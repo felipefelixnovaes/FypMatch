@@ -1,0 +1,390 @@
+package com.ideiassertiva.FypMatch.data
+
+import com.ideiassertiva.FypMatch.model.*
+import java.util.Date
+
+object TestUsers {
+    val allUsers = listOf<User>(
+        // 1. Ana Clara Santos - Premium
+        User(
+            id = "test_001",
+            email = "ana.santos@email.com",
+            displayName = "Ana Clara",
+            photoUrl = "https://randomuser.me/api/portraits/women/1.jpg",
+            profile = UserProfile(
+                fullName = "Ana Clara Santos",
+                age = 26,
+                bio = "Designer apaixonada por UX/UI e café especial ☕",
+                aboutMe = "Sou uma pessoa criativa que adora resolver problemas através do design. Nas horas livres gosto de pintar aquarelas, assistir filmes de terror e descobrir cafeterias novas pela cidade. Busco alguém que saiba conversar sobre qualquer coisa e que tenha senso de humor!",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/women/1.jpg",
+                    "https://randomuser.me/api/portraits/women/11.jpg",
+                    "https://randomuser.me/api/portraits/women/21.jpg"
+                ),
+                location = Location(city = "São Paulo", state = "SP"),
+                gender = Gender.FEMALE,
+                orientation = Orientation.BISEXUAL,
+                intention = Intention.DATING,
+                interests = listOf("Design", "Arte", "Café", "Tecnologia", "Sustentabilidade"),
+                education = "Superior Completo - Design Gráfico",
+                profession = "Designer UX/UI",
+                height = 165,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.YES,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.SOCIALLY,
+                zodiacSign = ZodiacSign.GEMINI,
+                religion = Religion.SPIRITUAL,
+                favoriteMovies = listOf("Hereditary", "Midsommar", "The Shape of Water"),
+                favoriteGenres = listOf("Terror", "Drama", "Ficção Científica"),
+                favoriteBooks = listOf("The Design of Everyday Things", "Atomic Habits"),
+                favoriteMusic = listOf("Indie Rock", "Jazz", "Bossa Nova"),
+                hobbies = listOf("Pintura", "Fotografia", "Jardinagem"),
+                sports = listOf("Yoga", "Corrida"),
+                favoriteTeam = "",
+                languages = listOf("Português", "Inglês", "Espanhol"),
+                traveledCountries = listOf("Argentina", "Chile", "Portugal"),
+                petPreference = PetPreference.LOVE_PETS,
+                isProfileComplete = true
+            ),
+            subscription = SubscriptionStatus.PREMIUM,
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 10, dailyLimit = 10)
+        ),
+
+        // 2. Bruno Costa - Free
+        User(
+            id = "test_002",
+            email = "bruno.costa@email.com",
+            displayName = "Bruno",
+            photoUrl = "https://randomuser.me/api/portraits/men/2.jpg",
+            profile = UserProfile(
+                fullName = "Bruno Costa",
+                age = 29,
+                bio = "Dev full-stack e músico nas horas vagas 🎸",
+                aboutMe = "Trabalho com tecnologia durante o dia e toco guitarra à noite. Sou fanático por futebol (vai Flamengo!), adoro uma boa cerveja artesanal e estou sempre procurando novos lugares para conhecer. Procuro alguém para compartilhar aventuras e quem sabe assistir alguns jogos juntos.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/men/2.jpg",
+                    "https://randomuser.me/api/portraits/men/12.jpg"
+                ),
+                location = Location(city = "Rio de Janeiro", state = "RJ"),
+                gender = Gender.MALE,
+                orientation = Orientation.STRAIGHT,
+                intention = Intention.DATING,
+                interests = listOf("Programação", "Música", "Futebol", "Cerveja artesanal", "Viagens"),
+                education = "Superior Completo - Ciências da Computação",
+                profession = "Desenvolvedor Full-Stack",
+                height = 178,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.YES,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.SOCIALLY,
+                zodiacSign = ZodiacSign.LEO,
+                religion = Religion.CATHOLIC,
+                favoriteMovies = listOf("Interstellar", "The Matrix", "Pulp Fiction"),
+                favoriteGenres = listOf("Ficção Científica", "Ação", "Comédia"),
+                favoriteBooks = listOf("Clean Code", "O Cortiço"),
+                favoriteMusic = listOf("Rock", "MPB", "Blues"),
+                hobbies = listOf("Tocar guitarra", "Programar", "Assistir futebol"),
+                sports = listOf("Futebol", "Natação"),
+                favoriteTeam = "Flamengo",
+                languages = listOf("Português", "Inglês"),
+                traveledCountries = listOf("Uruguai"),
+                petPreference = PetPreference.LIKE_PETS,
+                isProfileComplete = true
+            ),
+            subscription = SubscriptionStatus.FREE,
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 0, dailyLimit = 0)
+        ),
+
+        // 3. Carlos Eduardo - VIP
+        User(
+            id = "test_003",
+            email = "carlos.silva@email.com",
+            displayName = "Carlos Eduardo",
+            photoUrl = "https://randomuser.me/api/portraits/men/3.jpg",
+            profile = UserProfile(
+                fullName = "Carlos Eduardo Silva",
+                age = 35,
+                bio = "Professor de História e pai de dois 👨‍👧‍👦",
+                aboutMe = "Sou professor há 10 anos e pai de duas meninas lindas. Divorciado há 2 anos, estou pronto para um novo amor. Gosto de ler, viajar e conhecer culturas diferentes. Procuro alguém compreensiva que aceite crianças e que queira construir algo bonito juntos.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/men/3.jpg",
+                    "https://randomuser.me/api/portraits/men/13.jpg",
+                    "https://randomuser.me/api/portraits/men/23.jpg"
+                ),
+                location = Location(city = "Belo Horizonte", state = "MG"),
+                gender = Gender.MALE,
+                orientation = Orientation.STRAIGHT,
+                intention = Intention.DATING,
+                interests = listOf("História", "Leitura", "Viagens", "Culinária", "Cinema"),
+                education = "Mestrado - História",
+                profession = "Professor de História",
+                height = 175,
+                relationshipStatus = RelationshipStatus.DIVORCED,
+                hasChildren = ChildrenStatus.YES,
+                wantsChildren = ChildrenStatus.PREFER_NOT_TO_SAY,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.SOCIALLY,
+                zodiacSign = ZodiacSign.VIRGO,
+                religion = Religion.CATHOLIC,
+                favoriteMovies = listOf("Gladiator", "The Last Samurai", "Braveheart"),
+                favoriteGenres = listOf("Drama", "História", "Aventura"),
+                favoriteBooks = listOf("1984", "Dom Casmurro", "O Nome da Rosa"),
+                favoriteMusic = listOf("MPB", "Rock Clássico", "Jazz"),
+                hobbies = listOf("Leitura", "Culinária", "Xadrez"),
+                sports = listOf("Caminhada", "Tênis"),
+                favoriteTeam = "Atlético Mineiro",
+                languages = listOf("Português", "Inglês", "Espanhol", "Italiano"),
+                traveledCountries = listOf("Argentina", "Peru", "Itália", "França"),
+                petPreference = PetPreference.LIKE_PETS,
+                isProfileComplete = true
+            ),
+            subscription = SubscriptionStatus.VIP,
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 25, dailyLimit = 25)
+        ),
+
+        // 4. Daniela Ferreira - Premium
+        User(
+            id = "test_004",
+            email = "daniela.ferreira@email.com",
+            displayName = "Daniela",
+            photoUrl = "https://randomuser.me/api/portraits/women/4.jpg",
+            profile = UserProfile(
+                fullName = "Daniela Ferreira",
+                age = 31,
+                bio = "Psicóloga clínica, amante da natureza e dos livros 📚🌿",
+                aboutMe = "Trabalho ajudando pessoas e isso me realiza muito. Sou apaixonada por psicologia, adoro a natureza e tenho um amor especial por livros. Pratico meditação e yoga regularmente. Busco alguém maduro, que saiba se comunicar e que queira crescer junto comigo.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/women/4.jpg",
+                    "https://randomuser.me/api/portraits/women/14.jpg",
+                    "https://randomuser.me/api/portraits/women/24.jpg"
+                ),
+                location = Location(city = "Florianópolis", state = "SC"),
+                gender = Gender.FEMALE,
+                orientation = Orientation.STRAIGHT,
+                intention = Intention.DATING,
+                interests = listOf("Psicologia", "Natureza", "Leitura", "Meditação", "Yoga"),
+                education = "Pós-graduação - Psicologia Clínica",
+                profession = "Psicóloga Clínica",
+                height = 168,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.YES,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.NEVER,
+                zodiacSign = ZodiacSign.PISCES,
+                religion = Religion.SPIRITUAL,
+                favoriteMovies = listOf("Her", "Eternal Sunshine", "Inside Out"),
+                favoriteGenres = listOf("Drama", "Romance", "Documentário"),
+                favoriteBooks = listOf("O Poder do Agora", "Sapiens", "Mulheres que Correm com os Lobos"),
+                favoriteMusic = listOf("Indie", "Folk", "Música Clássica"),
+                hobbies = listOf("Leitura", "Meditação", "Jardinagem", "Fotografia"),
+                sports = listOf("Yoga", "Caminhada", "Surf"),
+                favoriteTeam = "",
+                languages = listOf("Português", "Inglês"),
+                traveledCountries = listOf("Índia", "Nepal", "Chile"),
+                petPreference = PetPreference.LOVE_PETS,
+                isProfileComplete = true
+            ),
+            subscription = SubscriptionStatus.PREMIUM,
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 10, dailyLimit = 10)
+        ),
+
+        // 5. Emerson Silva - Free  
+        User(
+            id = "test_005",
+            email = "emerson.silva@email.com",
+            displayName = "Emerson",
+            photoUrl = "https://randomuser.me/api/portraits/men/5.jpg",
+            profile = UserProfile(
+                fullName = "Emerson Silva",
+                age = 24,
+                bio = "Músico indie, apaixonado por vinis e café da manhã 🎵☕",
+                aboutMe = "Toco em uma banda indie e trabalho como produtor musical. Sou colecionador de vinis e posso passar horas conversando sobre música. Adoro acordar cedo para tomar café da manhã reforçado. Procuro alguém que curta música boa e que tenha paciência com meus horários malucos de músico.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/men/5.jpg",
+                    "https://randomuser.me/api/portraits/men/15.jpg"
+                ),
+                location = Location(city = "Porto Alegre", state = "RS"),
+                gender = Gender.MALE,
+                orientation = Orientation.BISEXUAL,
+                intention = Intention.CASUAL,
+                interests = listOf("Música", "Vinis", "Produção musical", "Café", "Arte"),
+                education = "Superior Incompleto - Música",
+                profession = "Músico/Produtor",
+                height = 172,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.NO,
+                smokingStatus = SmokingStatus.SOCIALLY,
+                drinkingStatus = DrinkingStatus.REGULARLY,
+                zodiacSign = ZodiacSign.AQUARIUS,
+                religion = Religion.AGNOSTIC,
+                favoriteMovies = listOf("Almost Famous", "Baby Driver", "La La Land"),
+                favoriteGenres = listOf("Musical", "Drama", "Comédia"),
+                favoriteBooks = listOf("High Fidelity", "Just Kids"),
+                favoriteMusic = listOf("Indie Rock", "Alternative", "Post-Punk"),
+                hobbies = listOf("Tocar guitarra", "Colecionar vinis", "Produzir música"),
+                sports = listOf("Skate"),
+                favoriteTeam = "Internacional",
+                languages = listOf("Português", "Inglês"),
+                traveledCountries = listOf("Argentina"),
+                petPreference = PetPreference.LIKE_PETS,
+                isProfileComplete = true
+            ),
+            subscription = SubscriptionStatus.FREE,
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 0, dailyLimit = 0)
+        ),
+
+        // 6. Fernanda Lopes - VIP
+        User(
+            id = "test_006",
+            email = "fernanda.lopes@email.com",
+            displayName = "Fernanda",
+            photoUrl = "https://randomuser.me/api/portraits/women/6.jpg",
+            profile = UserProfile(
+                fullName = "Fernanda Lopes",
+                age = 33,
+                bio = "Médica pediatra, viúva, em busca de um novo amor ❤️",
+                aboutMe = "Perdi meu marido há 3 anos e agora me sinto pronta para amar novamente. Sou médica pediatra e amo o que faço. Tenho uma filha de 8 anos que é minha vida. Procuro alguém maduro, carinhoso e que entenda que somos um pacote. Adoro viajar, dançar e cozinhar para quem amo.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/women/6.jpg",
+                    "https://randomuser.me/api/portraits/women/16.jpg",
+                    "https://randomuser.me/api/portraits/women/26.jpg"
+                ),
+                location = Location(city = "Recife", state = "PE"),
+                gender = Gender.FEMALE,
+                orientation = Orientation.STRAIGHT,
+                intention = Intention.DATING,
+                interests = listOf("Medicina", "Dança", "Culinária", "Viagens", "Literatura"),
+                education = "Residência Médica - Pediatria",
+                profession = "Médica Pediatra",
+                height = 162,
+                relationshipStatus = RelationshipStatus.WIDOWED,
+                hasChildren = ChildrenStatus.YES,
+                wantsChildren = ChildrenStatus.PREFER_NOT_TO_SAY,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.SOCIALLY,
+                zodiacSign = ZodiacSign.CANCER,
+                religion = Religion.CATHOLIC,
+                favoriteMovies = listOf("The Pursuit of Happyness", "Life is Beautiful", "Coco"),
+                favoriteGenres = listOf("Drama", "Romance", "Família"),
+                favoriteBooks = listOf("O Pequeno Príncipe", "Medicina do Amor"),
+                favoriteMusic = listOf("MPB", "Forró", "Samba"),
+                hobbies = listOf("Dança", "Culinária", "Leitura"),
+                sports = listOf("Dança", "Pilates"),
+                favoriteTeam = "Sport",
+                languages = listOf("Português", "Inglês", "Francês"),
+                traveledCountries = listOf("França", "Itália", "Estados Unidos"),
+                petPreference = PetPreference.LOVE_PETS,
+                isProfileComplete = true
+            ),
+            subscription = SubscriptionStatus.VIP,
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 25, dailyLimit = 25)
+        ),
+
+        // Felix - usuário especial VIP
+        User(
+            id = "felix_vip",
+            email = "felix.gato@FypMatch.com",
+            displayName = "Felix",
+            photoUrl = "🐱",
+            profile = UserProfile(
+                fullName = "Felix da Silva Gato",
+                age = 3,
+                bio = "Gato laranja, especialista em dormir e comer ração premium 🐾",
+                aboutMe = "Miau miau miau miau miau. Miau miau miau miau miau miau miau. Miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau.",
+                photos = listOf("🐱", "🐾", "😸"),
+                location = Location(city = "CatCity", state = "Miau"),
+                gender = Gender.MALE,
+                orientation = Orientation.OTHER,
+                intention = Intention.FRIENDSHIP,
+                interests = listOf("Dormir", "Comer", "Brincar", "Miar", "Arranhar móveis"),
+                education = "Escola de Gatos",
+                profession = "Gato profissional",
+                height = 30,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.NO,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.NEVER,
+                zodiacSign = ZodiacSign.LEO,
+                religion = Religion.OTHER,
+                favoriteMovies = listOf("O Gato de Botas", "Garfield", "Aristocats"),
+                favoriteGenres = listOf("Comédia", "Animação"),
+                favoriteBooks = listOf("Como Ser um Gato", "Miau para Iniciantes"),
+                favoriteMusic = listOf("Miados clássicos", "Purr music"),
+                hobbies = listOf("Dormir", "Caçar", "Subir em árvores"),
+                sports = listOf("Corrida atrás de laser"),
+                favoriteTeam = "Gatos FC",
+                languages = listOf("Miau", "Purr"),
+                traveledCountries = listOf("Reino dos Gatos"),
+                petPreference = PetPreference.LOVE_PETS,
+                isProfileComplete = true
+            ),
+            subscription = SubscriptionStatus.VIP,
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 999, dailyLimit = 999)
+        )
+    )
+}

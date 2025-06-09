@@ -1,4 +1,4 @@
-# 🚀 MatchReal - Guia de Desenvolvimento
+# 🚀 FypMatch - Guia de Desenvolvimento
 
 ## 💻 **CONFIGURAÇÃO DO AMBIENTE**
 
@@ -13,10 +13,10 @@
 ```bash
 # 1. Clone o repositório
 git clone [repository-url]
-cd MatchReal
+cd FypMatch
 
 # 2. Abra no Android Studio
-# File -> Open -> Selecione a pasta MatchReal
+# File -> Open -> Selecione a pasta FypMatch
 
 # 3. Aguarde o Gradle Sync
 # O Android Studio fará o sync automático das dependências
@@ -34,7 +34,7 @@ cd MatchReal
 
 ### **Organização de Pastas**
 ```
-app/src/main/java/com/example/matchreal/
+app/src/main/java/com/example/FypMatch/
 ├── data/repository/          # Camada de dados
 ├── model/                    # Modelos de domínio
 ├── ui/
@@ -77,13 +77,13 @@ app/src/main/java/com/example/matchreal/
 ### **Debugging**
 ```bash
 # Ver logs em tempo real
-adb logcat | grep "MatchReal"
+adb logcat | grep "FypMatch"
 
 # Instalar APK manualmente
 adb install app/build/outputs/apk/debug/app-debug.apk
 
 # Limpar dados do app
-adb shell pm clear com.example.matchreal
+adb shell pm clear com.ideiassertiva.FypMatch
 ```
 
 ---
@@ -288,4 +288,4 @@ git pull origin main
 
 ---
 
-**🚀 Ambiente de desenvolvimento completo e organizado para o MatchReal!** 
+**🚀 Ambiente de desenvolvimento completo e organizado para o FypMatch!** 

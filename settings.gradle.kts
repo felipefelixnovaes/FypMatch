@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MatchReal"
+rootProject.name = "FypMatch"
 include(":app")
  

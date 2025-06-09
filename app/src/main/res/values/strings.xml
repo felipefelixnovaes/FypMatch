@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MatchReal</string>
+    <string name="app_name">FypMatch</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>

@@ -1,4 +1,4 @@
-# 🎟️ Códigos de Acesso Antecipado - MatchReal
+# 🎟️ Códigos de Acesso Antecipado - FypMatch
 
 ## 📋 Lista de Códigos para Distribuição
 
@@ -38,7 +38,7 @@
 
 ## 🔧 Como Usar
 
-1. **Acesse o MatchReal**
+1. **Acesse o FypMatch**
 2. **Na tela inicial**, clique em "🎟️ Tenho um código de acesso"
 3. **Digite o código** exatamente como listado acima
 4. **Clique em "Resgatar Código"**
@@ -61,7 +61,7 @@
 ## 🎯 Funcionalidades Liberadas
 
 ### ✅ Para Todos os Códigos
-- Acesso completo ao MatchReal
+- Acesso completo ao FypMatch
 - Conselheiro de IA para relacionamentos
 - Sistema de créditos
 - Todas as funcionalidades básicas

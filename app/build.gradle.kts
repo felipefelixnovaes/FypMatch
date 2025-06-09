@@ -3,17 +3,19 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
     id("com.google.gms.google-services") version "4.4.2"
+    kotlin("kapt")
+    id("com.google.dagger.hilt.android")
     // id("kotlin-kapt")
     // id("dagger.hilt.android.plugin")
 }
 
 android {
-    namespace = "com.example.matchreal"
-    compileSdk = 35
+    namespace = "com.ideiassertiva.FypMatch"
+    compileSdk = 34
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "com.example.matchreal"
+        applicationId = "com.ideiassertiva.FypMatch"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -77,10 +79,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     
-    // Hilt - Dependency Injection - VERSÃO ESTÁVEL (TEMPORARIAMENTE DESABILITADO)
-    // implementation("com.google.dagger:hilt-android:2.51.1")
-    // kapt("com.google.dagger:hilt-compiler:2.51.1")
-    // implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    // Hilt - Dependency Injection - VERSÃO ESTÁVEL
+    implementation("com.google.dagger:hilt-android:2.54")
+    kapt("com.google.dagger:hilt-compiler:2.54")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     
     // Core Android - VERSÃO ESTÁVEL
     implementation("androidx.core:core-ktx:1.13.1")

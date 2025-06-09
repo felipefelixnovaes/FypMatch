@@ -16,3 +16,7 @@ local.properties
 
 # Arquivos de instalação
 *.msi
+
+# Keystore de release (credenciais sensíveis)
+*.keystore
+fypmatch-release.keystore

@@ -18,7 +18,7 @@ class UserRepository {
     
     init {
         // Carregar todos os usuários de teste
-        TestUsers.getTestUsers().forEach { user ->
+        TestUsers.allUsers.forEach { user ->
             // Configurar créditos de IA baseado na assinatura
             val creditsLimit = when (user.subscription) {
                 SubscriptionStatus.FREE -> AiCreditLimits.FREE_DAILY

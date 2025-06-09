@@ -1,22 +1,23 @@
 package com.example.matchreal.ui.screens
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +31,8 @@ import coil.request.ImageRequest
 import com.example.matchreal.model.*
 import com.example.matchreal.ui.theme.MatchRealTheme
 import com.example.matchreal.ui.viewmodel.DiscoveryViewModel
+import kotlin.math.abs
+import kotlin.math.sign
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +41,8 @@ fun DiscoveryScreen(
     onNavigateToMatches: () -> Unit = {},
     onNavigateToPremium: () -> Unit = {},
     onNavigateToAICounselor: (String) -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToUserDetails: (String) -> Unit = {},
     viewModel: DiscoveryViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -66,11 +71,12 @@ fun DiscoveryScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header com botões
+        // Header melhorado
         DiscoveryTopBar(
             onSettingsClick = { /* TODO: Implementar settings */ },
             onMatchesClick = onNavigateToMatches,
-            onAICounselorClick = { onNavigateToAICounselor("current_user_id") }
+            onAICounselorClick = { onNavigateToAICounselor("current_user_id") },
+            onProfileClick = onNavigateToProfile
         )
         
         // Área dos cards
@@ -92,7 +98,8 @@ fun DiscoveryScreen(
                 currentCard != null -> {
                     SwipeCard(
                         card = currentCard!!,
-                        onSwipe = { swipeType -> viewModel.performSwipe(swipeType) }
+                        onSwipe = { swipeType -> viewModel.performSwipe(swipeType) },
+                        onCardClick = { onNavigateToUserDetails(currentCard!!.user.id) }
                     )
                 }
                 
@@ -120,7 +127,8 @@ fun DiscoveryScreen(
 private fun DiscoveryTopBar(
     onSettingsClick: () -> Unit,
     onMatchesClick: () -> Unit,
-    onAICounselorClick: () -> Unit = {}
+    onAICounselorClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -129,11 +137,20 @@ private fun DiscoveryTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onSettingsClick) {
+        // Botão de perfil do usuário
+        IconButton(
+            onClick = onProfileClick,
+            modifier = Modifier
+                .size(40.dp)
+                .background(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    CircleShape
+                )
+        ) {
             Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = "Configurações",
-                tint = MaterialTheme.colorScheme.onSurface
+                imageVector = Icons.Default.Person,
+                contentDescription = "Meu Perfil",
+                tint = MaterialTheme.colorScheme.primary
             )
         }
         
@@ -147,16 +164,21 @@ private fun DiscoveryTopBar(
             )
             
             // Botão do conselheiro VIP
-            TextButton(onClick = onAICounselorClick) {
+            OutlinedButton(
+                onClick = onAICounselorClick,
+                modifier = Modifier.height(32.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Star,
                     contentDescription = null,
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Conselheiro VIP",
+                    text = "Conselheiro",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium
@@ -164,12 +186,37 @@ private fun DiscoveryTopBar(
             }
         }
         
-        IconButton(onClick = onMatchesClick) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Matches",
-                tint = MaterialTheme.colorScheme.onSurface
-            )
+        // Botão de matches
+        Box {
+            IconButton(
+                onClick = onMatchesClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Matches",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // Badge de notificação (exemplo)
+            Badge(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = (-2).dp, y = 2.dp),
+                containerColor = Color.Red
+            ) {
+                Text(
+                    text = "3",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
     }
 }
@@ -177,12 +224,70 @@ private fun DiscoveryTopBar(
 @Composable
 private fun SwipeCard(
     card: DiscoveryCard,
-    onSwipe: (SwipeType) -> Unit
+    onSwipe: (SwipeType) -> Unit,
+    onCardClick: () -> Unit
 ) {
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
+    var rotation by remember { mutableFloatStateOf(0f) }
+    
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = spring(dampingRatio = 0.7f)
+    )
+    val animatedOffsetY by animateFloatAsState(
+        targetValue = offsetY,
+        animationSpec = spring(dampingRatio = 0.7f)
+    )
+    val animatedRotation by animateFloatAsState(
+        targetValue = rotation,
+        animationSpec = spring(dampingRatio = 0.7f)
+    )
+    
+    val screenWidth = 350.dp // Aproximadamente
+    val threshold = with(androidx.compose.ui.platform.LocalDensity.current) { 100.dp.toPx() }
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(0.7f),
+            .aspectRatio(0.7f)
+            .graphicsLayer {
+                translationX = animatedOffsetX
+                translationY = animatedOffsetY
+                rotationZ = animatedRotation
+                alpha = if (abs(offsetX) > threshold) 0.8f else 1f
+            }
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragEnd = {
+                        when {
+                            abs(offsetX) > threshold -> {
+                                val swipeType = if (offsetX > 0) SwipeType.LIKE else SwipeType.PASS
+                                onSwipe(swipeType)
+                                offsetX = 0f
+                                offsetY = 0f
+                                rotation = 0f
+                            }
+                            offsetY < -threshold -> {
+                                onSwipe(SwipeType.SUPER_LIKE)
+                                offsetX = 0f
+                                offsetY = 0f
+                                rotation = 0f
+                            }
+                            else -> {
+                                offsetX = 0f
+                                offsetY = 0f
+                                rotation = 0f
+                            }
+                        }
+                    }
+                ) { _, dragAmount ->
+                    offsetX += dragAmount.x
+                    offsetY += dragAmount.y
+                    rotation = (offsetX / 10f).coerceIn(-30f, 30f)
+                }
+            }
+            .clickable { onCardClick() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
@@ -198,6 +303,9 @@ private fun SwipeCard(
                 modifier = Modifier.fillMaxSize()
             )
             
+            // Indicadores de swipe
+            SwipeIndicators(offsetX = offsetX, offsetY = offsetY, threshold = threshold)
+            
             // Gradient overlay
             Box(
                 modifier = Modifier
@@ -212,6 +320,24 @@ private fun SwipeCard(
                         )
                     )
             )
+            
+            // Botão de mais informações
+            IconButton(
+                onClick = onCardClick,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.5f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Ver mais detalhes",
+                    tint = Color.White
+                )
+            }
             
             // Informações do usuário
             Column(
@@ -241,7 +367,7 @@ private fun SwipeCard(
                 }
                 
                 Text(
-                    text = "${card.distance}km de distância",
+                    text = "${card.distance}km de distância • ${card.user.profile.profession}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.8f)
                 )
@@ -259,7 +385,7 @@ private fun SwipeCard(
                 if (card.commonInterests.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Interesses em comum: ${card.commonInterests.joinToString(", ")}",
+                        text = "Interesses em comum: ${card.commonInterests.take(3).joinToString(", ")}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.7f)
                     )
@@ -270,18 +396,91 @@ private fun SwipeCard(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    repeat(5) { index ->
+                        val isFilled = index < (card.compatibilityScore * 5).toInt()
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            tint = if (isFilled) Color.Yellow else Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Compatibilidade: ",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = "${(card.compatibilityScore * 100).toInt()}%",
+                        text = "${(card.compatibilityScore * 100).toInt()}% compatível",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.Green
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SwipeIndicators(
+    offsetX: Float,
+    offsetY: Float,
+    threshold: Float
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Indicador LIKE (direita)
+        if (offsetX > threshold * 0.3f) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(32.dp)
+                    .rotate(15f),
+                colors = CardDefaults.cardColors(containerColor = Color.Green),
+                border = BorderStroke(3.dp, Color.White)
+            ) {
+                Text(
+                    text = "CURTIR",
+                    modifier = Modifier.padding(16.dp, 8.dp),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        }
+        
+        // Indicador PASS (esquerda)
+        if (offsetX < -threshold * 0.3f) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(32.dp)
+                    .rotate(-15f),
+                colors = CardDefaults.cardColors(containerColor = Color.Red),
+                border = BorderStroke(3.dp, Color.White)
+            ) {
+                Text(
+                    text = "PASSAR",
+                    modifier = Modifier.padding(16.dp, 8.dp),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        }
+        
+        // Indicador SUPER LIKE (cima)
+        if (offsetY < -threshold * 0.5f) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 50.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF4FC3F7)),
+                border = BorderStroke(3.dp, Color.White)
+            ) {
+                Text(
+                    text = "SUPER CURTIR",
+                    modifier = Modifier.padding(16.dp, 8.dp),
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
     }

@@ -12,7 +12,7 @@ data class Match(
     val lastMessageAt: Date = Date()
 )
 
-data class SwipeAction(
+data class SwipeRecord(
     val id: String = "",
     val fromUserId: String = "",
     val toUserId: String = "",

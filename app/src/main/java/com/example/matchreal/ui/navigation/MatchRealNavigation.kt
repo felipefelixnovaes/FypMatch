@@ -5,15 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.matchreal.ui.screens.AccessCodeScreen
-import com.example.matchreal.ui.screens.AICounselorScreen
-import com.example.matchreal.ui.screens.DiscoveryScreen
-import com.example.matchreal.ui.screens.LoginScreen
-import com.example.matchreal.ui.screens.MatchesScreen
-import com.example.matchreal.ui.screens.PremiumScreen
-import com.example.matchreal.ui.screens.ProfileScreen
-import com.example.matchreal.ui.screens.WaitlistScreen
-import com.example.matchreal.ui.screens.WelcomeScreen
+import com.example.matchreal.ui.screens.*
 
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
@@ -30,6 +22,10 @@ sealed class Screen(val route: String) {
         fun createRoute(userId: String) = "ai_counselor/$userId"
     }
     object AccessCode : Screen("access_code")
+    object UserDetails : Screen("user_details/{userId}") {
+        fun createRoute(userId: String) = "user_details/$userId"
+    }
+    object ProfileEdit : Screen("profile_edit")
 }
 
 @Composable
@@ -83,6 +79,12 @@ fun MatchRealNavigation(
                 },
                 onNavigateToAICounselor = { userId ->
                     navController.navigate(Screen.AICounselor.createRoute(userId))
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Screen.ProfileEdit.route)
+                },
+                onNavigateToUserDetails = { userId ->
+                    navController.navigate(Screen.UserDetails.createRoute(userId))
                 }
             )
         }
@@ -143,6 +145,40 @@ fun MatchRealNavigation(
                     navController.navigate(Screen.Discovery.route) {
                         popUpTo(Screen.Welcome.route) { inclusive = true }
                     }
+                }
+            )
+        }
+        
+        composable(Screen.UserDetails.route) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            UserDetailsScreen(
+                userId = userId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onLike = {
+                    // TODO: Implementar ação de curtir
+                    navController.popBackStack()
+                },
+                onPass = {
+                    // TODO: Implementar ação de passar
+                    navController.popBackStack()
+                },
+                onSuperLike = {
+                    // TODO: Implementar ação de super curtir
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.ProfileEdit.route) {
+            ProfileEditScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onSave = { user ->
+                    // TODO: Implementar salvamento do perfil
+                    navController.popBackStack()
                 }
             )
         }

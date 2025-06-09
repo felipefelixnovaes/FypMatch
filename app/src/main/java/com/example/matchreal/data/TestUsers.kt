@@ -4,466 +4,387 @@ import com.example.matchreal.model.*
 import java.util.Date
 
 object TestUsers {
-    
-    fun getTestUsers(): List<User> = listOf(
-        // 1. Ana Clara - Designer UX/UI
+    val allUsers = listOf<User>(
+        // 1. Ana Clara Santos - Premium
         User(
-            id = "user_001",
-            email = "ana.clara@email.com",
+            id = "test_001",
+            email = "ana.santos@email.com",
             displayName = "Ana Clara",
+            photoUrl = "https://randomuser.me/api/portraits/women/1.jpg",
             profile = UserProfile(
                 fullName = "Ana Clara Santos",
                 age = 26,
-                bio = "Designer UX/UI apaixonada por criar experiências incríveis. Amo café, filmes indie e viagens. Procuro alguém para compartilhar aventuras! ☕🎬✈️",
+                bio = "Designer apaixonada por UX/UI e café especial ☕",
+                aboutMe = "Sou uma pessoa criativa que adora resolver problemas através do design. Nas horas livres gosto de pintar aquarelas, assistir filmes de terror e descobrir cafeterias novas pela cidade. Busco alguém que saiba conversar sobre qualquer coisa e que tenha senso de humor!",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/women/1.jpg",
+                    "https://randomuser.me/api/portraits/women/11.jpg",
+                    "https://randomuser.me/api/portraits/women/21.jpg"
+                ),
                 location = Location(city = "São Paulo", state = "SP"),
                 gender = Gender.FEMALE,
                 orientation = Orientation.BISEXUAL,
                 intention = Intention.DATING,
-                interests = listOf("Design", "Cinema", "Viagens", "Café", "Arte", "Fotografia"),
-                education = "Superior Completo - Design",
+                interests = listOf("Design", "Arte", "Café", "Tecnologia", "Sustentabilidade"),
+                education = "Superior Completo - Design Gráfico",
                 profession = "Designer UX/UI",
                 height = 165,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.YES,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.SOCIALLY,
+                zodiacSign = ZodiacSign.GEMINI,
+                religion = Religion.SPIRITUAL,
+                favoriteMovies = listOf("Hereditary", "Midsommar", "The Shape of Water"),
+                favoriteGenres = listOf("Terror", "Drama", "Ficção Científica"),
+                favoriteBooks = listOf("The Design of Everyday Things", "Atomic Habits"),
+                favoriteMusic = listOf("Indie Rock", "Jazz", "Bossa Nova"),
+                hobbies = listOf("Pintura", "Fotografia", "Jardinagem"),
+                sports = listOf("Yoga", "Corrida"),
+                favoriteTeam = "",
+                languages = listOf("Português", "Inglês", "Espanhol"),
+                traveledCountries = listOf("Argentina", "Chile", "Portugal"),
+                petPreference = PetPreference.LOVE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.PREMIUM,
-            accessLevel = AccessLevel.FULL_ACCESS
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 10, dailyLimit = 10)
         ),
-        
-        // 2. Bruno Costa - Desenvolvedor
+
+        // 2. Bruno Costa - Free
         User(
-            id = "user_002", 
+            id = "test_002",
             email = "bruno.costa@email.com",
             displayName = "Bruno",
+            photoUrl = "https://randomuser.me/api/portraits/men/2.jpg",
             profile = UserProfile(
                 fullName = "Bruno Costa",
                 age = 29,
-                bio = "Dev full-stack que ama tecnologia e inovação. Nas horas vagas, jogo videogame e faço trilhas. Buscando alguém para dividir código e risadas! 💻🎮🥾",
+                bio = "Dev full-stack e músico nas horas vagas 🎸",
+                aboutMe = "Trabalho com tecnologia durante o dia e toco guitarra à noite. Sou fanático por futebol (vai Flamengo!), adoro uma boa cerveja artesanal e estou sempre procurando novos lugares para conhecer. Procuro alguém para compartilhar aventuras e quem sabe assistir alguns jogos juntos.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/men/2.jpg",
+                    "https://randomuser.me/api/portraits/men/12.jpg"
+                ),
                 location = Location(city = "Rio de Janeiro", state = "RJ"),
                 gender = Gender.MALE,
                 orientation = Orientation.STRAIGHT,
                 intention = Intention.DATING,
-                interests = listOf("Programação", "Games", "Trilhas", "Tecnologia", "Música", "Filmes"),
-                education = "Superior Completo - Ciência da Computação",
+                interests = listOf("Programação", "Música", "Futebol", "Cerveja artesanal", "Viagens"),
+                education = "Superior Completo - Ciências da Computação",
                 profession = "Desenvolvedor Full-Stack",
                 height = 178,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.YES,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.SOCIALLY,
+                zodiacSign = ZodiacSign.LEO,
+                religion = Religion.CATHOLIC,
+                favoriteMovies = listOf("Interstellar", "The Matrix", "Pulp Fiction"),
+                favoriteGenres = listOf("Ficção Científica", "Ação", "Comédia"),
+                favoriteBooks = listOf("Clean Code", "O Cortiço"),
+                favoriteMusic = listOf("Rock", "MPB", "Blues"),
+                hobbies = listOf("Tocar guitarra", "Programar", "Assistir futebol"),
+                sports = listOf("Futebol", "Natação"),
+                favoriteTeam = "Flamengo",
+                languages = listOf("Português", "Inglês"),
+                traveledCountries = listOf("Uruguai"),
+                petPreference = PetPreference.LIKE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.FREE,
-            accessLevel = AccessLevel.FULL_ACCESS
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 0, dailyLimit = 0)
         ),
-        
-        // 3. Carlos Eduardo - Professor
+
+        // 3. Carlos Eduardo - VIP
         User(
-            id = "user_003",
-            email = "carlos.eduardo@email.com", 
-            displayName = "Carlos",
+            id = "test_003",
+            email = "carlos.silva@email.com",
+            displayName = "Carlos Eduardo",
+            photoUrl = "https://randomuser.me/api/portraits/men/3.jpg",
             profile = UserProfile(
-                fullName = "Carlos Eduardo Oliveira",
+                fullName = "Carlos Eduardo Silva",
                 age = 35,
-                bio = "Professor de história que adora contar histórias. Pai de um golden retriever chamado Beethoven. Procuro conexões verdadeiras e boas conversas! 📚🐕❤️",
+                bio = "Professor de História e pai de dois 👨‍👧‍👦",
+                aboutMe = "Sou professor há 10 anos e pai de duas meninas lindas. Divorciado há 2 anos, estou pronto para um novo amor. Gosto de ler, viajar e conhecer culturas diferentes. Procuro alguém compreensiva que aceite crianças e que queira construir algo bonito juntos.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/men/3.jpg",
+                    "https://randomuser.me/api/portraits/men/13.jpg",
+                    "https://randomuser.me/api/portraits/men/23.jpg"
+                ),
                 location = Location(city = "Belo Horizonte", state = "MG"),
                 gender = Gender.MALE,
-                orientation = Orientation.GAY,
+                orientation = Orientation.STRAIGHT,
                 intention = Intention.DATING,
-                interests = listOf("História", "Livros", "Cães", "Música Clássica", "Teatro", "Culinária"),
-                education = "Pós-graduação - História",
-                profession = "Professor",
-                height = 172,
+                interests = listOf("História", "Leitura", "Viagens", "Culinária", "Cinema"),
+                education = "Mestrado - História",
+                profession = "Professor de História",
+                height = 175,
+                relationshipStatus = RelationshipStatus.DIVORCED,
+                hasChildren = ChildrenStatus.YES,
+                wantsChildren = ChildrenStatus.PREFER_NOT_TO_SAY,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.SOCIALLY,
+                zodiacSign = ZodiacSign.VIRGO,
+                religion = Religion.CATHOLIC,
+                favoriteMovies = listOf("Gladiator", "The Last Samurai", "Braveheart"),
+                favoriteGenres = listOf("Drama", "História", "Aventura"),
+                favoriteBooks = listOf("1984", "Dom Casmurro", "O Nome da Rosa"),
+                favoriteMusic = listOf("MPB", "Rock Clássico", "Jazz"),
+                hobbies = listOf("Leitura", "Culinária", "Xadrez"),
+                sports = listOf("Caminhada", "Tênis"),
+                favoriteTeam = "Atlético Mineiro",
+                languages = listOf("Português", "Inglês", "Espanhol", "Italiano"),
+                traveledCountries = listOf("Argentina", "Peru", "Itália", "França"),
+                petPreference = PetPreference.LIKE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.VIP,
-            accessLevel = AccessLevel.FULL_ACCESS
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 25, dailyLimit = 25)
         ),
-        
-        // 4. Daniela Ferreira - Psicóloga
+
+        // 4. Daniela Ferreira - Premium
         User(
-            id = "user_004",
+            id = "test_004",
             email = "daniela.ferreira@email.com",
-            displayName = "Dani",
+            displayName = "Daniela",
+            photoUrl = "https://randomuser.me/api/portraits/women/4.jpg",
             profile = UserProfile(
                 fullName = "Daniela Ferreira",
                 age = 31,
-                bio = "Psicóloga clínica que acredita no poder das conexões humanas. Yoga, meditação e natureza são meus refúgios. Busco alguém para crescer junto! 🧘‍♀️🌱💕",
+                bio = "Psicóloga clínica, amante da natureza e dos livros 📚🌿",
+                aboutMe = "Trabalho ajudando pessoas e isso me realiza muito. Sou apaixonada por psicologia, adoro a natureza e tenho um amor especial por livros. Pratico meditação e yoga regularmente. Busco alguém maduro, que saiba se comunicar e que queira crescer junto comigo.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/women/4.jpg",
+                    "https://randomuser.me/api/portraits/women/14.jpg",
+                    "https://randomuser.me/api/portraits/women/24.jpg"
+                ),
                 location = Location(city = "Florianópolis", state = "SC"),
                 gender = Gender.FEMALE,
                 orientation = Orientation.STRAIGHT,
                 intention = Intention.DATING,
-                interests = listOf("Psicologia", "Yoga", "Meditação", "Natureza", "Livros", "Wellness"),
-                education = "Superior Completo - Psicologia",
-                profession = "Psicóloga",
+                interests = listOf("Psicologia", "Natureza", "Leitura", "Meditação", "Yoga"),
+                education = "Pós-graduação - Psicologia Clínica",
+                profession = "Psicóloga Clínica",
                 height = 168,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.YES,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.NEVER,
+                zodiacSign = ZodiacSign.PISCES,
+                religion = Religion.SPIRITUAL,
+                favoriteMovies = listOf("Her", "Eternal Sunshine", "Inside Out"),
+                favoriteGenres = listOf("Drama", "Romance", "Documentário"),
+                favoriteBooks = listOf("O Poder do Agora", "Sapiens", "Mulheres que Correm com os Lobos"),
+                favoriteMusic = listOf("Indie", "Folk", "Música Clássica"),
+                hobbies = listOf("Leitura", "Meditação", "Jardinagem", "Fotografia"),
+                sports = listOf("Yoga", "Caminhada", "Surf"),
+                favoriteTeam = "",
+                languages = listOf("Português", "Inglês"),
+                traveledCountries = listOf("Índia", "Nepal", "Chile"),
+                petPreference = PetPreference.LOVE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.PREMIUM,
-            accessLevel = AccessLevel.FULL_ACCESS
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 10, dailyLimit = 10)
         ),
-        
-        // 5. Emerson Silva - Músico
+
+        // 5. Emerson Silva - Free  
         User(
-            id = "user_005",
+            id = "test_005",
             email = "emerson.silva@email.com",
             displayName = "Emerson",
+            photoUrl = "https://randomuser.me/api/portraits/men/5.jpg",
             profile = UserProfile(
                 fullName = "Emerson Silva",
                 age = 24,
-                bio = "Músico indie que vive entre acordes e melodias. Toco guitarra, baixo e um pouco de tudo. Procuro alguém para harmonizar comigo! 🎸🎵✨",
+                bio = "Músico indie, apaixonado por vinis e café da manhã 🎵☕",
+                aboutMe = "Toco em uma banda indie e trabalho como produtor musical. Sou colecionador de vinis e posso passar horas conversando sobre música. Adoro acordar cedo para tomar café da manhã reforçado. Procuro alguém que curta música boa e que tenha paciência com meus horários malucos de músico.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/men/5.jpg",
+                    "https://randomuser.me/api/portraits/men/15.jpg"
+                ),
                 location = Location(city = "Porto Alegre", state = "RS"),
                 gender = Gender.MALE,
-                orientation = Orientation.PANSEXUAL,
+                orientation = Orientation.BISEXUAL,
                 intention = Intention.CASUAL,
-                interests = listOf("Música", "Guitarra", "Bandas Indie", "Festivais", "Arte", "Boemia"),
+                interests = listOf("Música", "Vinis", "Produção musical", "Café", "Arte"),
                 education = "Superior Incompleto - Música",
-                profession = "Músico",
-                height = 175,
+                profession = "Músico/Produtor",
+                height = 172,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.NO,
+                smokingStatus = SmokingStatus.SOCIALLY,
+                drinkingStatus = DrinkingStatus.REGULARLY,
+                zodiacSign = ZodiacSign.AQUARIUS,
+                religion = Religion.AGNOSTIC,
+                favoriteMovies = listOf("Almost Famous", "Baby Driver", "La La Land"),
+                favoriteGenres = listOf("Musical", "Drama", "Comédia"),
+                favoriteBooks = listOf("High Fidelity", "Just Kids"),
+                favoriteMusic = listOf("Indie Rock", "Alternative", "Post-Punk"),
+                hobbies = listOf("Tocar guitarra", "Colecionar vinis", "Produzir música"),
+                sports = listOf("Skate"),
+                favoriteTeam = "Internacional",
+                languages = listOf("Português", "Inglês"),
+                traveledCountries = listOf("Argentina"),
+                petPreference = PetPreference.LIKE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.FREE,
-            accessLevel = AccessLevel.FULL_ACCESS
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 0, dailyLimit = 0)
         ),
-        
-        // 6. Fernanda Lopes - Médica
+
+        // 6. Fernanda Lopes - VIP
         User(
-            id = "user_006",
+            id = "test_006",
             email = "fernanda.lopes@email.com",
             displayName = "Fernanda",
+            photoUrl = "https://randomuser.me/api/portraits/women/6.jpg",
             profile = UserProfile(
                 fullName = "Fernanda Lopes",
                 age = 33,
-                bio = "Médica pediatra com um coração gigante. Amo crianças, animais e causas sociais. Nas folgas, pratico corrida e leio muito. Busco amor genuíno! 👩‍⚕️🏃‍♀️📖",
+                bio = "Médica pediatra, viúva, em busca de um novo amor ❤️",
+                aboutMe = "Perdi meu marido há 3 anos e agora me sinto pronta para amar novamente. Sou médica pediatra e amo o que faço. Tenho uma filha de 8 anos que é minha vida. Procuro alguém maduro, carinhoso e que entenda que somos um pacote. Adoro viajar, dançar e cozinhar para quem amo.",
+                photos = listOf(
+                    "https://randomuser.me/api/portraits/women/6.jpg",
+                    "https://randomuser.me/api/portraits/women/16.jpg",
+                    "https://randomuser.me/api/portraits/women/26.jpg"
+                ),
                 location = Location(city = "Recife", state = "PE"),
                 gender = Gender.FEMALE,
-                orientation = Orientation.LESBIAN,
+                orientation = Orientation.STRAIGHT,
                 intention = Intention.DATING,
-                interests = listOf("Medicina", "Corrida", "Leitura", "Voluntariado", "Animais", "Viagens"),
-                education = "Pós-graduação - Medicina",
+                interests = listOf("Medicina", "Dança", "Culinária", "Viagens", "Literatura"),
+                education = "Residência Médica - Pediatria",
                 profession = "Médica Pediatra",
                 height = 162,
+                relationshipStatus = RelationshipStatus.WIDOWED,
+                hasChildren = ChildrenStatus.YES,
+                wantsChildren = ChildrenStatus.PREFER_NOT_TO_SAY,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.SOCIALLY,
+                zodiacSign = ZodiacSign.CANCER,
+                religion = Religion.CATHOLIC,
+                favoriteMovies = listOf("The Pursuit of Happyness", "Life is Beautiful", "Coco"),
+                favoriteGenres = listOf("Drama", "Romance", "Família"),
+                favoriteBooks = listOf("O Pequeno Príncipe", "Medicina do Amor"),
+                favoriteMusic = listOf("MPB", "Forró", "Samba"),
+                hobbies = listOf("Dança", "Culinária", "Leitura"),
+                sports = listOf("Dança", "Pilates"),
+                favoriteTeam = "Sport",
+                languages = listOf("Português", "Inglês", "Francês"),
+                traveledCountries = listOf("França", "Itália", "Estados Unidos"),
+                petPreference = PetPreference.LOVE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.VIP,
-            accessLevel = AccessLevel.FULL_ACCESS
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
+            ),
+            aiCredits = AiCredits(current = 25, dailyLimit = 25)
         ),
-        
-        // 7. Gabriel Santos - Engenheiro
+
+        // Felix - usuário especial VIP
         User(
-            id = "user_007",
-            email = "gabriel.santos@email.com",
-            displayName = "Gabriel",
+            id = "felix_vip",
+            email = "felix.gato@matchreal.com",
+            displayName = "Felix",
+            photoUrl = "🐱",
             profile = UserProfile(
-                fullName = "Gabriel Santos",
-                age = 28,
-                bio = "Engenheiro civil que constrói pontes, literalmente! Amo esportes, cerveja artesanal e churrascos. Procuro alguém para construir algo especial! 🏗️🍺⚽",
-                location = Location(city = "Brasília", state = "DF"),
+                fullName = "Felix da Silva Gato",
+                age = 3,
+                bio = "Gato laranja, especialista em dormir e comer ração premium 🐾",
+                aboutMe = "Miau miau miau miau miau. Miau miau miau miau miau miau miau. Miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau miau.",
+                photos = listOf("🐱", "🐾", "😸"),
+                location = Location(city = "CatCity", state = "Miau"),
                 gender = Gender.MALE,
-                orientation = Orientation.STRAIGHT,
-                intention = Intention.DATING,
-                interests = listOf("Engenharia", "Futebol", "Cerveja", "Churrasco", "Arquitetura", "Esportes"),
-                education = "Superior Completo - Engenharia Civil",
-                profession = "Engenheiro Civil",
-                height = 183,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.FREE,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 8. Helena Martins - Artista
-        User(
-            id = "user_008",
-            email = "helena.martins@email.com",
-            displayName = "Helena",
-            profile = UserProfile(
-                fullName = "Helena Martins",
-                age = 27,
-                bio = "Artista visual que vê magia em tudo. Pintura, escultura e performance são minha linguagem. Vegetariana, amante da lua e dos gatos. Busco alma gêmea! 🎨🌙🐱",
-                location = Location(city = "Salvador", state = "BA"),
-                gender = Gender.FEMALE,
-                orientation = Orientation.BISEXUAL,
-                intention = Intention.DATING,
-                interests = listOf("Arte", "Pintura", "Gatos", "Vegetarianismo", "Lua", "Espiritualidade"),
-                education = "Superior Completo - Artes Visuais",
-                profession = "Artista Visual",
-                height = 170,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.PREMIUM,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 9. Igor Pereira - Chef
-        User(
-            id = "user_009",
-            email = "igor.pereira@email.com",
-            displayName = "Igor",
-            profile = UserProfile(
-                fullName = "Igor Pereira",
-                age = 30,
-                bio = "Chef que tempera a vida com sabor e paixão. Cozinho com amor e sempre invento receitas novas. Busco alguém para dividir a mesa e o coração! 👨‍🍳🍷❤️",
-                location = Location(city = "Curitiba", state = "PR"),
-                gender = Gender.MALE,
-                orientation = Orientation.STRAIGHT,
-                intention = Intention.DATING,
-                interests = listOf("Culinária", "Vinhos", "Gastronomia", "Viagens", "Mercados", "Restaurantes"),
-                education = "Superior Completo - Gastronomia",
-                profession = "Chef de Cozinha",
-                height = 177,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.VIP,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 10. Julia Costa - Jornalista
-        User(
-            id = "user_010",
-            email = "julia.costa@email.com",
-            displayName = "Julia",
-            profile = UserProfile(
-                fullName = "Julia Costa",
-                age = 25,
-                bio = "Jornalista que conta histórias que importam. Curiosa, questionadora e sempre em busca da verdade. Amo café, livros e debates intensos! ☕📰💭",
-                location = Location(city = "Fortaleza", state = "CE"),
-                gender = Gender.FEMALE,
-                orientation = Orientation.STRAIGHT,
+                orientation = Orientation.OTHER,
                 intention = Intention.FRIENDSHIP,
-                interests = listOf("Jornalismo", "Política", "Café", "Livros", "Debates", "Sociedade"),
-                education = "Superior Completo - Jornalismo",
-                profession = "Jornalista",
-                height = 163,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.FREE,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 11. Kai Nakamura - Game Designer
-        User(
-            id = "user_011",
-            email = "kai.nakamura@email.com",
-            displayName = "Kai",
-            profile = UserProfile(
-                fullName = "Kai Nakamura",
-                age = 23,
-                bio = "Game designer não-binário que cria mundos virtuais. Anime, RPG e cultura japonesa são minha vida. Procuro conexões autênticas e level up no amor! 🎮🌸⚡",
-                location = Location(city = "São Paulo", state = "SP"),
-                gender = Gender.NON_BINARY,
-                orientation = Orientation.PANSEXUAL,
-                intention = Intention.DATING,
-                interests = listOf("Games", "Anime", "RPG", "Cultura Japonesa", "Design", "Tecnologia"),
-                education = "Superior Completo - Design de Games",
-                profession = "Game Designer",
-                height = 168,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.PREMIUM,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 12. Lucas Almeida - Veterinário
-        User(
-            id = "user_012",
-            email = "lucas.almeida@email.com",
-            displayName = "Lucas",
-            profile = UserProfile(
-                fullName = "Lucas Almeida",
-                age = 32,
-                bio = "Veterinário apaixonado por todos os bichinhos. Tenho 3 gatos resgatados e um coração imenso. Procuro alguém que ame animais tanto quanto eu! 🐾❤️🐱",
-                location = Location(city = "Goiânia", state = "GO"),
-                gender = Gender.MALE,
-                orientation = Orientation.GAY,
-                intention = Intention.DATING,
-                interests = listOf("Veterinária", "Animais", "Resgate", "Natureza", "Caminhadas", "Proteção Animal"),
-                education = "Superior Completo - Veterinária",
-                profession = "Veterinário",
-                height = 174,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.FREE,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 13. Mariana Silva - Advogada
-        User(
-            id = "user_013",
-            email = "mariana.silva@email.com",
-            displayName = "Mari",
-            profile = UserProfile(
-                fullName = "Mariana Silva",
-                age = 29,
-                bio = "Advogada que luta por justiça social. Feminista, ativista e sonhadora. Amo teatro, dança e conversas profundas. Busco parceria para mudar o mundo! ⚖️💃🌍",
-                location = Location(city = "Rio de Janeiro", state = "RJ"),
-                gender = Gender.FEMALE,
-                orientation = Orientation.BISEXUAL,
-                intention = Intention.DATING,
-                interests = listOf("Direito", "Ativismo", "Teatro", "Dança", "Feminismo", "Política"),
-                education = "Pós-graduação - Direito",
-                profession = "Advogada",
-                height = 166,
+                interests = listOf("Dormir", "Comer", "Brincar", "Miar", "Arranhar móveis"),
+                education = "Escola de Gatos",
+                profession = "Gato profissional",
+                height = 30,
+                relationshipStatus = RelationshipStatus.SINGLE,
+                hasChildren = ChildrenStatus.NO,
+                wantsChildren = ChildrenStatus.NO,
+                smokingStatus = SmokingStatus.NEVER,
+                drinkingStatus = DrinkingStatus.NEVER,
+                zodiacSign = ZodiacSign.LEO,
+                religion = Religion.OTHER,
+                favoriteMovies = listOf("O Gato de Botas", "Garfield", "Aristocats"),
+                favoriteGenres = listOf("Comédia", "Animação"),
+                favoriteBooks = listOf("Como Ser um Gato", "Miau para Iniciantes"),
+                favoriteMusic = listOf("Miados clássicos", "Purr music"),
+                hobbies = listOf("Dormir", "Caçar", "Subir em árvores"),
+                sports = listOf("Corrida atrás de laser"),
+                favoriteTeam = "Gatos FC",
+                languages = listOf("Miau", "Purr"),
+                traveledCountries = listOf("Reino dos Gatos"),
+                petPreference = PetPreference.LOVE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.VIP,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 14. Nicolas Ferreira - Fotógrafo
-        User(
-            id = "user_014",
-            email = "nicolas.ferreira@email.com",
-            displayName = "Nicolas",
-            profile = UserProfile(
-                fullName = "Nicolas Ferreira",
-                age = 26,
-                bio = "Fotógrafo que captura momentos únicos. Viajo o mundo em busca da foto perfeita. Skate, surf e aventuras são meu estilo. Vamos criar memórias? 📸🏄‍♂️🛹",
-                location = Location(city = "Florianópolis", state = "SC"),
-                gender = Gender.MALE,
-                orientation = Orientation.STRAIGHT,
-                intention = Intention.CASUAL,
-                interests = listOf("Fotografia", "Viagens", "Surf", "Skate", "Aventura", "Natureza"),
-                education = "Superior Completo - Fotografia",
-                profession = "Fotógrafo",
-                height = 180,
-                isProfileComplete = true
+            accessLevel = AccessLevel.FULL_ACCESS,
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = true
             ),
-            subscription = SubscriptionStatus.PREMIUM,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 15. Olivia Santos - Nutricionista
-        User(
-            id = "user_015",
-            email = "olivia.santos@email.com",
-            displayName = "Olivia",
-            profile = UserProfile(
-                fullName = "Olivia Santos",
-                age = 34,
-                bio = "Nutricionista que acredita em alimentação como medicina. Vegana, pratico crossfit e amo smoothies. Busco alguém para dividir um estilo de vida saudável! 🥗💪🌱",
-                location = Location(city = "Belo Horizonte", state = "MG"),
-                gender = Gender.FEMALE,
-                orientation = Orientation.LESBIAN,
-                intention = Intention.DATING,
-                interests = listOf("Nutrição", "CrossFit", "Veganismo", "Saúde", "Smoothies", "Bem-estar"),
-                education = "Pós-graduação - Nutrição",
-                profession = "Nutricionista",
-                height = 171,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.VIP,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 16. Pedro Rodrigues - Arquiteto
-        User(
-            id = "user_016",
-            email = "pedro.rodrigues@email.com",
-            displayName = "Pedro",
-            profile = UserProfile(
-                fullName = "Pedro Rodrigues",
-                age = 37,
-                bio = "Arquiteto que desenha sonhos e constrói futuros. Minimalista, amante de bom design e café especial. Procuro alguém para projetar uma vida a dois! ☕🏛️💫",
-                location = Location(city = "São Paulo", state = "SP"),
-                gender = Gender.MALE,
-                orientation = Orientation.STRAIGHT,
-                intention = Intention.DATING,
-                interests = listOf("Arquitetura", "Design", "Café", "Minimalismo", "Arte", "Urbanismo"),
-                education = "Pós-graduação - Arquitetura",
-                profession = "Arquiteto",
-                height = 179,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.FREE,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 17. Quinn Taylor - Tradutor/a
-        User(
-            id = "user_017",
-            email = "quinn.taylor@email.com",
-            displayName = "Quinn",
-            profile = UserProfile(
-                fullName = "Quinn Taylor",
-                age = 28,
-                bio = "Tradutor/a que navega entre idiomas e culturas. Fluente em 5 línguas, amo literatura e viagens. Demissexual, busco conexão intelectual primeiro! 📚🌍💭",
-                location = Location(city = "Porto Alegre", state = "RS"),
-                gender = Gender.NON_BINARY,
-                orientation = Orientation.DEMISEXUAL,
-                intention = Intention.FRIENDSHIP,
-                interests = listOf("Idiomas", "Literatura", "Tradução", "Culturas", "Viagens", "Filosofia"),
-                education = "Superior Completo - Letras/Tradução",
-                profession = "Tradutor/a",
-                height = 167,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.PREMIUM,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 18. Renata Lima - Fisioterapeuta
-        User(
-            id = "user_018",
-            email = "renata.lima@email.com",
-            displayName = "Renata",
-            profile = UserProfile(
-                fullName = "Renata Lima",
-                age = 30,
-                bio = "Fisioterapeuta que ajuda pessoas a se moverem melhor. Pilates, natação e vida ativa são essenciais. Busco alguém para dançar pela vida! 💃🏊‍♀️🤸‍♀️",
-                location = Location(city = "Recife", state = "PE"),
-                gender = Gender.FEMALE,
-                orientation = Orientation.STRAIGHT,
-                intention = Intention.DATING,
-                interests = listOf("Fisioterapia", "Pilates", "Natação", "Dança", "Saúde", "Movimento"),
-                education = "Superior Completo - Fisioterapia",
-                profession = "Fisioterapeuta",
-                height = 164,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.FREE,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 19. Samuel Oliveira - Barista
-        User(
-            id = "user_019",
-            email = "samuel.oliveira@email.com",
-            displayName = "Samuel",
-            profile = UserProfile(
-                fullName = "Samuel Oliveira",
-                age = 22,
-                bio = "Barista apaixonado por cada grão de café. Latte art é minha forma de arte. Amo música indie, livros e conversas até tarde. Vamos tomar um café? ☕🎨📚",
-                location = Location(city = "Curitiba", state = "PR"),
-                gender = Gender.MALE,
-                orientation = Orientation.BISEXUAL,
-                intention = Intention.CASUAL,
-                interests = listOf("Café", "Latte Art", "Música Indie", "Livros", "Arte", "Conversas"),
-                education = "Ensino Médio",
-                profession = "Barista",
-                height = 176,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.FREE,
-            accessLevel = AccessLevel.FULL_ACCESS
-        ),
-        
-        // 20. Valentina Rocha - Bióloga
-        User(
-            id = "user_020",
-            email = "valentina.rocha@email.com",
-            displayName = "Val",
-            profile = UserProfile(
-                fullName = "Valentina Rocha",
-                age = 27,
-                bio = "Bióloga marinha apaixonada pelos oceanos. Mergulho, pesquisa e conservação são minha vida. Surfo nas horas vagas e sonho em salvar o planeta! 🌊🐠🏄‍♀️",
-                location = Location(city = "Vitória", state = "ES"),
-                gender = Gender.FEMALE,
-                orientation = Orientation.PANSEXUAL,
-                intention = Intention.DATING,
-                interests = listOf("Biologia Marinha", "Mergulho", "Surf", "Conservação", "Oceanos", "Pesquisa"),
-                education = "Pós-graduação - Biologia Marinha",
-                profession = "Bióloga Marinha",
-                height = 169,
-                isProfileComplete = true
-            ),
-            subscription = SubscriptionStatus.VIP,
-            accessLevel = AccessLevel.FULL_ACCESS
+            aiCredits = AiCredits(current = 999, dailyLimit = 999)
         )
     )
 }

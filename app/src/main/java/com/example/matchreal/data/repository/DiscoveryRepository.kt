@@ -14,8 +14,8 @@ class DiscoveryRepository {
     private val _discoveryCards = MutableStateFlow<List<DiscoveryCard>>(emptyList())
     val discoveryCards: Flow<List<DiscoveryCard>> = _discoveryCards.asStateFlow()
     
-    private val _swipeActions = MutableStateFlow<List<SwipeAction>>(emptyList())
-    val swipeActions: Flow<List<SwipeAction>> = _swipeActions.asStateFlow()
+    private val _swipeActions = MutableStateFlow<List<SwipeRecord>>(emptyList())
+    val swipeActions: Flow<List<SwipeRecord>> = _swipeActions.asStateFlow()
     
     private val _matches = MutableStateFlow<List<Match>>(emptyList())
     val matches: Flow<List<Match>> = _matches.asStateFlow()
@@ -72,7 +72,7 @@ class DiscoveryRepository {
         swipeType: SwipeType
     ): Result<SwipeResult> {
         return try {
-            val swipeAction = SwipeAction(
+            val swipeAction = SwipeRecord(
                 id = UUID.randomUUID().toString(),
                 fromUserId = fromUserId,
                 toUserId = toUserId,

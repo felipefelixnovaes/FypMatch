@@ -1,0 +1,43 @@
+package com.example.matchreal
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.matchreal.ui.navigation.MatchRealNavigation
+import com.example.matchreal.ui.theme.MatchRealTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContent {
+            MatchRealTheme {
+                MatchRealApp()
+            }
+        }
+    }
+}
+
+@Composable
+fun MatchRealApp() {
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
+        MatchRealNavigation()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MatchRealAppPreview() {
+    MatchRealTheme {
+        MatchRealApp()
+    }
+}

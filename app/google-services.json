@@ -1,47 +1,29 @@
 {
   "project_info": {
-    "project_number": "123456789",
-    "project_id": "FypMatch-dev",
-    "storage_bucket": "FypMatch-dev.appspot.com"
+    "project_number": "15026077760",
+    "project_id": "fypmatch-bd2cc",
+    "storage_bucket": "fypmatch-bd2cc.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789:android:abcdef123456789",
+        "mobilesdk_app_id": "1:15026077760:android:11c58623a6cb8f9a665fa5",
         "android_client_info": {
           "package_name": "com.ideiassertiva.FypMatch"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.ideiassertiva.FypMatch",
-            "certificate_hash": "abcdef1234567890"
-          }
-        },
-        {
-          "client_id": "123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDummyKeyForDevelopment123456789"
+          "current_key": "AIzaSyAFZrVBcc4FJLpOFRVPuTELtWNlwlFGnMU"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
   ],
   "configuration_version": "1"
-} 
+}

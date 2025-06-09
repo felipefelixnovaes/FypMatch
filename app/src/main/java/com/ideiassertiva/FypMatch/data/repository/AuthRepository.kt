@@ -43,8 +43,12 @@ class AuthRepository(private val context: Context) {
     }
     
     fun getGoogleSignInClient(): GoogleSignInClient {
+        // TODO: Substituir pelo Web Client ID real obtido no Firebase Console
+        // Formato: XXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.apps.googleusercontent.com
+        val webClientId = "123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com" // PLACEHOLDER - SUBSTITUIR!
+        
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com") // Web client ID do Firebase
+            .requestIdToken(webClientId)
             .requestEmail()
             .build()
         

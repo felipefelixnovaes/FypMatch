@@ -43,9 +43,9 @@ class AuthRepository(private val context: Context) {
     }
     
     fun getGoogleSignInClient(): GoogleSignInClient {
-        // TODO: Substituir pelo Web Client ID real obtido no Firebase Console
-        // Formato: XXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.apps.googleusercontent.com
-        val webClientId = "123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com" // PLACEHOLDER - SUBSTITUIR!
+        // Web Client ID obtido do Firebase Console - Projeto fypmatch-8ac3c
+        // Package name: com.ideiassertiva.FypMatch ✅
+        val webClientId = "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com"
         
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(webClientId)
@@ -64,9 +64,21 @@ class AuthRepository(private val context: Context) {
             val firebaseUser = authResult.user
             
             if (firebaseUser != null) {
-                val user = createOrUpdateUser(firebaseUser)
-                _currentUser.value = user
-                Result.success(user)
+                try {
+                    val user = createOrUpdateUser(firebaseUser)
+                    _currentUser.value = user
+                    Result.success(user)
+                } catch (firestoreError: Exception) {
+                    // Se Firestore falhar, criar usuário mínimo para permitir login
+                    val minimalUser = User(
+                        id = firebaseUser.uid,
+                        email = firebaseUser.email ?: "",
+                        displayName = firebaseUser.displayName ?: "",
+                        photoUrl = firebaseUser.photoUrl?.toString() ?: ""
+                    )
+                    _currentUser.value = minimalUser
+                    Result.success(minimalUser)
+                }
             } else {
                 Result.failure(Exception("Falha na autenticação"))
             }
@@ -79,9 +91,21 @@ class AuthRepository(private val context: Context) {
     
     private suspend fun createOrUpdateUser(firebaseUser: FirebaseUser): User {
         val userDoc = firestore.collection("users").document(firebaseUser.uid)
-        val userSnapshot = userDoc.get().await()
         
-        return if (userSnapshot.exists()) {
+        // Forçar busca do servidor para evitar erro offline
+        val userSnapshot = try {
+            userDoc.get(com.google.firebase.firestore.Source.SERVER).await()
+        } catch (serverError: Exception) {
+            try {
+                // Se falhar do servidor, tentar cache local
+                userDoc.get(com.google.firebase.firestore.Source.CACHE).await()
+            } catch (cacheError: Exception) {
+                // Se ambos falharem, assumir que é novo usuário
+                null
+            }
+        }
+        
+        return if (userSnapshot != null && userSnapshot.exists()) {
             // Usuário já existe, atualizar última atividade
             val existingUser = userSnapshot.toObject(User::class.java) ?: User()
             val updatedUser = existingUser.copy(
@@ -91,7 +115,11 @@ class AuthRepository(private val context: Context) {
                 photoUrl = firebaseUser.photoUrl?.toString() ?: existingUser.photoUrl
             )
             
-            userDoc.set(updatedUser).await()
+            try {
+                userDoc.set(updatedUser).await()
+            } catch (e: Exception) {
+                // Ignorar erro de escrita e continuar com dados atualizados
+            }
             updatedUser
         } else {
             // Novo usuário - verificar acesso especial baseado no email
@@ -109,7 +137,11 @@ class AuthRepository(private val context: Context) {
                 lastActive = Date()
             )
             
-            userDoc.set(newUser).await()
+            try {
+                userDoc.set(newUser).await()
+            } catch (e: Exception) {
+                // Ignorar erro de escrita e continuar com novo usuário
+            }
             newUser
         }
     }

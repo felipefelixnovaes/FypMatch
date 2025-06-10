@@ -1,9 +1,11 @@
 package com.ideiassertiva.FypMatch.di
 
+import android.content.Context
 import com.ideiassertiva.FypMatch.data.repository.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -51,5 +53,13 @@ object AppModule {
     @Singleton
     fun provideDiscoveryRepository(): DiscoveryRepository {
         return DiscoveryRepository()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideRewardedAdsRepository(
+        @ApplicationContext context: Context
+    ): RewardedAdsRepository {
+        return RewardedAdsRepository(context)
     }
 } 

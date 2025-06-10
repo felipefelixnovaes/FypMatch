@@ -112,6 +112,9 @@ dependencies {
     // Firebase AI Logic (Gemini Developer API) - Fase 3
     implementation("com.google.firebase:firebase-ai")
     
+    // Google Mobile Ads (AdMob) - Fase 4
+    implementation("com.google.android.gms:play-services-ads:23.5.0")
+    
     // Coil para carregamento de imagens - Segunda Fase
     implementation("io.coil-kt:coil-compose:2.7.0")
     

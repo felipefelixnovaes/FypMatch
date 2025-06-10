@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -50,6 +51,7 @@ fun DiscoveryScreen(
     onNavigateToMatches: () -> Unit = {},
     onNavigateToPremium: () -> Unit = {},
     onNavigateToAICounselor: (String) -> Unit = {},
+    onNavigateToFype: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToUserDetails: (String) -> Unit = {},
     onNavigateToChat: (String) -> Unit = {},
@@ -91,6 +93,7 @@ fun DiscoveryScreen(
             onSettingsClick = { /* TODO: Implementar settings */ },
             onMatchesClick = onNavigateToMatches,
             onAICounselorClick = { onNavigateToAICounselor("current_user_id") },
+            onFypeClick = onNavigateToFype,
             onProfileClick = onNavigateToProfile
         )
         
@@ -144,6 +147,7 @@ private fun DiscoveryTopBar(
     onSettingsClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onAICounselorClick: () -> Unit = {},
+    onFypeClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
     Row(
@@ -181,26 +185,56 @@ private fun DiscoveryTopBar(
                 contentScale = ContentScale.Fit
             )
             
-            // Botão do conselheiro VIP
-            OutlinedButton(
-                onClick = onAICounselorClick,
-                modifier = Modifier.height(32.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+            // Botões dos conselheiros
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Conselheiro",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium
-                )
+                // Botão do conselheiro tradicional
+                OutlinedButton(
+                    onClick = onAICounselorClick,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "IA",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                
+                // 💕 Botão da Fype - Novo!
+                Button(
+                    onClick = onFypeClick,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE91E63),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Icon(
+                                                    imageVector = Icons.Default.Face,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Fype",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
         

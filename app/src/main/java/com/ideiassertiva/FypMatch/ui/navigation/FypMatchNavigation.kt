@@ -27,6 +27,7 @@ sealed class Screen(val route: String) {
         fun createRoute(userId: String) = "user_details/$userId"
     }
     object ProfileEdit : Screen("profile_edit")
+    object Fype : Screen("fype")
 }
 
 @Composable
@@ -80,6 +81,9 @@ fun FypMatchNavigation(
                 },
                 onNavigateToAICounselor = { userId ->
                     navController.navigate(Screen.AICounselor.createRoute(userId))
+                },
+                onNavigateToFype = {
+                    navController.navigate(Screen.Fype.route)
                 },
                 onNavigateToProfile = {
                     navController.navigate(Screen.ProfileEdit.route)
@@ -198,6 +202,14 @@ fun FypMatchNavigation(
                 },
                 onSave = { user ->
                     // TODO: Implementar salvamento do perfil
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.Fype.route) {
+            FypeScreen(
+                onBackClick = {
                     navController.popBackStack()
                 }
             )

@@ -13,7 +13,15 @@
 
 ## 🔧 **PASSO A PASSO - Firebase Console**
 
-### **1️⃣ Adicionar Fingerprints de Release**
+### **⚠️ CORREÇÃO URGENTE - Package Name**
+**PROBLEMA**: Firebase está com `com.ideiassertiva.fypmatch` mas o código usa `com.ideiassertiva.FypMatch`
+
+**SOLUÇÃO**:
+1. Delete o app Android atual no Firebase Console
+2. Adicione novo app Android com package name: `com.ideiassertiva.FypMatch`
+3. Re-adicione todos os fingerprints abaixo
+
+### **1️⃣ Adicionar Fingerprints (após correção do package)**
 1. Acesse [console.firebase.google.com](https://console.firebase.google.com)
 2. Selecione o projeto **FypMatch**
 3. Vá em **⚙️ Configurações do Projeto** > **Geral**

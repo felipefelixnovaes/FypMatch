@@ -164,6 +164,62 @@
 - **Suporte neurodiverso**: Estratégias personalizadas
 - **Detecção de alertas**: Identificação de situações que requerem ajuda profissional
 
+### ✅ **FASE 2.7 - FYPE: CONSELHEIRA DE RELACIONAMENTOS COM IA**
+
+### 💕 **Sistema da Fype - Conselheira Pessoal**
+- ✅ **Interface dedicada**: Tela completa com design gradient rosa/roxo/violeta
+- ✅ **Sistema de créditos integrado**: 3 créditos por anúncio assistido
+- ✅ **Chat inteligente**: Conversas contextuais sobre relacionamentos
+- ✅ **Anúncios recompensados**: Integração completa com Google AdMob
+- ✅ **Avatar personalizado**: Ícone e identidade visual única da Fype
+- ✅ **Mensagem de boas-vindas**: Apresentação automática da conselheira
+- ✅ **Indicador de digitação**: Feedback visual durante respostas da IA
+- ✅ **Estados responsivos**: Tela de créditos e área de chat
+- ✅ **Dialog de recompensa**: Celebração ao ganhar créditos
+- ✅ **Contador em tempo real**: Exibição de créditos no header
+- ✅ **Navegação integrada**: Botão dedicado na tela Discovery
+- ✅ **Sistema de custos**: 1 crédito por mensagem enviada
+
+### 🧠 **Firebase AI Logic + Gemini Integration**
+- ✅ **Gemini 2.0 Flash**: Modelo mais avançado do Google
+- ✅ **Prompts especializados**: Contexto específico para relacionamentos
+- ✅ **Respostas empáticas**: Tom carinhoso e acolhedor da Fype
+- ✅ **Fallback inteligente**: Respostas de emergência em caso de erro
+- ✅ **Detecção de contexto**: Análise de mensagens para respostas adequadas
+- ✅ **Sistema de personalidade**: Fype como conselheira experiente
+
+### 📱 **Funcionalidades da Interface**
+- ✅ **Design gradient moderno**: Cores que refletem amor e cuidado
+- ✅ **Bolhas de mensagem**: Diferenciação visual entre usuário e Fype
+- ✅ **Timestamps relativos**: Horários de cada mensagem
+- ✅ **Estados de loading**: Indicadores visuais durante operações
+- ✅ **Tela sem créditos**: Interface dedicada para assistir anúncios
+- ✅ **Botão de voltar**: Navegação fluida para Discovery
+- ✅ **Mensagens do sistema**: Feedback via Snackbar
+
+### 🎯 **Especialidades da Fype**
+- **Conselhos sobre relacionamentos**: Dicas para melhorar conexões
+- **Ansiedade em encontros**: Técnicas para relaxar antes de encontros
+- **Comunicação afetiva**: Como expressar sentimentos e necessidades
+- **Autoestima**: Exercícios para aumentar confiança pessoal
+- **Conflitos**: Estratégias para resolver desentendimentos
+- **Primeiros encontros**: Preparação e dicas práticas
+- **Relacionamentos online**: Navegação no mundo digital
+
+### 💰 **Sistema de Monetização da Fype**
+| Tipo Usuário | Créditos Iniciais | Reposição | Anúncios |
+|--------------|------------------|-----------|----------|
+| **FREE** | 0 | Manual via anúncios | 3 créditos/vídeo |
+| **PREMIUM** | 10/dia | Automática às 00h | Opcional |
+| **VIP** | 25/dia | Automática às 00h | Desnecessário |
+
+### 📊 **Arquivos Implementados**
+- `FypeScreen.kt` - Interface completa da conselheira
+- `CreditsViewModel.kt` - Gerenciamento de créditos e anúncios
+- `RewardedAdsRepository.kt` - Integração com Google AdMob
+- `ChatViewModel.kt` - Estados do chat (expandido)
+- `GeminiRepository.kt` - Integração com Firebase AI Logic
+
 ### **Próximas Funcionalidades (Fase 3+)**
 - [ ] Chat em tempo real
 - [ ] Upload de fotos
@@ -172,6 +228,8 @@
 - [ ] IA de compatibilidade avançada expandida
 - [ ] Sistema de boost
 - [ ] Analytics detalhados
+- [ ] Persistência de créditos no Firebase
+- [ ] Histórico de conversas com a Fype
 
 ---
 

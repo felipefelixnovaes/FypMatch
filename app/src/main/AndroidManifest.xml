@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 🌐 Permissões necessárias para login Google e Firebase AI -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name=".FypMatchApplication"
         android:allowBackup="true"
@@ -13,6 +17,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FypMatch"
         tools:targetApi="31">
+        
+        <!-- 🎯 AdMob App ID - FypMatch Brasil -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-9657321458227740~9100657445"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

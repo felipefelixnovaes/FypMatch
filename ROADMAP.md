@@ -16,6 +16,21 @@
 - 🏆 Telas premium com planos detalhados
 - 📋 Lista de matches organizada
 
+### ✅ **FASE 2.5 - CONSELHEIRO DE IA (CONCLUÍDA)**
+- 🧠 Sistema de IA com créditos e anúncios
+- 💬 Chat integrado com Gemini AI
+- 🎯 Especialização em relacionamentos
+- 📱 Interface moderna com estados responsivos
+
+### ✅ **FASE 2.7 - FYPE: CONSELHEIRA DE RELACIONAMENTOS (CONCLUÍDA)**
+- 💕 Sistema da Fype com identidade própria
+- 🎨 Interface dedicada com design gradient
+- 💰 Anúncios recompensados integrados (AdMob)
+- 🤖 Firebase AI Logic + Gemini 2.0 Flash
+- ⭐ Sistema de créditos (3 por anúncio)
+- 💬 Chat contextual especializado
+- 🎪 Estados responsivos e feedback visual
+
 ---
 
 ## 🚀 **PRÓXIMAS FASES PLANEJADAS**

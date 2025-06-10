@@ -1,7 +1,9 @@
 package com.ideiassertiva.FypMatch.ui.viewmodel
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ideiassertiva.FypMatch.data.repository.AdMobRepository
 import com.ideiassertiva.FypMatch.data.repository.DiscoveryRepository
 import com.ideiassertiva.FypMatch.data.repository.ChatRepository
 import com.ideiassertiva.FypMatch.model.*
@@ -15,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DiscoveryViewModel @Inject constructor(
     private val discoveryRepository: DiscoveryRepository,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val adMobRepository: AdMobRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(DiscoveryUiState())
@@ -76,6 +79,10 @@ class DiscoveryViewModel @Inject constructor(
                 )
                 
                 result.onSuccess { swipeResult ->
+                    // 🎯 Registrar swipe para AdMob (somente usuários básicos)
+                    val isBasicUser = currentUserSubscription == SubscriptionStatus.FREE
+                    adMobRepository.onUserSwipe(isBasicUser)
+                    
                     if (swipeResult.isMatch) {
                         // Criar conversa automaticamente quando há match
                         val conversationId = chatRepository.createConversationFromMatch(
@@ -148,6 +155,15 @@ class DiscoveryViewModel @Inject constructor(
     
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+    
+    /**
+     * 🎯 Tenta exibir anúncio AdMob se necessário
+     * Chame após swipes para usuários básicos
+     */
+    suspend fun tryShowAdMobAd(activity: Activity) {
+        val isBasicUser = currentUserSubscription == SubscriptionStatus.FREE
+        adMobRepository.showAdIfNeeded(activity, isBasicUser)
     }
 }
 

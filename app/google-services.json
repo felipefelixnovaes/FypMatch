@@ -1,26 +1,52 @@
 {
   "project_info": {
-    "project_number": "15026077760",
-    "project_id": "fypmatch-bd2cc",
-    "storage_bucket": "fypmatch-bd2cc.firebasestorage.app"
+    "project_number": "98859676437",
+    "project_id": "fypmatch-8ac3c",
+    "storage_bucket": "fypmatch-8ac3c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:15026077760:android:11c58623a6cb8f9a665fa5",
+        "mobilesdk_app_id": "1:98859676437:android:b01d8961659b5f3125af1c",
         "android_client_info": {
           "package_name": "com.ideiassertiva.FypMatch"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "98859676437-nr136lfnuoo7ni94iapdq2h0m7tr29dr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ideiassertiva.FypMatch",
+            "certificate_hash": "b9ac491d00f730eb8550617ced7acea152f9b148"
+          }
+        },
+        {
+          "client_id": "98859676437-v7g0v0o21287usfspra1rp76k3t8b0eg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ideiassertiva.FypMatch",
+            "certificate_hash": "d8d6fb8d3dffdfe5f214037e2bce6ebf4d60e6d3"
+          }
+        },
+        {
+          "client_id": "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAFZrVBcc4FJLpOFRVPuTELtWNlwlFGnMU"
+          "current_key": "AIzaSyDvrKRr2tV7dQNtkSQM9_40j8bDNZQbff0"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

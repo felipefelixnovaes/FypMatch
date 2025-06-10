@@ -43,13 +43,14 @@ class AuthRepository(private val context: Context) {
     }
     
     fun getGoogleSignInClient(): GoogleSignInClient {
-        // Web Client ID obtido do Firebase Console - Projeto fypmatch-8ac3c
-        // Package name: com.ideiassertiva.FypMatch ✅
-        val webClientId = "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com"
+        // Web Client ID correto do Firebase Console - Projeto fypmatch-8ac3c
+        // Este é o Client ID web OAuth 2.0 correto para o projeto
+        val webClientId = "98859676437-v8u5n4dqnk2bjqvaqh4bvt0uqitj7n5f.apps.googleusercontent.com"
         
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(webClientId)
             .requestEmail()
+            .requestProfile()
             .build()
         
         return GoogleSignIn.getClient(context, gso)

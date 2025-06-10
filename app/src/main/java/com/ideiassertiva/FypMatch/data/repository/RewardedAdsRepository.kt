@@ -9,6 +9,7 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.OnUserEarnedRewardListener
+import com.ideiassertiva.FypMatch.util.AdMobConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,8 +21,9 @@ class RewardedAdsRepository @Inject constructor(
     private val context: Context
 ) {
     
-    // 🎥 ID do anúncio recompensado - Vídeo para ganhar 3 créditos com a Fype
-    private val rewardedAdUnitId = "ca-app-pub-9657321458227740/9078839667"
+    // 🎥 ID do anúncio recompensado
+    // Configuração centralizada para usar IDs de teste em desenvolvimento
+    private val rewardedAdUnitId = AdMobConfig.REWARDED_AD_UNIT_ID
     
     // Estados do anúncio
     private val _isAdLoaded = MutableStateFlow(false)
@@ -43,7 +45,7 @@ class RewardedAdsRepository @Inject constructor(
     init {
         loadRewardedAd()
         // Créditos iniciais - pode ser carregado do SharedPreferences depois
-        _credits.value = 1 // 1 crédito inicial para testar
+        _credits.value = AdMobConfig.INITIAL_CREDITS
     }
     
     /**
@@ -96,7 +98,7 @@ class RewardedAdsRepository @Inject constructor(
         if (rewardedAd != null && _isAdLoaded.value) {
             rewardedAd?.show(activity) { rewardItem ->
                 // 🎉 Usuário ganhou a recompensa!
-                val creditsEarned = 3 // 3 créditos por vídeo assistido
+                val creditsEarned = AdMobConfig.CREDITS_PER_AD
                 addCredits(creditsEarned)
                 onRewardEarned?.invoke(creditsEarned)
             }

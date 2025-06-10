@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
     kotlin("kapt")
     id("com.google.dagger.hilt.android")
     // id("kotlin-kapt")
@@ -72,11 +73,12 @@ dependencies {
     // Compose BOM - Versão estável 🚀
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
+    
     // Core Compose
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("com.google.firebase:firebase-analytics")
+    
     // Material Design 3
     implementation("androidx.compose.material3:material3")
     
@@ -102,18 +104,22 @@ dependencies {
     // Material Components para resolver problemas de tema
     implementation("com.google.android.material:material:1.9.0")
     
-    // Firebase - Primeira Fase + AI Logic (Gemini)
-    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
+    // Firebase (usando BOM 33.15.0 acima)
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-crashlytics")
+    // implementation("com.google.firebase:firebase-performance") // Comentado temporariamente
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
-    
-    // Firebase AI Logic (Gemini Developer API) - Fase 3
     implementation("com.google.firebase:firebase-ai")
     
-    // Google Mobile Ads (AdMob) - Fase 4
+    // Google Services
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("com.google.android.gms:play-services-ads:23.5.0")
+    
+    // Google Play Billing (para compras com cartão do Google)
+    implementation("com.android.billingclient:billing:6.1.0")
+    implementation("com.android.billingclient:billing-ktx:6.1.0")
     
     // Coil para carregamento de imagens - Segunda Fase
     implementation("io.coil-kt:coil-compose:2.7.0")

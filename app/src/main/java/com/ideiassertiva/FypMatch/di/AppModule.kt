@@ -15,6 +15,12 @@ object AppModule {
     
     @Provides
     @Singleton
+    fun provideApplicationContext(@ApplicationContext context: Context): Context {
+        return context
+    }
+    
+    @Provides
+    @Singleton
     fun provideUserRepository(): UserRepository {
         return UserRepository()
     }

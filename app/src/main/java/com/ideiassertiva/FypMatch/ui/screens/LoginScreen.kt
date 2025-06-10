@@ -20,7 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.ideiassertiva.FypMatch.data.repository.NavigationState
 import com.ideiassertiva.FypMatch.model.isProfileComplete
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.LoginViewModel
@@ -33,13 +34,11 @@ fun LoginScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToDiscovery: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = run {
-        val context = LocalContext.current
-        viewModel { LoginViewModel(context) }
-    }
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+    val navigationState by viewModel.navigationState.collectAsStateWithLifecycle()
     
     // Launcher para Google Sign-In
     val googleSignInLauncher = rememberLauncherForActivityResult(
@@ -53,17 +52,23 @@ fun LoginScreen(
             } catch (e: ApiException) {
                 viewModel.handleSignInError("Erro no login: ${e.message}")
             }
+        } else {
+            viewModel.handleSignInError("Login cancelado")
         }
     }
     
-    // Navegar automaticamente se usuário já estiver logado
-    LaunchedEffect(currentUser) {
-        currentUser?.let { user ->
-            if (user.isProfileComplete()) {
-                onNavigateToDiscovery()
-            } else {
+    // Navegação automática baseada no estado
+    LaunchedEffect(navigationState) {
+        when (navigationState) {
+            is NavigationState.ToProfile -> {
                 onNavigateToProfile()
+                viewModel.clearNavigationState()
             }
+            is NavigationState.ToDiscovery -> {
+                onNavigateToDiscovery()
+                viewModel.clearNavigationState()
+            }
+            else -> {} // Não navegar
         }
     }
     

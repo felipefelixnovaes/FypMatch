@@ -2,6 +2,8 @@ package com.ideiassertiva.FypMatch.util
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
+import com.ideiassertiva.FypMatch.BuildConfig
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.analytics.ktx.analytics
@@ -21,9 +23,40 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 class AnalyticsManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    companion object {
+        private const val TAG = "AnalyticsManager"
+    }
     
-    private val analytics: FirebaseAnalytics by lazy { Firebase.analytics }
-    private val crashlytics: FirebaseCrashlytics by lazy { Firebase.crashlytics }
+    private val analytics = FirebaseAnalytics.getInstance(context)
+    private val crashlytics = FirebaseCrashlytics.getInstance()
+    
+    init {
+        // Configurar debug mode se estivermos em build debug
+        if (BuildConfig.FIREBASE_DEBUG) {
+            // Ativar DebugView
+            analytics.setDefaultEventParameters(Bundle().apply {
+                putString("debug_mode", "true")
+            })
+            
+            Log.d(TAG, "Firebase Analytics Debug Mode ATIVADO")
+            Log.d(TAG, "Para ver eventos: Firebase Console > Analytics > DebugView")
+            Log.d(TAG, "Ou use: adb shell setprop debug.firebase.analytics.app ${BuildConfig.APPLICATION_ID}")
+        }
+        
+        // Configurar identificadores para debug
+        setupDebugIdentifiers()
+    }
+    
+    private fun setupDebugIdentifiers() {
+        if (BuildConfig.FIREBASE_DEBUG) {
+            // Adicionar propriedades de debug
+            analytics.setUserProperty("debug_build", "true")
+            analytics.setUserProperty("app_version", BuildConfig.VERSION_NAME)
+            analytics.setUserProperty("build_type", if (BuildConfig.DEBUG) "debug" else "release")
+            
+            Log.d(TAG, "Propriedades de debug configuradas")
+        }
+    }
     
     // ===== INICIALIZAÇÃO ===== 
     fun initialize() {
@@ -48,11 +81,19 @@ class AnalyticsManager @Inject constructor(
             putString("user_type", "new_user")
         }
         analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP, bundle)
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.d(TAG, "Sign Up Event: method=$method")
+        }
     }
     
     fun logUserLogin(method: String) {
         analytics.logEvent(FirebaseAnalytics.Event.LOGIN) {
             param(FirebaseAnalytics.Param.METHOD, method)
+        }
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.d(TAG, "Login Event: method=$method")
         }
     }
     
@@ -60,6 +101,10 @@ class AnalyticsManager @Inject constructor(
         analytics.logEvent("user_profile_setup") {
             age?.let { param("user_age_range", getAgeRange(it)) }
             gender?.let { param("user_gender", it) }
+        }
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.d(TAG, "Profile Updated Event: age=$age, gender=$gender")
         }
     }
     
@@ -79,6 +124,10 @@ class AnalyticsManager @Inject constructor(
             putBoolean(FirebaseAnalytics.Param.SUCCESS, true)
         }
         analytics.logEvent("match_created", bundle)
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.d(TAG, "Match Event: $matchId")
+        }
     }
     
     fun logConversationStarted(matchId: String) {
@@ -96,6 +145,10 @@ class AnalyticsManager @Inject constructor(
             param(FirebaseAnalytics.Param.ITEM_CATEGORY, "subscription")
             param(FirebaseAnalytics.Param.VALUE, amount)
             param(FirebaseAnalytics.Param.CURRENCY, "BRL")
+        }
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.d(TAG, "Purchase Event: plan=$planType, amount=$amount")
         }
     }
     
@@ -138,6 +191,10 @@ class AnalyticsManager @Inject constructor(
             param(FirebaseAnalytics.Param.SCREEN_NAME, screenName)
             param(FirebaseAnalytics.Param.SCREEN_CLASS, screenClass)
         }
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.d(TAG, "Screen View: $screenName ($screenClass)")
+        }
     }
     
     fun logFeatureUsage(featureName: String) {
@@ -165,6 +222,10 @@ class AnalyticsManager @Inject constructor(
     fun setUserId(userId: String) {
         crashlytics.setUserId(userId)
         analytics.setUserId(userId)
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.d(TAG, "User ID definido: $userId")
+        }
     }
     
     fun setUserProperties(properties: Map<String, String>) {
@@ -172,11 +233,19 @@ class AnalyticsManager @Inject constructor(
             analytics.setUserProperty(key, value)
             crashlytics.setCustomKey(key, value)
         }
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.d(TAG, "User Properties: $properties")
+        }
     }
     
     fun logError(exception: Throwable, context: String = "") {
         crashlytics.recordException(exception)
         crashlytics.setCustomKey("error_context", context)
+        
+        if (BuildConfig.FIREBASE_DEBUG) {
+            Log.e(TAG, "Error logged - Context: $context", exception)
+        }
         
         analytics.logEvent("app_error") {
             param("error_type", exception.javaClass.simpleName)

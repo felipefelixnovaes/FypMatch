@@ -66,6 +66,7 @@ class AuthRepository @Inject constructor(
             .requestIdToken(webClientId)
             .requestEmail()
             .requestProfile()
+            .requestServerAuthCode(webClientId) // Adiciona server auth code
             .build()
         
         return GoogleSignIn.getClient(context, gso)

@@ -21,9 +21,9 @@ enum class MessageStatus {
 }
 
 data class MessageReaction(
-    val emoji: String,
-    val userId: String,
-    val timestamp: LocalDateTime
+    val emoji: String = "",
+    val userId: String = "",
+    val timestamp: LocalDateTime = LocalDateTime.now()
 )
 
 data class LocationData(
@@ -40,10 +40,10 @@ data class MediaData(
 )
 
 data class Message(
-    val id: String,
-    val conversationId: String,
-    val senderId: String,
-    val receiverId: String,
+    val id: String = "",
+    val conversationId: String = "",
+    val senderId: String = "",
+    val receiverId: String = "",
     val content: String = "", // Texto da mensagem
     val type: MessageType = MessageType.TEXT,
     val status: MessageStatus = MessageStatus.SENDING,

@@ -2,6 +2,7 @@ package com.ideiassertiva.FypMatch.di
 
 import android.content.Context
 import com.ideiassertiva.FypMatch.data.repository.*
+import com.ideiassertiva.FypMatch.util.AnalyticsManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +18,12 @@ object AppModule {
     @Singleton
     fun provideApplicationContext(@ApplicationContext context: Context): Context {
         return context
+    }
+    
+    @Provides
+    @Singleton
+    fun provideAnalyticsManager(@ApplicationContext context: Context): AnalyticsManager {
+        return AnalyticsManager(context)
     }
     
     @Provides
@@ -51,8 +58,14 @@ object AppModule {
     
     @Provides
     @Singleton
-    fun provideChatRepository(): ChatRepository {
-        return ChatRepository()
+    fun provideChatRepository(analyticsManager: AnalyticsManager): ChatRepository {
+        return ChatRepository(analyticsManager)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideGeminiRepository(analyticsManager: AnalyticsManager): GeminiRepository {
+        return GeminiRepository(analyticsManager)
     }
     
     @Provides
@@ -67,5 +80,14 @@ object AppModule {
         @ApplicationContext context: Context
     ): RewardedAdsRepository {
         return RewardedAdsRepository(context)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideGooglePlayBillingRepository(
+        @ApplicationContext context: Context,
+        analyticsManager: AnalyticsManager
+    ): GooglePlayBillingRepository {
+        return GooglePlayBillingRepository(context, analyticsManager)
     }
 } 

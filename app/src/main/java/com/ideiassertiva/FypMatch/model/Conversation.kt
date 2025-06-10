@@ -24,13 +24,16 @@ data class ConversationParticipant(
 )
 
 data class Conversation(
-    val id: String,
-    val matchId: String,
-    val participants: List<ConversationParticipant>,
+    val id: String = "",
+    val matchId: String = "",
+    val participantIds: List<String> = emptyList(), // Para queries do Firestore
+    val participants: List<ConversationParticipant> = emptyList(),
     val status: ConversationStatus = ConversationStatus.ACTIVE,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     val lastMessageAt: LocalDateTime? = null,
     val lastMessage: Message? = null,
+    val lastMessageContent: String = "",
+    val lastMessageSenderId: String = "",
     val unreadCount: Map<String, Int> = emptyMap(), // userId -> unread count
     val typingIndicators: List<TypingIndicator> = emptyList(),
     val pinnedMessages: List<String> = emptyList(), // Message IDs

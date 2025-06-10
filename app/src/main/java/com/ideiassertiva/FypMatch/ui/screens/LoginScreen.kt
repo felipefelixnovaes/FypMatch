@@ -44,16 +44,32 @@ fun LoginScreen(
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)
-                viewModel.signInWithGoogle(account)
-            } catch (e: ApiException) {
-                viewModel.handleSignInError("Erro no login: ${e.message}")
+        when (result.resultCode) {
+            Activity.RESULT_OK -> {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                try {
+                    val account = task.getResult(ApiException::class.java)
+                    if (account != null) {
+                        viewModel.signInWithGoogle(account)
+                    } else {
+                        viewModel.handleSignInError("Conta Google não encontrada")
+                    }
+                } catch (e: ApiException) {
+                    val errorMessage = when (e.statusCode) {
+                        12500 -> "Configuração Google incorreta. Tente novamente."
+                        12501 -> "Login cancelado pelo usuário"
+                        7 -> "Sem conexão com internet"
+                        else -> "Erro no login Google: ${e.statusCode}"
+                    }
+                    viewModel.handleSignInError(errorMessage)
+                }
             }
-        } else {
-            viewModel.handleSignInError("Login cancelado")
+            Activity.RESULT_CANCELED -> {
+                viewModel.handleSignInError("Login cancelado pelo usuário")
+            }
+            else -> {
+                viewModel.handleSignInError("Erro inesperado no login")
+            }
         }
     }
     

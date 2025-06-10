@@ -1,5 +1,8 @@
 package com.ideiassertiva.FypMatch.data.repository
 
+import android.util.Log
+import com.ideiassertiva.FypMatch.BuildConfig
+import com.ideiassertiva.FypMatch.util.AnalyticsManager
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import kotlinx.coroutines.flow.Flow
@@ -10,54 +13,99 @@ import javax.inject.Singleton
 import kotlin.random.Random
 
 @Singleton
-class GeminiRepository @Inject constructor() {
+class GeminiRepository @Inject constructor(
+    private val analyticsManager: AnalyticsManager
+) {
+    
+    companion object {
+        private const val TAG = "GeminiRepository"
+        // API Key testada e funcionando: AIzaSyAsUX8dj3_OKuHWQlEsBEGa0d3mWFqat2E
+        private const val GEMINI_API_KEY = "AIzaSyAsUX8dj3_OKuHWQlEsBEGa0d3mWFqat2E"
+    }
     
     // Inicializa Firebase AI Logic com Gemini Developer API
-    // API Key testada e funcionando: AIzaSyAsUX8dj3_OKuHWQlEsBEGa0d3mWFqat2E
-    private val model = Firebase.ai.generativeModel("gemini-2.0-flash")
+    private val model = try {
+        Firebase.ai.generativeModel("gemini-2.0-flash")
+    } catch (e: Exception) {
+        Log.e(TAG, "Erro ao inicializar Gemini model", e)
+        analyticsManager.logError(e, "gemini_init_error")
+        null
+    }
     
-    private val isAvailable = true
+    private val isAvailable = model != null
     
     /**
      * Envia uma mensagem para o Gemini e retorna a resposta como Flow
      */
     suspend fun sendMessage(userMessage: String): Flow<String> = flow {
         try {
-            if (!isAvailable) {
-                emit("Serviço de IA indisponível no momento.")
+            if (BuildConfig.FIREBASE_DEBUG) {
+                Log.d(TAG, "Enviando mensagem para Gemini: $userMessage")
+            }
+            
+            if (!isAvailable || model == null) {
+                Log.w(TAG, "Gemini indisponível, usando fallback")
+                emit(getFallbackResponse(userMessage))
                 return@flow
             }
             
             // Cria prompt com contexto de relacionamentos
             val contextualPrompt = """
-                Você é um assistente de relacionamentos do FypMatch, um app de encontros brasileiro.
-                Responda de forma amigável, empática e útil sobre relacionamentos, encontros e conversas.
-                Mantenha respostas em português brasileiro, seja positivo e dê conselhos práticos.
+                Você é a Fype, uma conselheira de relacionamentos carinhosa e experiente do FypMatch.
                 
-                Pergunta do usuário: $userMessage
+                CARACTERÍSTICAS DA FYPE:
+                - Amigável, empática e acolhedora
+                - Especialista em relacionamentos, amor e encontros
+                - Usa linguagem natural do português brasileiro
+                - Dá conselhos práticos e positivos
+                - Incentiva autoestima e crescimento pessoal
+                - Usa emojis ocasionalmente para ser mais calorosa (máximo 2 por resposta)
+                - Respostas entre 50-150 palavras
+                
+                CONTEXTO: Usuário do app de encontros FypMatch precisa de ajuda.
+                
+                PERGUNTA DO USUÁRIO: $userMessage
+                
+                IMPORTANTE: Responda SEMPRE como a Fype daria um conselho pessoal, acolhedor e específico para a situação. Seja autêntica e humana.
             """.trimIndent()
+            
+            // Analytics: Tentativa de chamada Gemini
+            analyticsManager.logCustomCrash("gemini_request_attempt", mapOf(
+                "message_length" to userMessage.length.toString(),
+                "has_question_mark" to userMessage.contains("?").toString()
+            ))
             
             // Chama API real do Gemini
             val result = model.generateContent(contextualPrompt)
+            val response = result.text
             
-
-            val response = result.text ?: "Desculpe, não consegui gerar uma resposta no momento."
+            if (BuildConfig.FIREBASE_DEBUG) {
+                Log.d(TAG, "Resposta do Gemini recebida: ${response?.take(100)}...")
+            }
             
-            emit(response)
+            if (!response.isNullOrBlank()) {
+                // Analytics: Sucesso
+                analyticsManager.logCustomCrash("gemini_response_success", mapOf(
+                    "response_length" to response.length.toString(),
+                    "response_has_emoji" to (response.contains("💕") || response.contains("😊") || response.contains("❤️")).toString()
+                ))
+                
+                emit(response.trim())
+            } else {
+                throw Exception("Resposta vazia do Gemini")
+            }
+        
         } catch (e: Exception) {
-            // Fallback para respostas mock em caso de erro
-            val fallbackResponse = when {
-                userMessage.contains("ansiedade", ignoreCase = true) -> 
-                    "É normal sentir ansiedade em encontros! Respire fundo, seja você mesmo e lembre-se que a outra pessoa também pode estar nervosa."
-                
-                userMessage.contains("conversa", ignoreCase = true) -> 
-                    "Para manter uma boa conversa, faça perguntas abertas sobre os interesses da pessoa e escute ativamente."
-                
-                userMessage.contains("match", ignoreCase = true) -> 
-                    "Parabéns pelo match! Mencione algo específico do perfil da pessoa para mostrar interesse genuíno."
-                
-                else -> 
-                    "Entendo sua situação. Relacionamentos podem ser desafiadores, mas seja autêntico e paciente. Como posso ajudar mais?"
+            Log.e(TAG, "Erro na chamada Gemini: ${e.message}", e)
+            
+            // Analytics: Erro
+            analyticsManager.logError(e, "gemini_api_error")
+            
+            // Fallback para respostas inteligentes em caso de erro
+            val fallbackResponse = getFallbackResponse(userMessage)
+            
+            if (BuildConfig.FIREBASE_DEBUG) {
+                Log.d(TAG, "Usando fallback response: $fallbackResponse")
             }
             
             emit(fallbackResponse)
@@ -65,206 +113,112 @@ class GeminiRepository @Inject constructor() {
     }
     
     /**
+     * Respostas de fallback inteligentes baseadas no contexto
+     */
+    private fun getFallbackResponse(userMessage: String): String {
+        val message = userMessage.lowercase()
+        
+        return when {
+            // Ansiedade e nervosismo
+            message.contains("ansioso") || message.contains("nervoso") || message.contains("ansiedade") -> {
+                listOf(
+                    "É super normal sentir ansiedade em encontros! 💕 Respire fundo e lembre-se: a outra pessoa também pode estar nervosa. Seja você mesmo(a), isso é o mais atrativo!",
+                    "Nervosismo pré-encontro é clássico! 😊 Tente algumas respirações profundas. Foque no que você tem de especial - sua personalidade única é seu maior charme!",
+                    "Ansiedade é sinal de que você se importa, e isso é lindo! 💕 Prepare alguns tópicos de conversa e confie em si mesmo(a). Você vai se sair bem!"
+                ).random()
+            }
+            
+            // Conversa e comunicação
+            message.contains("conversa") || message.contains("falar") || message.contains("assunto") -> {
+                listOf(
+                    "Para uma boa conversa, faça perguntas abertas sobre os interesses da pessoa! 😊 'O que te faz feliz?' é sempre melhor que 'Como foi seu dia?'",
+                    "O segredo de uma conversa envolvente é escutar ativamente! 💕 Mostre interesse genuíno e faça perguntas baseadas no que a pessoa compartilhou.",
+                    "Converse sobre experiências e sonhos! Pergunte sobre a melhor viagem, hobbies favoritos ou planos para o futuro. Isso cria conexão real!"
+                ).random()
+            }
+            
+            // Match e primeiras mensagens
+            message.contains("match") || message.contains("primeira mensagem") || message.contains("inicial") -> {
+                listOf(
+                    "Parabéns pelo match! 💕 Mencione algo específico do perfil da pessoa para mostrar que você realmente olhou. Isso demonstra interesse genuíno!",
+                    "Para a primeira mensagem, seja criativo(a) mas autêntico(a)! 😊 Um comentário sobre uma foto ou interesse em comum funciona muito bem.",
+                    "Evite apenas 'oi, tudo bem?' Tente algo como: 'Vi que você curte [interesse]. Qual foi sua melhor experiência com isso?' Muito mais envolvente!"
+                ).random()
+            }
+            
+            // Relacionamentos e amor
+            message.contains("relacionamento") || message.contains("amor") || message.contains("parceiro") -> {
+                listOf(
+                    "Relacionamentos saudáveis começam com autoconhecimento! 💕 Saiba o que você busca e valoriza. Assim atrairá alguém compatível.",
+                    "O amor verdadeiro floresce quando somos autênticos! 😊 Não mude sua essência por ninguém. A pessoa certa vai te amar exatamente como você é.",
+                    "Paciência é fundamental no amor! 💕 O relacionamento certo vale a espera. Enquanto isso, invista em si mesmo(a) e seja feliz sozinho(a) também."
+                ).random()
+            }
+            
+            // Autoestima e confiança
+            message.contains("insegur") || message.contains("confiança") || message.contains("autoestima") -> {
+                listOf(
+                    "Você é único(a) e especial! 💕 Faça uma lista das suas qualidades e conquistas. Lembre-se delas sempre que a insegurança bater.",
+                    "Confiança vem de dentro! 😊 Cuide bem de si mesmo(a), faça coisas que te fazem feliz e cerque-se de pessoas que te valorizam.",
+                    "Sua autoestima é seu bem mais precioso! 💕 Trate-se com carinho, celebre pequenas vitórias e lembre-se: você merece amor e respeito."
+                ).random()
+            }
+            
+            // Encontros e dates
+            message.contains("encontro") || message.contains("date") || message.contains("sair") -> {
+                listOf(
+                    "Para um primeiro encontro, escolha um lugar público e confortável! 😊 Café ou almoço são ótimas opções. O importante é ter um ambiente para conversar.",
+                    "Vista-se de forma que você se sinta bem e confiante! 💕 Seja pontual, desligue o celular e esteja presente. Demonstre interesse genuíno!",
+                    "Encontros são para se conhecerem melhor! 😊 Não crie expectativas muito altas. Relaxe, se divirta e veja se há química natural entre vocês."
+                ).random()
+            }
+            
+            // Resposta geral empática
+            else -> {
+                listOf(
+                    "Entendo sua situação! 💕 Relacionamentos podem ser desafiadores, mas cada experiência nos ensina algo. Que parte específica te preocupa mais?",
+                    "Você veio ao lugar certo para conversar sobre isso! 😊 Estou aqui para te apoiar. Pode me contar mais detalhes sobre o que está sentindo?",
+                    "Cada pessoa é única, e sua jornada amorosa também é! 💕 Vamos trabalhar juntas para encontrar a melhor abordagem para sua situação. Me conte mais!",
+                    "É corajoso buscar ajuda e reflexão! 😊 Isso mostra que você se importa com seu crescimento. Qual aspecto você gostaria de explorar primeiro?"
+                ).random()
+            }
+        }
+    }
+    
+    /**
      * Analisa compatibilidade entre dois usuários usando IA
      */
-    suspend fun analyzeCompatibility(user1Profile: String, user2Profile: String): Result<Int> {
-        return try {
-            if (!isAvailable) {
-                return Result.failure(Exception("Serviço indisponível"))
+    suspend fun analyzeCompatibility(user1Bio: String, user2Bio: String): Flow<String> = flow {
+        try {
+            if (!isAvailable || model == null) {
+                emit("Análise indisponível no momento. Que tal conversarem e descobrirem por si mesmos? 😊")
+                return@flow
             }
             
-            val compatibilityPrompt = """
-                Analise a compatibilidade entre estes dois perfis de usuários de um app de encontros.
-                Retorne APENAS um número de 0 a 100 representando a porcentagem de compatibilidade.
+            val prompt = """
+                Você é a Fype, especialista em relacionamentos do FypMatch.
                 
-                Perfil 1: $user1Profile
-                Perfil 2: $user2Profile
+                Analise a compatibilidade entre estas duas pessoas baseado em suas biografias:
                 
-                Considere: interesses em comum, personalidade, objetivos, estilo de vida.
-                Responda apenas com o número, sem texto adicional.
+                PESSOA 1: $user1Bio
+                PESSOA 2: $user2Bio
+                
+                Forneça uma análise de compatibilidade focando em:
+                1. Pontos em comum
+                2. Diferenças complementares
+                3. Sugestões de conversa
+                
+                Seja otimista mas realista. Máximo 100 palavras.
             """.trimIndent()
             
-            val result = model.generateContent(compatibilityPrompt)
-            val response = result.text?.trim() ?: ""
+            val result = model.generateContent(prompt)
+            val response = result.text
             
-            // Extrai número da resposta
-            val score = response.replace(Regex("[^0-9]"), "").toIntOrNull()
-                ?: run {
-                    // Fallback para algoritmo simples se Gemini não retornar número
-                    val profile1Words = user1Profile.lowercase().split(" ", ",", ".", ";")
-                    val profile2Words = user2Profile.lowercase().split(" ", ",", ".", ";")
-                    val commonInterests = profile1Words.intersect(profile2Words.toSet()).size
-                    val totalWords = (profile1Words + profile2Words).distinct().size
-                    
-                    if (totalWords > 0) {
-                        (commonInterests.toFloat() / totalWords * 100).toInt().coerceIn(25, 95)
-                    } else {
-                        Random.nextInt(40, 80)
-                    }
-                }
-            
-            Result.success(score.coerceIn(0, 100))
+            emit(response ?: "Vocês parecem ter potencial! Que tal começar conversando sobre interesses em comum? 💕")
+        
         } catch (e: Exception) {
-            // Fallback para algoritmo simples
-            val profile1Words = user1Profile.lowercase().split(" ", ",", ".", ";")
-            val profile2Words = user2Profile.lowercase().split(" ", ",", ".", ";")
-            val commonInterests = profile1Words.intersect(profile2Words.toSet()).size
-            val totalWords = (profile1Words + profile2Words).distinct().size
-            
-            val fallbackScore = if (totalWords > 0) {
-                (commonInterests.toFloat() / totalWords * 100).toInt().coerceIn(25, 95)
-            } else {
-                Random.nextInt(40, 80)
-            }
-            
-            Result.success(fallbackScore)
+            Log.e(TAG, "Erro na análise de compatibilidade", e)
+            emit("O importante é a conexão que vocês vão construir conversando! 😊 Sejam autênticos um com o outro.")
         }
-    }
-    
-    /**
-     * Gera sugestões de conversa baseadas no perfil do match
-     */
-    suspend fun generateConversationStarters(profileInfo: String): Result<List<String>> {
-        return try {
-            if (!isAvailable) {
-                return Result.failure(Exception("Serviço indisponível"))
-            }
-            
-            val startersPrompt = """
-                Baseado neste perfil de usuário de um app de encontros, crie 3 perguntas interessantes para iniciar uma conversa.
-                
-                Perfil: $profileInfo
-                
-                Regras:
-                - Seja natural e casual
-                - Use português brasileiro
-                - Foque nos interesses da pessoa
-                - Evite perguntas óbvias ou genéricas
-                - Faça perguntas que gerem uma conversa interessante
-                
-                Retorne apenas as 3 perguntas, uma por linha, sem numeração.
-            """.trimIndent()
-            
-            val result = model.generateContent(startersPrompt)
-            val response = result.text?.trim() ?: ""
-            
-            // Processa resposta em lista
-            val suggestions = response.split("\n")
-                .map { it.trim() }
-                .filter { it.isNotEmpty() && !it.matches(Regex("^[0-9]+\\..*")) }
-                .take(3)
-            
-            if (suggestions.size >= 3) {
-                Result.success(suggestions)
-            } else {
-                // Fallback para sugestões baseadas em palavras-chave
-                val fallbackSuggestions = generateFallbackStarters(profileInfo)
-                Result.success(fallbackSuggestions)
-            }
-        } catch (e: Exception) {
-            // Fallback para sugestões baseadas em palavras-chave
-            val fallbackSuggestions = generateFallbackStarters(profileInfo)
-            Result.success(fallbackSuggestions)
-        }
-    }
-    
-    private fun generateFallbackStarters(profileInfo: String): List<String> {
-        val suggestions = mutableListOf<String>()
-        val profileLower = profileInfo.lowercase()
-        
-        when {
-            profileLower.contains("música") || profileLower.contains("music") -> {
-                suggestions.add("Que tipo de música você mais curte? Tem algum artista favorito?")
-                suggestions.add("Já foi em algum show marcante? Qual foi a experiência?")
-                suggestions.add("Toca algum instrumento ou só curte escutar mesmo?")
-            }
-            profileLower.contains("viagem") || profileLower.contains("travel") -> {
-                suggestions.add("Qual foi a viagem mais incrível que você já fez?")
-                suggestions.add("Tem algum destino dos sonhos na sua lista?")
-                suggestions.add("Prefere aventuras ou relaxar nas férias?")
-            }
-            profileLower.contains("esporte") || profileLower.contains("sport") -> {
-                suggestions.add("Que esporte você pratica? Como começou?")
-                suggestions.add("Tem algum time do coração ou atleta que admira?")
-                suggestions.add("Prefere esportes individuais ou em equipe?")
-            }
-            else -> {
-                suggestions.add("O que você mais gosta de fazer no tempo livre?")
-                suggestions.add("Qual foi o melhor momento do seu fim de semana?")
-                suggestions.add("Tem algum hobby que te deixa super animado(a)?")
-            }
-        }
-        
-        return suggestions.take(3)
-    }
-    
-    /**
-     * Detecta se a mensagem indica necessidade de ajuda profissional
-     */
-    suspend fun detectSeriousIssues(message: String): Result<Boolean> {
-        return try {
-            if (!isAvailable) {
-                return Result.failure(Exception("Serviço indisponível"))
-            }
-            
-            val detectionPrompt = """
-                Analise esta mensagem e determine se indica problemas graves que requerem ajuda profissional:
-                
-                "$message"
-                
-                Considere indicadores como:
-                - Ideação suicida ou autolesão
-                - Depressão severa ou desespero extremo
-                - Abuso ou violência
-                - Transtornos mentais graves
-                - Crises emocionais intensas
-                
-                Responda apenas "SIM" se detectar problemas sérios, ou "NÃO" caso contrário.
-            """.trimIndent()
-            
-            val result = model.generateContent(detectionPrompt)
-            val response = result.text?.trim()?.uppercase() ?: ""
-            
-            val hasSeriousIssues = response.contains("SIM")
-            
-            // Fallback com verificação por palavras-chave se resposta não for clara
-            if (!response.contains("SIM") && !response.contains("NÃO")) {
-                val fallbackResult = detectSeriousIssuesFallback(message)
-                Result.success(fallbackResult)
-            } else {
-                Result.success(hasSeriousIssues)
-            }
-        } catch (e: Exception) {
-            // Fallback para detecção por palavras-chave
-            val fallbackResult = detectSeriousIssuesFallback(message)
-            Result.success(fallbackResult)
-        }
-    }
-    
-    private fun detectSeriousIssuesFallback(message: String): Boolean {
-        // Palavras-chave que indicam problemas sérios
-        val seriousKeywords = listOf(
-            "suicídio", "suicidar", "morrer", "acabar com tudo",
-            "depressão severa", "não aguento mais", "sem esperança",
-            "abuso", "violência", "agressão", "machuca",
-            "transtorno", "surto", "crise", "desespero total"
-        )
-        
-        val messageLower = message.lowercase()
-        val hasSeriousIndicators = seriousKeywords.any { keyword ->
-            messageLower.contains(keyword)
-        }
-        
-        // Também verifica padrões de linguagem preocupantes
-        val concerningPatterns = listOf(
-            "não vejo saída", "nada faz sentido", "todo mundo me odeia",
-            "sou um fracasso total", "nunca vai melhorar"
-        )
-        
-        val hasConcerningPatterns = concerningPatterns.any { pattern ->
-            messageLower.contains(pattern)
-        }
-        
-        return hasSeriousIndicators || hasConcerningPatterns
     }
 } 

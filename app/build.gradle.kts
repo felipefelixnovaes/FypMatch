@@ -27,6 +27,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        // Firebase Analytics Debug Mode - Para debug no dispositivo
+        manifestPlaceholders["enableFirebaseAnalyticsDebugging"] = "true"
     }
 
     signingConfigs {
@@ -39,6 +42,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+            // Habilitar Firebase Analytics Debug View para todos os builds debug
+            buildConfigField("boolean", "FIREBASE_DEBUG", "true")
+        }
+        
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -46,6 +55,7 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+            buildConfigField("boolean", "FIREBASE_DEBUG", "false")
         }
     }
     compileOptions {
@@ -57,6 +67,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.15"
@@ -112,6 +123,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-ai")
+    implementation("com.google.firebase:firebase-database-ktx") // Firebase Realtime Database
     
     // Google Services
     implementation("com.google.android.gms:play-services-auth:21.2.0")

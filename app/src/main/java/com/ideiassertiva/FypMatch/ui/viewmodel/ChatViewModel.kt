@@ -264,4 +264,80 @@ class ChatViewModel @Inject constructor(
         delay(1500 + (Math.random() * 2000).toLong()) // 1.5-3.5 segundos
         _isTyping.value = false
     }
+    
+    /**
+     * Inicia conversa com a FYPE (assistente)
+     */
+    fun startFypeConversation(userId: String) {
+        this.currentUserId = userId
+        
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                
+                // Criar ou encontrar conversa com a assistente
+                val conversationId = chatRepository.createOrFindConversation(userId, "assistente_fypmatch")
+                this@ChatViewModel.conversationId = conversationId
+                
+                // Inicializar listeners
+                chatRepository.initializeMessages(conversationId)
+                
+                // Observar mensagens
+                chatRepository.getConversationMessages(conversationId)
+                    .collect { messages ->
+                        _uiState.value = _uiState.value.copy(
+                            messages = messages.sortedBy { it.timestamp },
+                            isLoading = false
+                        )
+                    }
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = e.message,
+                    isLoading = false
+                )
+            }
+        }
+    }
+    
+    /**
+     * Envia mensagem para a FYPE e obtém resposta da IA
+     */
+    fun sendMessageToFype(messageText: String) {
+        if (messageText.isBlank()) return
+        
+        viewModelScope.launch {
+            try {
+                // Enviar mensagem do usuário
+                chatRepository.sendMessage(
+                    conversationId = conversationId,
+                    senderId = currentUserId,
+                    content = messageText,
+                    type = MessageType.TEXT
+                )
+                
+                // Buscar resposta da IA usando GeminiRepository
+                geminiRepository.sendMessage(messageText).collect { response ->
+                    // Enviar resposta da FYPE
+                    chatRepository.sendMessage(
+                        conversationId = conversationId,
+                        senderId = "assistente_fypmatch",
+                        content = response,
+                        type = MessageType.TEXT
+                    )
+                }
+                
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
+                
+                // Enviar mensagem de erro como FYPE
+                chatRepository.sendMessage(
+                    conversationId = conversationId,
+                    senderId = "assistente_fypmatch",
+                    content = "Ops! Tive um probleminha técnico, mas estou aqui para te ajudar! 💕 Pode repetir sua pergunta?",
+                    type = MessageType.TEXT
+                )
+            }
+        }
+    }
 } 

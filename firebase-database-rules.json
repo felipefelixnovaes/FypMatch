@@ -1,0 +1,112 @@
+{
+  "rules": {
+    "conversas": {
+      "$conversationId": {
+        // Só pode ler/escrever se for participante da conversa
+        ".read": "data.child('participantes').hasChild(auth.uid)",
+        ".write": "data.child('participantes').hasChild(auth.uid) || newData.child('participantes').hasChild(auth.uid)",
+        
+        // Validações da estrutura da conversa
+        ".validate": "newData.hasChildren(['tipo', 'participantes']) && newData.child('tipo').isString()",
+        
+        "tipo": {
+          ".validate": "newData.isString() && (newData.val() == 'usuario-usuario' || newData.val() == 'usuario-assistente')"
+        },
+        
+        "participantes": {
+          // Deve ter exatamente 2 participantes
+          ".validate": "newData.numChildren() == 2",
+          
+          "$participantId": {
+            // Valor deve ser true
+            ".validate": "newData.val() === true"
+          }
+        },
+        
+        "mensagens": {
+          "$messageId": {
+            // Só pode escrever mensagem se for participante da conversa
+            ".write": "root.child('conversas').child($conversationId).child('participantes').hasChild(auth.uid)",
+            
+            // Validação da estrutura da mensagem
+            ".validate": "newData.hasChildren(['remetenteId', 'texto', 'timestamp']) && newData.child('remetenteId').isString() && newData.child('texto').isString() && newData.child('timestamp').isNumber()",
+            
+            "remetenteId": {
+              // O remetente deve ser o usuário autenticado OU a assistente
+              ".validate": "newData.val() == auth.uid || newData.val() == 'assistente_fypmatch'"
+            },
+            
+            "texto": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
+            },
+            
+            "timestamp": {
+              ".validate": "newData.isNumber() && newData.val() <= now + 300000" // Máximo 5 minutos no futuro
+            },
+            
+            "tipo": {
+              ".validate": "newData.isString()"
+            },
+            
+            "status": {
+              ".validate": "newData.isString()"
+            },
+            
+            "reactions": {
+              "$reactionId": {
+                ".validate": "newData.hasChildren(['emoji', 'userId', 'timestamp'])",
+                
+                "emoji": {
+                  ".validate": "newData.isString() && newData.val().length <= 10"
+                },
+                
+                "userId": {
+                  ".validate": "newData.val() == auth.uid"
+                },
+                
+                "timestamp": {
+                  ".validate": "newData.isNumber()"
+                }
+              }
+            }
+          }
+        },
+        
+        "ultimaMensagem": {
+          // Atualização automática da última mensagem
+          ".write": "root.child('conversas').child($conversationId).child('participantes').hasChild(auth.uid)",
+          
+          ".validate": "newData.hasChildren(['remetenteId', 'texto', 'timestamp'])",
+          
+          "remetenteId": {
+            ".validate": "newData.val() == auth.uid || newData.val() == 'assistente_fypmatch'"
+          },
+          
+          "texto": {
+            ".validate": "newData.isString() && newData.val().length > 0"
+          },
+          
+          "timestamp": {
+            ".validate": "newData.isNumber()"
+          }
+        },
+        
+        "criadaEm": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    
+    // Regras para outros nós (se necessário)
+    "users": {
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid"
+      }
+    },
+    
+    // Permitir que assistente tenha acesso especial
+    ".read": "auth.uid == 'assistente_fypmatch'",
+    ".write": "auth.uid == 'assistente_fypmatch'"
+  }
+} 

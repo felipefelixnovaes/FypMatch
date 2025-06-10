@@ -1,0 +1,44 @@
+{
+  "name": "fypmatch-website",
+  "version": "2.7.0",
+  "description": "Landing page oficial do FypMatch - App de relacionamento com IA",
+  "main": "index.html",
+  "scripts": {
+    "dev": "firebase serve --only hosting",
+    "build": "echo 'Static website - no build needed'",
+    "deploy": "firebase deploy --only hosting",
+    "login": "firebase login",
+    "init": "firebase init hosting"
+  },
+  "keywords": [
+    "fypmatch",
+    "dating",
+    "app",
+    "relationship",
+    "ai",
+    "fype",
+    "firebase",
+    "website"
+  ],
+  "author": "Ideias Assertiva",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "firebase": "^10.7.1"
+  },
+  "devDependencies": {
+    "firebase-tools": "^14.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ideiassertiva/fypmatch-website"
+  },
+  "homepage": "https://www.fypmatch.com",
+  "bugs": {
+    "url": "mailto:contato@fypmatch.com"
+  }
+} 

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FypMatch - O App de Relacionamento Mais Moderno e Inclusivo do Brasil</title>
+    <meta name="description" content="FypMatch é o app de relacionamento que combina IA avançada, inclusividade e segurança. Encontre conexões genuínas com nossa conselheira Fype e sistema de compatibilidade inteligente.">
+    <meta name="keywords" content="app relacionamento, dating app, encontros, relacionamentos, IA, inclusivo, LGBTQIA+, neurodiversidade, Fype">
+    <meta name="author" content="Ideias Assertiva">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.fypmatch.com/">
+    <meta property="og:title" content="FypMatch - App de Relacionamento com IA">
+    <meta property="og:description" content="O app de relacionamento mais moderno do Brasil. IA avançada, inclusividade total e a Fype, sua conselheira pessoal.">
+    <meta property="og:image" content="https://www.fypmatch.com/images/og-image.jpg">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.fypmatch.com/">
+    <meta property="twitter:title" content="FypMatch - App de Relacionamento com IA">
+    <meta property="twitter:description" content="O app de relacionamento mais moderno do Brasil. IA avançada, inclusividade total e a Fype, sua conselheira pessoal.">
+    <meta property="twitter:image" content="https://www.fypmatch.com/images/og-image.jpg">
+    
+    <!-- Resource Hints for Performance -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//www.googletagmanager.com">
+    <link rel="dns-prefetch" href="//www.gstatic.com">
+    <link rel="preload" href="images/logo.png" as="image" type="image/png">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    
+    <!-- Fonts - Optimized for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"></noscript>
+    
+    <!-- Critical CSS Inline for instant FCP -->
+    <style><?php echo file_get_contents('css/critical-inline.css'); ?></style>
+    
+    <!-- Non-critical CSS loaded async -->
+    <link rel="preload" href="css/style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="css/style.css"></noscript>
+    
+    <!-- JSON-LD Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "MobileApplication",
+        "name": "FypMatch",
+        "description": "App de relacionamento moderno com IA avançada e inclusividade total",
+        "url": "https://www.fypmatch.com",
+        "applicationCategory": "Dating",
+        "operatingSystem": "Android",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "BRL"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "Ideias Assertiva",
+            "url": "https://www.fypmatch.com"
+        }
+    }
+    </script>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YV1P5N7TGZ"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-YV1P5N7TGZ');
+    </script>
+    
+    <!-- Firebase SDK - Deferred loading for better performance -->
+    <script>
+        // Initialize Firebase after page load
+        window.addEventListener('load', function() {
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.textContent = `
+                import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+                import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+                import { getPerformance } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-performance.js';
+                
+                const firebaseConfig = {
+                    apiKey: "AIzaSyD_VEm6yh-kDtVBwZ-ISsK6woK4RIp6oec",
+                    authDomain: "fypmatch-8ac3c.firebaseapp.com",
+                    projectId: "fypmatch-8ac3c",
+                    storageBucket: "fypmatch-8ac3c.firebasestorage.app",
+                    messagingSenderId: "98859676437",
+                    appId: "1:98859676437:web:2cc88e7ad1f47d0925af1c",
+                    measurementId: "G-YV1P5N7TGZ"
+                };
+                
+                const app = initializeApp(firebaseConfig);
+                const analytics = getAnalytics(app);
+                const perf = getPerformance(app);
+                
+                window.firebaseApp = app;
+                window.firebaseAnalytics = analytics;
+                window.firebasePerf = perf;
+                
+                console.log('🔥 Firebase SDK carregado após page load!');
+            `;
+            document.head.appendChild(script);
+        });
+    </script>
+</head>
+<body>
+    <!-- Skip Links for Accessibility -->
+    <a href="#main-content" class="skip-link">Pular para o conteúdo principal</a>
+    <a href="#nav-menu" class="skip-link">Pular para o menu</a>
+    
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="Menu principal">
+        <div class="container">
+            <div class="nav-brand">
+                <img src="images/logo.png" alt="FypMatch Logo" class="logo" width="40" height="40">
+                <span class="brand-name">FypMatch</span>
+            </div>
+            <div class="nav-menu" id="nav-menu" aria-hidden="false">
+                <ul class="nav-list" role="menubar">
+                    <li role="none"><a href="#home" class="nav-link" role="menuitem" aria-label="Ir para seção Início">Início</a></li>
+                    <li role="none"><a href="#features" class="nav-link" role="menuitem" aria-label="Ir para seção Funcionalidades">Funcionalidades</a></li>
+                    <li role="none"><a href="#fype" class="nav-link" role="menuitem" aria-label="Ir para seção Fype IA">Fype IA</a></li>
+                    <li role="none"><a href="#pricing" class="nav-link" role="menuitem" aria-label="Ir para seção Planos">Planos</a></li>
+                    <li role="none"><a href="#download" class="nav-link" role="menuitem" aria-label="Ir para seção Download">Download</a></li>
+                    <li role="none"><a href="#contact" class="nav-link" role="menuitem" aria-label="Ir para seção Contato">Contato</a></li>
+                </ul>
+            </div>
+            <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="nav-menu">
+                <span class="bar" aria-hidden="true"></span>
+                <span class="bar" aria-hidden="true"></span>
+                <span class="bar" aria-hidden="true"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main>
+        <section id="home" class="hero" aria-label="Seção principal - Encontre o amor com IA">
+            <div class="container" id="main-content">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <h1 class="hero-title">
+                            Encontre o Amor com
+                            <span class="gradient-text">Inteligência Artificial</span>
+                        </h1>
+                    <p class="hero-subtitle">
+                        FypMatch é o app de relacionamento mais moderno e inclusivo do Brasil. 
+                        Com IA avançada e nossa conselheira Fype, transformamos encontros em conexões genuínas.
+                    </p>
+                    <div class="hero-features">
+                        <div class="feature-item">
+                            <span class="icon">🤖</span>
+                            <span>IA Avançada</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="icon">🌈</span>
+                            <span>100% Inclusivo</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="icon">💕</span>
+                            <span>Conselheira Fype</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="icon">🛡️</span>
+                            <span>Super Seguro</span>
+                        </div>
+                    </div>
+                    <div class="hero-cta">
+                        <a href="#download" class="btn btn-primary" aria-label="Baixar aplicativo FypMatch gratuitamente">
+                            Download Grátis
+                            <span class="icon" aria-hidden="true">📱</span>
+                        </a>
+                        <a href="#features" class="btn btn-secondary" aria-label="Saiba mais sobre as funcionalidades do FypMatch">
+                            Saiba Mais
+                            <span class="icon" aria-hidden="true">→</span>
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat">
+                            <span class="stat-number">10K+</span>
+                            <span class="stat-label">Usuários Ativos</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">95%</span>
+                            <span class="stat-label">Satisfação</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">2M+</span>
+                            <span class="stat-label">Matches</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div class="phone-mockup">
+                        <picture>
+                            <source srcset="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='520'%3E%3Crect width='100%25' height='100%25' fill='%23f0f0f0'/%3E%3C/svg%3E" 
+                                    data-srcset="images/app-screenshot-1.webp" 
+                                    type="image/webp">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='520'%3E%3Crect width='100%25' height='100%25' fill='%23f0f0f0'/%3E%3C/svg%3E" 
+                                 data-src="images/app-screenshot-1.png" 
+                                 alt="Tela do aplicativo FypMatch mostrando interface de matches com IA e conselheira Fype" 
+                                 class="app-screenshot lazy"
+                                 loading="lazy"
+                                 width="260" 
+                                 height="520"
+                                 decoding="async">
+                        </picture>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-background">
+            <div class="gradient-bg"></div>
+            <div class="floating-hearts">
+                <span class="heart">💕</span>
+                <span class="heart">💖</span>
+                <span class="heart">💗</span>
+                <span class="heart">💘</span>
+                <span class="heart">💝</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Por que escolher o FypMatch?</h2>
+                <p class="section-subtitle">
+                    Revolucionamos os relacionamentos digitais com tecnologia de ponta e inclusividade total
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>IA de Compatibilidade</h3>
+                    <p>Algoritmo avançado analisa personalidade, interesses e comportamentos para encontrar matches perfeitos.</p>
+                    <ul class="feature-list">
+                        <li>Score de compatibilidade em tempo real</li>
+                        <li>Análise de personalidade profunda</li>
+                        <li>Sugestões personalizadas</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card featured">
+                    <div class="feature-badge">Exclusivo</div>
+                    <div class="feature-icon">💕</div>
+                    <h3>Fype - Sua Conselheira</h3>
+                    <p>A primeira conselheira de relacionamentos com IA do Brasil. Receba conselhos personalizados sobre amor e encontros.</p>
+                    <ul class="feature-list">
+                        <li>Conselhos sobre ansiedade em encontros</li>
+                        <li>Dicas de comunicação afetiva</li>
+                        <li>Suporte para autoestima</li>
+                        <li>Estratégias para primeiros encontros</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🌈</div>
+                    <h3>Inclusividade Total</h3>
+                    <p>Criado para TODOS. Suporte completo à comunidade LGBTQIA+ e neurodiversidade.</p>
+                    <ul class="feature-list">
+                        <li>Selos de verificação LGBTQIA+</li>
+                        <li>Assistente para neurodiversidade</li>
+                        <li>Interface adaptativa</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Segurança Premium</h3>
+                    <p>Verificação rigorosa de perfis e detecção automática de comportamentos suspeitos.</p>
+                    <ul class="feature-list">
+                        <li>Verificação por documento</li>
+                        <li>Detecção de perfis falsos</li>
+                        <li>Relatórios e bloqueios</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💬</div>
+                    <h3>Chat Inteligente</h3>
+                    <p>Sugestões de conversa personalizadas e análise de compatibilidade em tempo real.</p>
+                    <ul class="feature-list">
+                        <li>Sugestões de icebreakers</li>
+                        <li>Análise de tom das mensagens</li>
+                        <li>Tradução de linguagem corporal</li>
+                    </ul>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Analytics Pessoais</h3>
+                    <p>Insights detalhados sobre seus matches, conversas e oportunidades de melhoria.</p>
+                    <ul class="feature-list">
+                        <li>Dashboard personalizado</li>
+                        <li>Taxa de resposta em chats</li>
+                        <li>Horários de maior atividade</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fype Section -->
+    <section id="fype" class="fype-section">
+        <div class="container">
+            <div class="fype-content">
+                <div class="fype-text">
+                    <div class="section-badge">Exclusivo FypMatch</div>
+                    <h2 class="fype-title">
+                        Conheça a <span class="gradient-text">Fype</span>
+                        <br>Sua Conselheira Pessoal
+                    </h2>
+                    <p class="fype-subtitle">
+                        A primeira conselheira de relacionamentos com Inteligência Artificial do Brasil. 
+                        A Fype está aqui para ajudar você em cada etapa da sua jornada amorosa.
+                    </p>
+                    
+                    <div class="fype-features">
+                        <div class="fype-feature">
+                            <span class="fype-icon">💖</span>
+                            <div>
+                                <h4>Conselhos Personalizados</h4>
+                                <p>Receba dicas específicas para suas situações amorosas</p>
+                            </div>
+                        </div>
+                        <div class="fype-feature">
+                            <span class="fype-icon">🧘</span>
+                            <div>
+                                <h4>Ansiedade em Encontros</h4>
+                                <p>Técnicas comprovadas para relaxar e ter confiança</p>
+                            </div>
+                        </div>
+                        <div class="fype-feature">
+                            <span class="fype-icon">💬</span>
+                            <div>
+                                <h4>Comunicação Afetiva</h4>
+                                <p>Aprenda a expressar sentimentos de forma saudável</p>
+                            </div>
+                        </div>
+                        <div class="fype-feature">
+                            <span class="fype-icon">✨</span>
+                            <div>
+                                <h4>Autoestima e Confiança</h4>
+                                <p>Exercícios para fortalecer sua autoconfiança</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="fype-cta">
+                        <a href="#download" class="btn btn-primary">
+                            Conversar com a Fype
+                            <span class="icon">💕</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="fype-visual">
+                    <div class="fype-chat-mockup">
+                        <div class="chat-header">
+                            <div class="chat-avatar">💕</div>
+                            <div class="chat-info">
+                                <h4>Fype</h4>
+                                <span>Sua conselheira pessoal</span>
+                            </div>
+                        </div>
+                        <div class="chat-messages">
+                            <div class="message fype-message">
+                                <p>Olá! Eu sou a Fype, sua conselheira pessoal de relacionamentos! 💕</p>
+                            </div>
+                            <div class="message fype-message">
+                                <p>Estou aqui para ajudar você com conselhos sobre amor, encontros e relacionamentos. Como posso ajudar hoje?</p>
+                            </div>
+                            <div class="message user-message">
+                                <p>Tenho um encontro amanhã e estou muito nervoso(a)! 😰</p>
+                            </div>
+                            <div class="message fype-message">
+                                <p>Entendo perfeitamente! A ansiedade pré-encontro é super normal. Vou te dar algumas técnicas de respiração e dicas para aumentar sua confiança! ✨</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Escolha seu plano</h2>
+                <p class="section-subtitle">
+                    Encontre o plano perfeito para sua jornada amorosa
+                </p>
+            </div>
+            
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Gratuito</h3>
+                        <div class="price">
+                            <span class="currency">R$</span>
+                            <span class="amount">0</span>
+                            <span class="period">/sempre</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>✅ 10 curtidas por dia</li>
+                        <li>✅ 1 super curtida por dia</li>
+                        <li>✅ Matching básico</li>
+                        <li>✅ Chat limitado</li>
+                        <li>✅ Fype via anúncios</li>
+                        <li>❌ Ver quem curtiu</li>
+                        <li>❌ Boost do perfil</li>
+                    </ul>
+                    <button class="btn btn-secondary">Começar Grátis</button>
+                </div>
+                
+                <div class="pricing-card featured">
+                    <div class="pricing-badge">Mais Popular</div>
+                    <div class="pricing-header">
+                        <h3>Premium</h3>
+                        <div class="price">
+                            <span class="currency">R$</span>
+                            <span class="amount">19,90</span>
+                            <span class="period">/mês</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>✅ 100 curtidas por dia</li>
+                        <li>✅ 5 super curtidas por dia</li>
+                        <li>✅ Ver quem curtiu você</li>
+                        <li>✅ 1 boost por mês</li>
+                        <li>✅ Chat ilimitado</li>
+                        <li>✅ 10 créditos Fype/dia</li>
+                        <li>✅ Sem anúncios</li>
+                    </ul>
+                    <button class="btn btn-primary">Escolher Premium</button>
+                </div>
+                
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>VIP</h3>
+                        <div class="price">
+                            <span class="currency">R$</span>
+                            <span class="amount">39,90</span>
+                            <span class="period">/mês</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>✅ Curtidas ilimitadas</li>
+                        <li>✅ Super curtidas ilimitadas</li>
+                        <li>✅ 5 boosts por mês</li>
+                        <li>✅ Prioridade no algoritmo</li>
+                        <li>✅ Selo VIP exclusivo</li>
+                        <li>✅ 25 créditos Fype/dia</li>
+                        <li>✅ Suporte prioritário</li>
+                    </ul>
+                    <button class="btn btn-secondary">Escolher VIP</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="download">
+        <div class="container">
+            <div class="download-content">
+                <div class="download-text">
+                    <h2 class="download-title">
+                        Pronto para encontrar
+                        <span class="gradient-text">o amor?</span>
+                    </h2>
+                    <p class="download-subtitle">
+                        Baixe o FypMatch agora e comece sua jornada rumo a relacionamentos mais genuínos e conectados.
+                    </p>
+                    <div class="download-buttons">
+                        <a href="https://play.google.com/store/apps/details?id=com.ideiassertiva.FypMatch" class="download-btn" target="_blank">
+                            <img src="images/google-play-badge.png" alt="Baixar no Google Play">
+                        </a>
+                        <a href="#" class="download-btn coming-soon">
+                            <img src="images/app-store-badge.png" alt="Baixar na App Store">
+                            <span class="coming-soon-text">Em breve</span>
+                        </a>
+                    </div>
+                    <div class="download-info">
+                        <div class="info-item">
+                            <span class="icon">📱</span>
+                            <span>Android 7.0+</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="icon">🆓</span>
+                            <span>Download gratuito</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="icon">🔒</span>
+                            <span>100% seguro</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="download-visual">
+                    <div class="phones-mockup">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect width='100%25' height='100%25' fill='%23f0f0f0'/%3E%3C/svg%3E" 
+                             data-src="images/app-screenshots-multiple.png" 
+                             alt="FypMatch Screenshots" 
+                             class="phones-image lazy"
+                             loading="lazy"
+                             width="400" 
+                             height="300">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Entre em contato</h2>
+                <p class="section-subtitle">
+                    Dúvidas, sugestões ou precisa de ajuda? Estamos aqui para você!
+                </p>
+            </div>
+            
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <div class="contact-icon">📧</div>
+                        <div class="contact-details">
+                            <h4>Email</h4>
+                            <p>contato@fypmatch.com</p>
+                            <p>suporte@fypmatch.com</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <div class="contact-icon">💬</div>
+                        <div class="contact-details">
+                            <h4>Suporte no App</h4>
+                            <p>Acesse o menu "Ajuda" dentro do app para suporte direto</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <div class="contact-icon">🏢</div>
+                        <div class="contact-details">
+                            <h4>Empresa</h4>
+                            <p>Ideias Assertiva</p>
+                            <p>Desenvolvedor oficial do FypMatch</p>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item">
+                        <div class="contact-icon">📱</div>
+                        <div class="contact-details">
+                            <h4>Redes Sociais</h4>
+                            <div class="social-links">
+                                <a href="#" class="social-link">Instagram</a>
+                                <a href="#" class="social-link">Twitter</a>
+                                <a href="#" class="social-link">TikTok</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="contact-form">
+                    <form class="form" id="contact-form">
+                        <div class="form-group">
+                            <label for="name">Nome</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Assunto</label>
+                            <select id="subject" name="subject" required>
+                                <option value="">Selecione um assunto</option>
+                                <option value="suporte">Suporte Técnico</option>
+                                <option value="bug">Reportar Bug</option>
+                                <option value="sugestao">Sugestão</option>
+                                <option value="parceria">Parceria</option>
+                                <option value="imprensa">Imprensa</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Mensagem</label>
+                            <textarea id="message" name="message" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Enviar Mensagem
+                            <span class="icon">📧</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-brand">
+                        <img src="images/logo.png" alt="FypMatch Logo" class="footer-logo">
+                        <span class="footer-brand-name">FypMatch</span>
+                    </div>
+                    <p class="footer-description">
+                        O app de relacionamento mais moderno e inclusivo do Brasil. 
+                        Conectando corações com inteligência artificial e muito amor.
+                    </p>
+                    <div class="footer-social">
+                        <a href="#" class="social-icon">📱</a>
+                        <a href="#" class="social-icon">💬</a>
+                        <a href="#" class="social-icon">📧</a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>App</h4>
+                    <ul class="footer-links">
+                        <li><a href="#features">Funcionalidades</a></li>
+                        <li><a href="#fype">Fype IA</a></li>
+                        <li><a href="#pricing">Planos</a></li>
+                        <li><a href="#download">Download</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Suporte</h4>
+                    <ul class="footer-links">
+                        <li><a href="/help">Central de Ajuda</a></li>
+                        <li><a href="#contact">Contato</a></li>
+                        <li><a href="/faq">FAQ</a></li>
+                        <li><a href="/status">Status do Serviço</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul class="footer-links">
+                        <li><a href="/privacy">Política de Privacidade</a></li>
+                        <li><a href="/terms">Termos de Uso</a></li>
+                        <li><a href="/cookies">Política de Cookies</a></li>
+                        <li><a href="/community-guidelines">Diretrizes da Comunidade</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Empresa</h4>
+                    <ul class="footer-links">
+                        <li><a href="/about">Sobre Nós</a></li>
+                        <li><a href="/careers">Carreiras</a></li>
+                        <li><a href="/press">Imprensa</a></li>
+                        <li><a href="/investors">Investidores</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-copyright">
+                    <p>&copy; 2025 Ideias Assertiva. Todos os direitos reservados.</p>
+                    <p>FypMatch é uma marca registrada da Ideias Assertiva.</p>
+                </div>
+                <div class="footer-meta">
+                    <span>Feito com 💕 no Brasil</span>
+                    <span>|</span>
+                    <span>Versão 2.7</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts - Optimized loading -->
+    <script>
+        // Critical JavaScript inline for faster interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+                         // Mobile menu toggle with accessibility
+             const navToggle = document.getElementById('nav-toggle');
+             const navMenu = document.getElementById('nav-menu');
+             if (navToggle && navMenu) {
+                 navToggle.addEventListener('click', function() {
+                     const isExpanded = navMenu.classList.contains('active');
+                     navMenu.classList.toggle('active');
+                     navToggle.setAttribute('aria-expanded', !isExpanded);
+                     navMenu.setAttribute('aria-hidden', isExpanded);
+                 });
+                 
+                 // Close menu with Escape key
+                 document.addEventListener('keydown', function(e) {
+                     if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+                         navMenu.classList.remove('active');
+                         navToggle.setAttribute('aria-expanded', 'false');
+                         navMenu.setAttribute('aria-hidden', 'true');
+                         navToggle.focus();
+                     }
+                 });
+             }
+            
+                         // Lazy load images
+             if ('IntersectionObserver' in window) {
+                 const lazyImages = document.querySelectorAll('img[data-src]');
+                 const imageObserver = new IntersectionObserver((entries) => {
+                     entries.forEach(entry => {
+                         if (entry.isIntersecting) {
+                             const img = entry.target;
+                             img.src = img.dataset.src;
+                             img.classList.remove('lazy');
+                             img.classList.add('loaded');
+                             imageObserver.unobserve(img);
+                         }
+                     });
+                 });
+                 lazyImages.forEach(img => imageObserver.observe(img));
+             }
+             
+             // Register Service Worker for caching
+             if ('serviceWorker' in navigator) {
+                 navigator.serviceWorker.register('/sw.js')
+                     .then(registration => {
+                         console.log('✅ Service Worker registered:', registration);
+                     })
+                     .catch(error => {
+                         console.log('❌ Service Worker registration failed:', error);
+                     });
+             }
+        });
+    </script>
+    <script src="js/script.js" defer></script>
+</body>
+</html> 

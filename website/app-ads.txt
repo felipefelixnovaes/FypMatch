@@ -1,0 +1,8 @@
+# app-ads.txt for fypmatch.com
+# This file is required for AdMob app verification as per Google's policies
+
+# AdMob Publisher ID
+google.com, pub-9657321458227740, DIRECT, f08c47fec0942fa0
+
+# Additional ad networks can be added here in the future
+# Format: domain, publisher_id, relationship, certification_authority_id 

@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://www.fypmatch.com/sitemap.xml
+
+# AdMob crawler access
+User-agent: Googlebot
+Allow: /app-ads.txt
+
+# SEO important pages
+Allow: /privacy
+Allow: /terms
+Allow: /
+
+# Prevent indexing of sensitive areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /*.json$
+
+# Crawl delay for politeness
+Crawl-delay: 1 

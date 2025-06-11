@@ -36,7 +36,11 @@ class LoginViewModel @Inject constructor(
     
     fun signInWithGoogle(account: GoogleSignInAccount) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true, 
+                errorMessage = null,
+                cancelledMessage = null
+            )
             
             // Analytics: Tentativa de login
             analyticsManager.logCustomCrash("google_signin_attempt", mapOf(
@@ -93,8 +97,25 @@ class LoginViewModel @Inject constructor(
         analyticsManager.logError(Exception(message), "google_signin_ui_error")
     }
     
+    fun handleSignInCancellation(message: String) {
+        _uiState.value = _uiState.value.copy(
+            isLoading = false,
+            errorMessage = null, // Não mostrar como erro
+            cancelledMessage = message
+        )
+        
+        // Analytics: Login cancelado (info, não erro)
+        analyticsManager.logCustomCrash("google_signin_cancelled", mapOf(
+            "reason" to "user_cancelled",
+            "message" to message
+        ))
+    }
+    
     fun clearError() {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
+        _uiState.value = _uiState.value.copy(
+            errorMessage = null,
+            cancelledMessage = null
+        )
     }
     
     fun clearNavigationState() {
@@ -113,5 +134,6 @@ data class LoginUiState(
     val isLoading: Boolean = false,
     val isSignedIn: Boolean = false,
     val userProfileComplete: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val cancelledMessage: String? = null
 ) 

@@ -44,9 +44,12 @@ class ConversationsViewModel @Inject constructor(
                         
                         val users = mutableMapOf<String, User>()
                         otherUserIds.forEach { userId ->
-                            userRepository.getUserById(userId)?.let { user ->
-                                users[userId] = user
-                            }
+                            userRepository.getUserFromFirestore(userId).fold(
+                                onSuccess = { user -> 
+                                    if (user != null) users[userId] = user 
+                                },
+                                onFailure = { /* Ignorar erro */ }
+                            )
                         }
                         
                         _uiState.value = _uiState.value.copy(

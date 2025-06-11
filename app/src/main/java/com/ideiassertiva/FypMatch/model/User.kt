@@ -164,11 +164,16 @@ enum class Religion {
 
 enum class PetPreference {
     LOVE_PETS,       // Amo animais
-    LIKE_PETS,       // Gosto de animais
-    ALLERGIC,        // Alérgico
-    DONT_LIKE,       // Não gosto
+    ALLERGIC,        // Sou alérgico
+    NO_PETS,         // Não tenho/quero animais
     PREFER_NOT_TO_SAY,
     NOT_SPECIFIED
+}
+
+enum class ShowMe {
+    MEN,
+    WOMEN, 
+    EVERYONE
 }
 
 data class UserPreferences(
@@ -176,7 +181,7 @@ data class UserPreferences(
     val maxDistance: Int = 50, // em km
     val genderPreference: List<Gender> = emptyList(),
     val intentionPreference: List<Intention> = emptyList(),
-    val showMe: Boolean = true,
+    val showMe: ShowMe = ShowMe.EVERYONE,
     val onlyVerified: Boolean = false
 )
 
@@ -352,9 +357,8 @@ fun Religion.getDisplayName(): String {
 fun PetPreference.getDisplayName(): String {
     return when (this) {
         PetPreference.LOVE_PETS -> "Amo animais"
-        PetPreference.LIKE_PETS -> "Gosto de animais"
         PetPreference.ALLERGIC -> "Alérgico"
-        PetPreference.DONT_LIKE -> "Não gosto"
+        PetPreference.NO_PETS -> "Não tenho/quero animais"
         PetPreference.PREFER_NOT_TO_SAY -> "Prefiro não dizer"
         PetPreference.NOT_SPECIFIED -> "Não informado"
     }

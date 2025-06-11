@@ -121,9 +121,11 @@ dependencies {
     // implementation("com.google.firebase:firebase-performance") // Comentado temporariamente
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-ai")
     implementation("com.google.firebase:firebase-database-ktx") // Firebase Realtime Database
+    implementation("com.google.firebase:firebase-config-ktx") // Remote Config
+    implementation("com.google.firebase:firebase-messaging-ktx") // Cloud Messaging
+    implementation("com.google.firebase:firebase-appcheck-debug") // App Check para debug
     
     // Google Services
     implementation("com.google.android.gms:play-services-auth:21.2.0")

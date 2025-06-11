@@ -29,11 +29,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 @Singleton
 class AuthRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val analyticsManager: AnalyticsManager
+    private val analyticsManager: AnalyticsManager,
+    private val userRepository: UserRepository,
+    private val locationRepository: LocationRepository
 ) {
     
     private val auth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
     private val accessControlRepository = AccessControlRepository()
     
     private val _currentUser = MutableStateFlow<User?>(null)
@@ -60,7 +61,9 @@ class AuthRepository @Inject constructor(
     
     fun getGoogleSignInClient(): GoogleSignInClient {
         // Web Client ID correto do Firebase Console - Projeto fypmatch-8ac3c
-        val webClientId = "98859676437-v8u5n4dqnk2bjqvaqh4bvt0uqitj7n5f.apps.googleusercontent.com"
+        val webClientId = "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com"
+        
+        println("🔍 DEBUG - Web Client ID: $webClientId")
         
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(webClientId)
@@ -69,7 +72,10 @@ class AuthRepository @Inject constructor(
             .requestServerAuthCode(webClientId) // Adiciona server auth code
             .build()
         
-        return GoogleSignIn.getClient(context, gso)
+        val client = GoogleSignIn.getClient(context, gso)
+        println("🔍 DEBUG - GoogleSignInClient criado: ${client != null}")
+        
+        return client
     }
     
     suspend fun signInWithGoogle(account: GoogleSignInAccount): Result<User> {
@@ -85,8 +91,12 @@ class AuthRepository @Inject constructor(
             
             if (firebaseUser != null) {
                 try {
+                    // NOVA ARQUITETURA HÍBRIDA
                     val user = createOrUpdateUserWithGoogleData(firebaseUser, account)
                     _currentUser.value = user
+                    
+                    // Configurar status online no Realtime Database
+                    locationRepository.setUserOnline(user.id)
                     
                     // Analytics: Login bem-sucedido
                     analyticsManager.setUserId(user.id)
@@ -104,6 +114,7 @@ class AuthRepository @Inject constructor(
                     }
                     
                     Result.success(user)
+                
                 } catch (firestoreError: Exception) {
                     // Se Firestore falhar, criar usuário mínimo
                     val minimalUser = createMinimalUserFromGoogle(firebaseUser, account)
@@ -131,74 +142,79 @@ class AuthRepository @Inject constructor(
         firebaseUser: FirebaseUser, 
         googleAccount: GoogleSignInAccount
     ): User {
-        val userDoc = firestore.collection("users").document(firebaseUser.uid)
-        val snapshot = userDoc.get().await()
+        val userId = firebaseUser.uid
         
-        return if (snapshot.exists()) {
-            // Usuário existente - atualizar com novos dados do Google se necessário
-            val existingUser = snapshot.toObject(User::class.java) ?: 
-                throw Exception("Erro ao carregar dados do usuário")
-            
-            val updatedUser = existingUser.copy(
-                email = firebaseUser.email ?: existingUser.email,
-                displayName = firebaseUser.displayName ?: existingUser.displayName,
-                photoUrl = firebaseUser.photoUrl?.toString() ?: existingUser.photoUrl,
-                lastActive = Date(),
-                profile = existingUser.profile.copy(
-                    // Atualizar nome se vazio ou se mudou no Google
-                    fullName = if (existingUser.profile.fullName.isBlank()) {
-                        firebaseUser.displayName ?: ""
-                    } else existingUser.profile.fullName
-                )
-            )
-            
-            try {
-                userDoc.set(updatedUser).await()
-            } catch (e: Exception) {
-                // Continuar mesmo se não conseguir salvar
+        // Buscar usuário existente no Firestore
+        val existingUserResult = userRepository.getUserFromFirestore(userId)
+        
+        return existingUserResult.fold(
+            onSuccess = { existingUser ->
+                if (existingUser != null) {
+                    // Usuário existente - atualizar com novos dados do Google se necessário
+                    val updatedUser = existingUser.copy(
+                        email = firebaseUser.email ?: existingUser.email,
+                        displayName = firebaseUser.displayName ?: existingUser.displayName,
+                        photoUrl = firebaseUser.photoUrl?.toString() ?: existingUser.photoUrl,
+                        lastActive = Date(),
+                        profile = existingUser.profile.copy(
+                            // Atualizar nome se vazio ou se mudou no Google
+                            fullName = if (existingUser.profile.fullName.isBlank()) {
+                                firebaseUser.displayName ?: ""
+                            } else existingUser.profile.fullName
+                        )
+                    )
+                    
+                    // Salvar no Firestore via UserRepository
+                    userRepository.updateUserInFirestore(updatedUser).getOrThrow()
+                } else {
+                    // Novo usuário - criar com dados ricos do Google
+                    createNewUserFromGoogle(firebaseUser, googleAccount)
+                }
+            },
+            onFailure = {
+                // Erro ao buscar usuário, criar novo
+                createNewUserFromGoogle(firebaseUser, googleAccount)
             }
-            
-            updatedUser
-        } else {
-            // Novo usuário - criar com dados ricos do Google
-            val email = firebaseUser.email ?: ""
-            val (accessLevel, betaFlags) = accessControlRepository.getSpecialAccessConfig(email)
-            
-            val newUser = User(
-                id = firebaseUser.uid,
-                email = email,
-                displayName = firebaseUser.displayName ?: "",
-                photoUrl = firebaseUser.photoUrl?.toString() ?: "",
-                profile = UserProfile(
-                    fullName = firebaseUser.displayName ?: "",
-                    // Tentar inferir gênero pelo nome (opcional)
-                    gender = Gender.NOT_SPECIFIED,
-                    photos = if (firebaseUser.photoUrl != null) {
-                        listOf(firebaseUser.photoUrl.toString())
-                    } else emptyList(),
-                    location = Location(
-                        country = "Brasil" // Padrão para o mercado brasileiro
-                    ),
-                    isProfileComplete = false // Sempre false para novos usuários
+        )
+    }
+    
+    private suspend fun createNewUserFromGoogle(
+        firebaseUser: FirebaseUser,
+        googleAccount: GoogleSignInAccount
+    ): User {
+        val email = firebaseUser.email ?: ""
+        val (accessLevel, betaFlags) = accessControlRepository.getSpecialAccessConfig(email)
+        
+        val newUser = User(
+            id = firebaseUser.uid,
+            email = email,
+            displayName = firebaseUser.displayName ?: "",
+            photoUrl = firebaseUser.photoUrl?.toString() ?: "",
+            profile = UserProfile(
+                fullName = firebaseUser.displayName ?: "",
+                gender = Gender.NOT_SPECIFIED,
+                photos = if (firebaseUser.photoUrl != null) {
+                    listOf(firebaseUser.photoUrl.toString())
+                } else emptyList(),
+                location = Location(
+                    country = "Brasil" // Padrão para o mercado brasileiro
                 ),
-                accessLevel = accessLevel,
-                betaFlags = betaFlags,
-                createdAt = Date(),
-                lastActive = Date()
-            )
-            
-            try {
-                userDoc.set(newUser).await()
-                
-                // Analytics: Novo usuário
-                analyticsManager.logUserSignUp("google")
-                analyticsManager.logUserProfile(null, null) // Será atualizado depois
-            } catch (e: Exception) {
-                // Continuar mesmo se não conseguir salvar
-            }
-            
-            newUser
-        }
+                isProfileComplete = false // Sempre false para novos usuários
+            ),
+            accessLevel = accessLevel,
+            betaFlags = betaFlags,
+            createdAt = Date(),
+            lastActive = Date()
+        )
+        
+        // Salvar no Firestore via UserRepository
+        val savedUser = userRepository.createUserInFirestore(newUser).getOrThrow()
+        
+        // Analytics: Novo usuário
+        analyticsManager.logUserSignUp("google")
+        analyticsManager.logUserProfile(null, null) // Será atualizado depois
+        
+        return savedUser
     }
     
     private fun createMinimalUserFromGoogle(
@@ -221,30 +237,20 @@ class AuthRepository @Inject constructor(
     }
     
     private fun loadUserData(firebaseUser: FirebaseUser) {
-        firestore.collection("users").document(firebaseUser.uid)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    return@addSnapshotListener
-                }
-                
-                if (snapshot != null && snapshot.exists()) {
-                    val user = snapshot.toObject(User::class.java)
-                    _currentUser.value = user
-                    
-                    // Determinar navegação se usuário mudou
-                    user?.let {
-                        _navigationState.value = if (it.isProfileComplete()) {
-                            NavigationState.ToDiscovery
-                        } else {
-                            NavigationState.ToProfile
-                        }
-                    }
-                }
-            }
+        // Observar dados do usuário via UserRepository (Firestore)
+        // TODO: Implementar observação contínua dos dados do usuário
+        // userRepository.observeUserInFirestore(firebaseUser.uid)
     }
     
     suspend fun signOut(): Result<Unit> {
         return try {
+            val currentUserId = auth.currentUser?.uid
+            
+            // Marcar como offline no Realtime Database
+            if (currentUserId != null) {
+                locationRepository.setUserOffline(currentUserId)
+            }
+            
             auth.signOut()
             GoogleSignIn.getClient(context, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut().await()
             _currentUser.value = null

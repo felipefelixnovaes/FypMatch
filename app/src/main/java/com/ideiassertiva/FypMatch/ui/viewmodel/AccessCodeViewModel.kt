@@ -8,10 +8,13 @@ import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Date
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class AccessCodeViewModel(
-    private val accessCodeRepository: AccessCodeRepository = AccessCodeRepository(),
-    private val userRepository: UserRepository = UserRepository()
+@HiltViewModel
+class AccessCodeViewModel @Inject constructor(
+    private val accessCodeRepository: AccessCodeRepository,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     
     // Estado do código sendo inserido
@@ -40,10 +43,13 @@ class AccessCodeViewModel(
     
     private fun loadCurrentUser() {
         viewModelScope.launch {
-            userRepository.getCurrentUser().collect { user ->
-                _currentUser.value = user
-                user?.let {
-                    _canUseCode.value = accessCodeRepository.canUserUseCode(it.email)
+            val currentUserId = userRepository.getCurrentUserId()
+            if (currentUserId != null) {
+                userRepository.observeUserInFirestore(currentUserId).collect { user ->
+                    _currentUser.value = user
+                    user?.let {
+                        _canUseCode.value = accessCodeRepository.canUserUseCode(it.email)
+                    }
                 }
             }
         }
@@ -109,7 +115,7 @@ class AccessCodeViewModel(
             )
         }
         
-        userRepository.updateUser(updatedUser)
+        userRepository.updateUserInFirestore(updatedUser)
     }
     
     fun clearResult() {

@@ -380,7 +380,7 @@ class ChatRepository @Inject constructor(
             
             // Simular resposta automática para conversas usuário-usuário
             if (senderId != ASSISTENTE_ID && !conversationId.contains(ASSISTENTE_ID)) {
-                coroutineScope.launch {
+            coroutineScope.launch {
                     delay(kotlin.random.Random.nextLong(2000, 8000))
                     sendAutomaticReply(conversationId, senderId, content)
                 }

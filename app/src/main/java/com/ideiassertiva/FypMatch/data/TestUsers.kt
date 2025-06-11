@@ -100,7 +100,7 @@ object TestUsers {
                 favoriteTeam = "Flamengo",
                 languages = listOf("Português", "Inglês"),
                 traveledCountries = listOf("Uruguai"),
-                petPreference = PetPreference.LIKE_PETS,
+                petPreference = PetPreference.LOVE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.FREE,
@@ -154,7 +154,7 @@ object TestUsers {
                 favoriteTeam = "Atlético Mineiro",
                 languages = listOf("Português", "Inglês", "Espanhol", "Italiano"),
                 traveledCountries = listOf("Argentina", "Peru", "Itália", "França"),
-                petPreference = PetPreference.LIKE_PETS,
+                petPreference = PetPreference.LOVE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.VIP,
@@ -265,7 +265,7 @@ object TestUsers {
                 favoriteTeam = "Internacional",
                 languages = listOf("Português", "Inglês"),
                 traveledCountries = listOf("Argentina"),
-                petPreference = PetPreference.LIKE_PETS,
+                petPreference = PetPreference.LOVE_PETS,
                 isProfileComplete = true
             ),
             subscription = SubscriptionStatus.FREE,

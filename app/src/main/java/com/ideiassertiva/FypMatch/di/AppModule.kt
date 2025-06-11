@@ -26,11 +26,44 @@ object AppModule {
         return AnalyticsManager(context)
     }
     
+    // === ARQUITETURA OTIMIZADA PLANO SPARK ===
+    
     @Provides
     @Singleton
-    fun provideUserRepository(): UserRepository {
-        return UserRepository()
+    fun provideUserRepository(analyticsManager: AnalyticsManager): UserRepository {
+        return UserRepository(analyticsManager)
     }
+    
+    @Provides
+    @Singleton
+    fun provideLocationRepository(analyticsManager: AnalyticsManager): LocationRepository {
+        return LocationRepository(analyticsManager)
+    }
+    
+    @Provides
+    @Singleton
+    fun providePhotoRepository(analyticsManager: AnalyticsManager): PhotoRepository {
+        return PhotoRepository(analyticsManager)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideAuthRepository(
+        @ApplicationContext context: Context,
+        analyticsManager: AnalyticsManager,
+        userRepository: UserRepository,
+        locationRepository: LocationRepository
+    ): AuthRepository {
+        return AuthRepository(context, analyticsManager, userRepository, locationRepository)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideChatRepository(analyticsManager: AnalyticsManager): ChatRepository {
+        return ChatRepository(analyticsManager)
+    }
+    
+    // === REPOSITÓRIOS EXISTENTES ===
     
     @Provides
     @Singleton
@@ -54,12 +87,6 @@ object AppModule {
     @Singleton
     fun provideAccessCodeRepository(): AccessCodeRepository {
         return AccessCodeRepository()
-    }
-    
-    @Provides
-    @Singleton
-    fun provideChatRepository(analyticsManager: AnalyticsManager): ChatRepository {
-        return ChatRepository(analyticsManager)
     }
     
     @Provides

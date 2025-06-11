@@ -61,7 +61,12 @@ class ChatViewModel @Inject constructor(
             try {
                 val conversation = chatRepository.getConversationById(conversationId)
                 val otherUserId = conversation?.getOtherParticipant(currentUserId)?.userId
-                val otherUser = otherUserId?.let { userRepository.getUserById(it) }
+                val otherUser = otherUserId?.let { 
+                    userRepository.getUserFromFirestore(it).fold(
+                        onSuccess = { user -> user },
+                        onFailure = { null }
+                    )
+                }
                 
                 _uiState.value = _uiState.value.copy(
                     conversation = conversation,

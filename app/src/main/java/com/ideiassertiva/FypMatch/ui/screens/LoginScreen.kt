@@ -59,13 +59,26 @@ fun LoginScreen(
                         12500 -> "Configuração Google incorreta. Tente novamente."
                         12501 -> "Login cancelado pelo usuário"
                         7 -> "Sem conexão com internet"
+                        10 -> "Erro de desenvolvedor - configuração incorreta"
+                        16 -> "Erro interno do Google Play Services"
                         else -> "Erro no login Google: ${e.statusCode}"
                     }
-                    viewModel.handleSignInError(errorMessage)
+                    
+                    // Log detalhado para diagnóstico
+                    println("🔍 DEBUG LOGIN - ApiException: ${e.statusCode} - ${e.localizedMessage}")
+                    println("🔍 DEBUG LOGIN - Mensagem: $errorMessage")
+                    
+                    // Tratar cancelamento diferente de erro real
+                    if (e.statusCode == 12501) {
+                        viewModel.handleSignInCancellation("Login cancelado")
+                    } else {
+                        viewModel.handleSignInError(errorMessage)
+                    }
                 }
             }
             Activity.RESULT_CANCELED -> {
-                viewModel.handleSignInError("Login cancelado pelo usuário")
+                // Cancelamento é ação normal do usuário, não erro
+                viewModel.handleSignInCancellation("Login cancelado")
             }
             else -> {
                 viewModel.handleSignInError("Erro inesperado no login")
@@ -211,6 +224,32 @@ fun LoginScreen(
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     style = MaterialTheme.typography.bodyMedium
                 )
+            }
+        }
+        
+        // Mensagem de cancelamento (mais suave)
+        uiState.cancelledMessage?.let { message ->
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ℹ️",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = message,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         }
     }

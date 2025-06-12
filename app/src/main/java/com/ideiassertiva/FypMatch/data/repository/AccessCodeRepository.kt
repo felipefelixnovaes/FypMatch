@@ -6,8 +6,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Calendar
 import java.util.Date
+import javax.inject.Inject
 
-class AccessCodeRepository {
+class AccessCodeRepository @Inject constructor() {
     
     // Estado dos códigos utilizados
     private val _usedCodes = MutableStateFlow<Map<String, AccessCode>>(emptyMap())

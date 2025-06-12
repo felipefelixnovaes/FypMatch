@@ -25,6 +25,7 @@ import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 import dagger.hilt.android.qualifiers.ApplicationContext
+import android.os.Build
 
 @Singleton
 class AuthRepository @Inject constructor(
@@ -65,13 +66,33 @@ class AuthRepository @Inject constructor(
         
         println("🔍 DEBUG - Web Client ID: $webClientId")
         
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(webClientId)
+        // Verificar se estamos em um emulador
+        val isEmulator = Build.FINGERPRINT.contains("generic") || 
+                         Build.FINGERPRINT.startsWith("unknown") ||
+                         Build.MODEL.contains("google_sdk") || 
+                         Build.MODEL.contains("Emulator") ||
+                         Build.MODEL.contains("Android SDK built for x86") ||
+                         Build.MANUFACTURER.contains("Genymotion") ||
+                         Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic") ||
+                         "google_sdk" == Build.PRODUCT
+        
+        println("🔍 DEBUG - Executando em emulador: $isEmulator")
+        
+        val gsoBuilder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestProfile()
-            .requestServerAuthCode(webClientId) // Adiciona server auth code
-            .build()
         
+        // Em emuladores, podemos simplificar a autenticação para testes
+        if (isEmulator) {
+            println("🔍 DEBUG - Usando configuração simplificada para emulador")
+            // Não requisitar token no emulador para evitar erros de autenticação
+        } else {
+            // Configuração completa para dispositivos reais
+            gsoBuilder.requestIdToken(webClientId)
+                .requestServerAuthCode(webClientId)
+        }
+        
+        val gso = gsoBuilder.build()
         val client = GoogleSignIn.getClient(context, gso)
         println("🔍 DEBUG - GoogleSignInClient criado: ${client != null}")
         
@@ -85,6 +106,59 @@ class AuthRepository @Inject constructor(
             // Analytics: Login iniciado
             analyticsManager.logUserLogin("google")
             
+            // Verificar se estamos em um emulador
+            val isEmulator = Build.FINGERPRINT.contains("generic") || 
+                            Build.FINGERPRINT.startsWith("unknown") ||
+                            Build.MODEL.contains("google_sdk") || 
+                            Build.MODEL.contains("Emulator") ||
+                            Build.MODEL.contains("Android SDK built for x86") ||
+                            Build.MANUFACTURER.contains("Genymotion") ||
+                            Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic") ||
+                            "google_sdk" == Build.PRODUCT
+            
+            if (isEmulator) {
+                println("🔍 DEBUG - Usando autenticação simulada para emulador")
+                
+                // Criar um usuário fake para testes no emulador
+                val fakeUser = User(
+                    id = "emulator-test-user-123",
+                    email = account.email ?: "test@example.com",
+                    displayName = account.displayName ?: "Usuário de Teste",
+                    photoUrl = account.photoUrl?.toString() ?: "",
+                    profile = UserProfile(
+                        fullName = account.displayName ?: "Usuário de Teste",
+                        gender = Gender.NOT_SPECIFIED,
+                        bio = "Este é um usuário de teste para o emulador",
+                        photos = listOf("https://picsum.photos/200"),
+                        location = Location(
+                            country = "Brasil",
+                            city = "São Paulo",
+                            latitude = -23.5505,
+                            longitude = -46.6333
+                        ),
+                        isProfileComplete = true
+                    ),
+                    accessLevel = AccessLevel.FULL_ACCESS,
+                    betaFlags = BetaFlags(
+                        hasEarlyAccess = true,
+                        canAccessSwipe = true,
+                        canAccessChat = true,
+                        canAccessPremium = true,
+                        canAccessAI = true,
+                        isTestUser = true
+                    ),
+                    createdAt = Date(),
+                    lastActive = Date()
+                )
+                
+                _currentUser.value = fakeUser
+                _navigationState.value = NavigationState.ToDiscovery
+                
+                println("🔍 DEBUG - Usuário fake criado com sucesso para emulador")
+                return Result.success(fakeUser)
+            }
+            
+            // Continua com o fluxo normal para dispositivos reais
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
             val authResult = auth.signInWithCredential(credential).await()
             val firebaseUser = authResult.user

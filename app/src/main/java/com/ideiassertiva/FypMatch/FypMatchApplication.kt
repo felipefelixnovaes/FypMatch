@@ -1,24 +1,15 @@
 package com.ideiassertiva.FypMatch
 
 import android.app.Application
-import androidx.multidex.MultiDexApplication
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.ideiassertiva.FypMatch.data.repository.AdMobRepository
 import dagger.hilt.android.HiltAndroidApp
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltAndroidApp
-class FypMatchApplication : MultiDexApplication() {
-    
-    @Inject
-    lateinit var adMobRepository: AdMobRepository
+class FypMatchApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
@@ -39,10 +30,5 @@ class FypMatchApplication : MultiDexApplication() {
             .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
             .build()
         firestore.firestoreSettings = settings
-        
-        // Inicializa AdMob em background
-        CoroutineScope(Dispatchers.IO).launch {
-            adMobRepository.initializeAdMob()
-        }
     }
 }

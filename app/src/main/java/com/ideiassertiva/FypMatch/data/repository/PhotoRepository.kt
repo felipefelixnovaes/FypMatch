@@ -1,9 +1,9 @@
 package com.ideiassertiva.FypMatch.data.repository
 
-import com.ideiassertiva.FypMatch.util.AnalyticsManager
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.ideiassertiva.FypMatch.util.AnalyticsManager
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -11,8 +11,8 @@ import javax.inject.Singleton
 class PhotoRepository @Inject constructor(
     private val analyticsManager: AnalyticsManager
 ) {
-    private val firestore = FirebaseFirestore.getInstance()
-    private val auth = FirebaseAuth.getInstance()
+    // Especificar explicitamente o banco "(default)"
+    private val firestore = FirebaseFirestore.getInstance("(default)")
     
     // Coleção para metadados de fotos no Firestore
     private val photosCollection = firestore.collection("photos")

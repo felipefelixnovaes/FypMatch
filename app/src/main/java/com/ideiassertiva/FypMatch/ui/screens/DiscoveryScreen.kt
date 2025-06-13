@@ -38,6 +38,7 @@ import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryViewModel
+import com.ideiassertiva.FypMatch.ui.viewmodel.LocationViewModel
 import com.ideiassertiva.FypMatch.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,10 +56,30 @@ fun DiscoveryScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToUserDetails: (String) -> Unit = {},
     onNavigateToChat: (String) -> Unit = {},
-    viewModel: DiscoveryViewModel = hiltViewModel()
+    viewModel: DiscoveryViewModel = hiltViewModel(),
+    locationViewModel: LocationViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentCard by viewModel.currentCard.collectAsStateWithLifecycle()
+    val locationUiState by locationViewModel.uiState.collectAsStateWithLifecycle()
+    val currentLocation by locationViewModel.currentLocation.collectAsStateWithLifecycle()
+    
+    // Inicializar localização se necessário
+    LaunchedEffect(Unit) {
+        locationViewModel.checkPermissions()
+        if (locationViewModel.uiState.value.canUseLocation) {
+            locationViewModel.startLocationService()
+        }
+    }
+    
+    // Mostrar mensagens de erro da localização
+    LaunchedEffect(locationUiState.errorMessage) {
+        locationUiState.errorMessage?.let { message ->
+            // Aqui você pode mostrar um Toast ou Snackbar
+            println("🔍 DEBUG - Mensagem de localização: $message")
+            // TODO: Implementar Toast/Snackbar
+        }
+    }
     
     // Mostrar modal de match se houve match
     if (uiState.showMatchModal && uiState.lastMatch != null) {
@@ -94,7 +115,28 @@ fun DiscoveryScreen(
             onMatchesClick = onNavigateToMatches,
             onAICounselorClick = { onNavigateToAICounselor("current_user_id") },
             onFypeClick = onNavigateToFype,
-            onProfileClick = onNavigateToProfile
+            onProfileClick = onNavigateToProfile,
+            locationUiState = locationUiState,
+            onLocationClick = {
+                locationViewModel.checkPermissions()
+                when {
+                    !locationUiState.hasLocationPermission -> {
+                        // Mostrar mensagem explicativa e orientar para configurações
+                        locationViewModel.requestLocationPermission()
+                    }
+                    !locationUiState.isLocationServiceRunning -> {
+                        // Tentar iniciar serviço se permissões estão OK
+                        locationViewModel.startLocationService()
+                    }
+                    else -> {
+                        // Localização já está funcionando - mostrar status
+                        locationViewModel.logLocationEvent("location_status_checked", mapOf(
+                            "nearby_users" to locationUiState.nearbyUsersCount.toString(),
+                            "service_running" to locationUiState.isLocationServiceRunning.toString()
+                        ))
+                    }
+                }
+            }
         )
         
         // Área dos cards
@@ -117,7 +159,8 @@ fun DiscoveryScreen(
                     SwipeCard(
                         card = currentCard!!,
                         onSwipe = { swipeType -> viewModel.performSwipe(swipeType) },
-                        onCardClick = { onNavigateToUserDetails(currentCard!!.user.id) }
+                        onCardClick = { onNavigateToUserDetails(currentCard!!.user.id) },
+                        locationViewModel = locationViewModel
                     )
                 }
                 
@@ -148,7 +191,9 @@ private fun DiscoveryTopBar(
     onMatchesClick: () -> Unit,
     onAICounselorClick: () -> Unit = {},
     onFypeClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    locationUiState: com.ideiassertiva.FypMatch.ui.viewmodel.LocationUiState = com.ideiassertiva.FypMatch.ui.viewmodel.LocationUiState(),
+    onLocationClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -238,36 +283,71 @@ private fun DiscoveryTopBar(
             }
         }
         
-        // Botão de matches
-        Box {
+        // Botões de ação (localização e matches)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Indicador de localização
             IconButton(
-                onClick = onMatchesClick,
+                onClick = onLocationClick,
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        when {
+                            locationUiState.isFullyConfigured -> Color(0xFF4CAF50).copy(alpha = 0.1f)
+                            locationUiState.canUseLocation -> Color(0xFFFF9800).copy(alpha = 0.1f)
+                            else -> Color(0xFFF44336).copy(alpha = 0.1f)
+                        },
                         CircleShape
                     )
             ) {
                 Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Matches",
-                    tint = MaterialTheme.colorScheme.primary
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = when {
+                        locationUiState.isFullyConfigured -> "Localização ativa"
+                        locationUiState.canUseLocation -> "Localização parcial"
+                        else -> "Ativar localização"
+                    },
+                    tint = when {
+                        locationUiState.isFullyConfigured -> Color(0xFF4CAF50)
+                        locationUiState.canUseLocation -> Color(0xFFFF9800)
+                        else -> Color(0xFFF44336)
+                    }
                 )
             }
             
-            // Badge de notificação (exemplo)
-            Badge(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-2).dp, y = 2.dp),
-                containerColor = Color.Red
-            ) {
-                Text(
-                    text = "3",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall
-                )
+            // Botão de matches
+            Box {
+                IconButton(
+                    onClick = onMatchesClick,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = "Matches",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                // Badge de notificação (exemplo)
+                Badge(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-2).dp, y = 2.dp),
+                    containerColor = Color.Red
+                ) {
+                    Text(
+                        text = "3",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }
@@ -278,7 +358,8 @@ private fun DiscoveryTopBar(
 private fun SwipeCard(
     card: DiscoveryCard,
     onSwipe: (SwipeType) -> Unit,
-    onCardClick: () -> Unit
+    onCardClick: () -> Unit,
+    locationViewModel: LocationViewModel
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -287,6 +368,25 @@ private fun SwipeCard(
     
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
+    
+    // Estado da distância calculada dinamicamente
+    var calculatedDistance by remember { mutableStateOf<Double?>(null) }
+    var distanceText by remember { mutableStateOf("Calculando...") }
+    var distanceEmoji by remember { mutableStateOf("📍") }
+    
+    // Calcular distância quando o card aparecer
+    LaunchedEffect(card.user.id) {
+        val distance = locationViewModel.calculateDistanceToUser(card.user.id)
+        calculatedDistance = distance
+        
+        if (distance != null) {
+            distanceText = locationViewModel.formatDistance(distance)
+            distanceEmoji = locationViewModel.getDistanceEmoji(distance)
+        } else {
+            distanceText = "Distância não disponível"
+            distanceEmoji = "📍"
+        }
+    }
     
     // Estados das animações melhoradas
     val animatedOffsetX by animateFloatAsState(
@@ -533,12 +633,61 @@ private fun SwipeCard(
                     }
                 }
                 
-                Text(
-                    text = "${card.distance}km de distância",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontWeight = FontWeight.Medium
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = distanceEmoji,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = distanceText,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    // Indicador de proximidade especial para usuários muito próximos
+                    calculatedDistance?.let { distance ->
+                        when {
+                            distance < 0.1 -> {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFFFF5722).copy(alpha = 0.9f)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        text = "MUITO PRÓXIMO!",
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                            distance < 1.0 -> {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFFE91E63).copy(alpha = 0.9f)
+                                    ),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text(
+                                        text = "PRÓXIMO",
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
                 
                 if (card.user.profile.profession.isNotBlank()) {
                     Text(

@@ -145,13 +145,13 @@ class LocationRepository @Inject constructor(
             val snapshot = locationsRef.child(userId).get().await()
             
             if (snapshot.exists()) {
-                val data = snapshot.value as? Map<String, Any>
+                val data = snapshot.value as? Map<*, *>
                 val locationData = CurrentLocationData(
-                    latitude = data?.get("latitude") as? Double ?: 0.0,
-                    longitude = data?.get("longitude") as? Double ?: 0.0,
+                    latitude = (data?.get("latitude") as? Number)?.toDouble() ?: 0.0,
+                    longitude = (data?.get("longitude") as? Number)?.toDouble() ?: 0.0,
                     accuracy = (data?.get("accuracy") as? Number)?.toFloat(),
-                    timestamp = data?.get("timestamp") as? Long ?: 0L,
-                    lastUpdated = data?.get("lastUpdated") as? Long ?: 0L
+                    timestamp = (data?.get("timestamp") as? Number)?.toLong() ?: 0L,
+                    lastUpdated = (data?.get("lastUpdated") as? Number)?.toLong() ?: 0L
                 )
                 Result.success(locationData)
             } else {
@@ -170,11 +170,11 @@ class LocationRepository @Inject constructor(
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
                     if (snapshot.exists()) {
-                        val data = snapshot.value as? Map<String, Any>
+                        val data = snapshot.value as? Map<*, *>
                         val onlineStatus = OnlineStatus(
                             online = data?.get("online") as? Boolean ?: false,
-                            lastActivity = data?.get("lastActivity") as? Long ?: 0L,
-                            timestamp = data?.get("timestamp") as? Long ?: 0L
+                            lastActivity = (data?.get("lastActivity") as? Number)?.toLong() ?: 0L,
+                            timestamp = (data?.get("timestamp") as? Number)?.toLong() ?: 0L
                         )
                         trySend(onlineStatus)
                     } else {
@@ -203,13 +203,13 @@ class LocationRepository @Inject constructor(
             override fun onDataChange(snapshot: DataSnapshot) {
                 try {
                     if (snapshot.exists()) {
-                        val data = snapshot.value as? Map<String, Any>
+                        val data = snapshot.value as? Map<*, *>
                         val locationData = CurrentLocationData(
-                            latitude = data?.get("latitude") as? Double ?: 0.0,
-                            longitude = data?.get("longitude") as? Double ?: 0.0,
+                            latitude = (data?.get("latitude") as? Number)?.toDouble() ?: 0.0,
+                            longitude = (data?.get("longitude") as? Number)?.toDouble() ?: 0.0,
                             accuracy = (data?.get("accuracy") as? Number)?.toFloat(),
-                            timestamp = data?.get("timestamp") as? Long ?: 0L,
-                            lastUpdated = data?.get("lastUpdated") as? Long ?: 0L
+                            timestamp = (data?.get("timestamp") as? Number)?.toLong() ?: 0L,
+                            lastUpdated = (data?.get("lastUpdated") as? Number)?.toLong() ?: 0L
                         )
                         trySend(locationData)
                     } else {
@@ -249,10 +249,10 @@ class LocationRepository @Inject constructor(
                 val userId = userSnapshot.key ?: return@forEach
                 if (userId == excludeUserId) return@forEach
                 
-                val data = userSnapshot.value as? Map<String, Any>
-                val latitude = data?.get("latitude") as? Double ?: return@forEach
-                val longitude = data?.get("longitude") as? Double ?: return@forEach
-                val timestamp = data?.get("timestamp") as? Long ?: 0L
+                val data = userSnapshot.value as? Map<*, *>
+                val latitude = (data?.get("latitude") as? Number)?.toDouble() ?: return@forEach
+                val longitude = (data?.get("longitude") as? Number)?.toDouble() ?: return@forEach
+                val timestamp = (data?.get("timestamp") as? Number)?.toLong() ?: 0L
                 
                 // Calcular distância
                 val distance = calculateDistance(currentLatitude, currentLongitude, latitude, longitude)
@@ -288,9 +288,58 @@ class LocationRepository @Inject constructor(
         }
     }
     
+    // === CÁLCULO DE DISTÂNCIA ===
+    
+    suspend fun calculateDistanceBetweenUsers(userId1: String, userId2: String): Result<Double?> {
+        return try {
+            val location1Result = getCurrentLocation(userId1)
+            val location2Result = getCurrentLocation(userId2)
+            
+            val location1 = location1Result.getOrNull()
+            val location2 = location2Result.getOrNull()
+            
+            if (location1 != null && location2 != null) {
+                val distance = calculateDistance(
+                    location1.latitude, location1.longitude,
+                    location2.latitude, location2.longitude
+                )
+                Result.success(distance)
+            } else {
+                Result.success(null) // Uma ou ambas localizações não disponíveis
+            }
+        } catch (e: Exception) {
+            analyticsManager.logError(e, "calculate_distance_between_users_error")
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun getUserDistanceFromPoint(
+        userId: String,
+        targetLatitude: Double,
+        targetLongitude: Double
+    ): Result<Double?> {
+        return try {
+            val locationResult = getCurrentLocation(userId)
+            val userLocation = locationResult.getOrNull()
+            
+            if (userLocation != null) {
+                val distance = calculateDistance(
+                    userLocation.latitude, userLocation.longitude,
+                    targetLatitude, targetLongitude
+                )
+                Result.success(distance)
+            } else {
+                Result.success(null) // Localização do usuário não disponível
+            }
+        } catch (e: Exception) {
+            analyticsManager.logError(e, "get_user_distance_from_point_error")
+            Result.failure(e)
+        }
+    }
+    
     // === UTILIDADES ===
     
-    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val earthRadius = 6371.0 // Raio da Terra em km
         
         val dLat = Math.toRadians(lat2 - lat1)
@@ -303,6 +352,15 @@ class LocationRepository @Inject constructor(
         val c = 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
         
         return earthRadius * c
+    }
+    
+    fun formatDistance(distanceKm: Double): String {
+        return when {
+            distanceKm < 0.1 -> "Muito próximo"
+            distanceKm < 1.0 -> "${(distanceKm * 1000).toInt()}m"
+            distanceKm < 10.0 -> String.format("%.1fkm", distanceKm)
+            else -> "${distanceKm.toInt()}km"
+        }
     }
     
     suspend fun clearUserLocationData(userId: String): Result<Unit> {
@@ -321,6 +379,8 @@ class LocationRepository @Inject constructor(
             Result.failure(e)
         }
     }
+    
+
 }
 
 // === MODELOS DE DADOS ===

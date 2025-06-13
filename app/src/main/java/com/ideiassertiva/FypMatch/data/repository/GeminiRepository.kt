@@ -3,8 +3,8 @@ package com.ideiassertiva.FypMatch.data.repository
 import android.util.Log
 import com.ideiassertiva.FypMatch.BuildConfig
 import com.ideiassertiva.FypMatch.util.AnalyticsManager
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
+import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.delay
@@ -23,9 +23,18 @@ class GeminiRepository @Inject constructor(
         private const val GEMINI_API_KEY = "AIzaSyAsUX8dj3_OKuHWQlEsBEGa0d3mWFqat2E"
     }
     
-    // Inicializa Firebase AI Logic com Gemini Developer API
+    // Inicializa Gemini com a nova API
     private val model = try {
-        Firebase.ai.generativeModel("gemini-2.0-flash")
+        GenerativeModel(
+            modelName = "gemini-1.5-flash",
+            apiKey = GEMINI_API_KEY,
+            generationConfig = generationConfig {
+                temperature = 0.7f
+                topK = 40
+                topP = 0.95f
+                maxOutputTokens = 1024
+            }
+        )
     } catch (e: Exception) {
         Log.e(TAG, "Erro ao inicializar Gemini model", e)
         analyticsManager.logError(e, "gemini_init_error")

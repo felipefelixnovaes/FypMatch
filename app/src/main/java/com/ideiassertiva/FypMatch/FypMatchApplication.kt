@@ -2,8 +2,7 @@ package com.ideiassertiva.FypMatch
 
 import android.app.Application
 import com.google.firebase.FirebaseApp
-import com.google.firebase.appcheck.FirebaseAppCheck
-import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import dagger.hilt.android.HiltAndroidApp
@@ -17,18 +16,18 @@ class FypMatchApplication : Application() {
         // Inicializar Firebase
         FirebaseApp.initializeApp(this)
         
-        // CONFIGURAR FIREBASE APP CHECK PARA DEBUG
-        val firebaseAppCheck = FirebaseAppCheck.getInstance()
-        firebaseAppCheck.installAppCheckProviderFactory(
-            DebugAppCheckProviderFactory.getInstance()
-        )
+        // Configurar Analytics
+        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(true)
         
-        // Configurar Firestore
-        val firestore = FirebaseFirestore.getInstance()
-        val settings = FirebaseFirestoreSettings.Builder()
-            .setPersistenceEnabled(true)
-            .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+        // Configurar Firestore com configurações otimizadas
+        // Especificar explicitamente o banco "(default)"
+        val firestore = FirebaseFirestore.getInstance("(default)")
+        val firestoreSettings = FirebaseFirestoreSettings.Builder()
             .build()
-        firestore.firestoreSettings = settings
+        
+        firestore.firestoreSettings = firestoreSettings
+        
+        // Log de inicialização
+        println("🚀 FypMatch Application iniciado com Firebase configurado")
     }
 }

@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -205,7 +208,7 @@ fun ChatHeader(
         navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(
-                    Icons.Filled.ArrowBack, 
+                    Icons.AutoMirrored.Filled.ArrowBack, 
                     contentDescription = "Voltar",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
@@ -709,8 +712,8 @@ fun ChatInput(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 24.dp) // Padding maior para evitar sobreposição
-                    .padding(bottom = 32.dp), // Padding extra ainda maior
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                    .padding(bottom = 32.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
                 IconButton(onClick = { showAttachments = !showAttachments }) {
@@ -731,7 +734,6 @@ fun ChatInput(
                 
                 Spacer(modifier = Modifier.width(8.dp))
                 
-                // Botão de IA
                 IconButton(
                     onClick = onAISuggestionsClick,
                     modifier = Modifier
@@ -750,19 +752,26 @@ fun ChatInput(
                 Spacer(modifier = Modifier.width(8.dp))
                 
                 FloatingActionButton(
-                    onClick = onSendMessage,
+                    onClick = {
+                        if (currentMessage.isNotBlank()) {
+                            onSendMessage()
+                            onMessageChange("")
+                        }
+                    },
                     modifier = Modifier.size(48.dp),
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
                     Icon(
-                        Icons.Filled.Send, 
+                        Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Enviar", 
-                        tint = Color.White
+                        tint = if (currentMessage.isNotBlank()) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
             
-            // Spacer final para garantir espaço extra
             Spacer(modifier = Modifier.height(16.dp))
         }
     }

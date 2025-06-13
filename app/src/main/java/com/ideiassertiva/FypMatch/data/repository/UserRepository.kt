@@ -21,7 +21,7 @@ import javax.inject.Singleton
 class UserRepository @Inject constructor(
     private val analyticsManager: AnalyticsManager
 ) {
-    private val firestore = FirebaseFirestore.getInstance()
+    private val firestore = FirebaseFirestore.getInstance("(default)")
     private val auth = FirebaseAuth.getInstance()
     
     // Coleções no Firestore
@@ -270,6 +270,87 @@ class UserRepository @Inject constructor(
             Result.success(filteredUsers)
         } catch (e: Exception) {
             analyticsManager.logError(e, "users_search_error")
+            Result.failure(e)
+        }
+    }
+    
+    // === 🔍 BUSCA POR DUPLICATAS ===
+    
+    suspend fun findUserByEmailPattern(emailPattern: String): Result<User?> {
+        return try {
+            // Buscar usuários cujo ID contém o padrão do email
+            val query = usersCollection
+                .orderBy("id")
+                .startAt(emailPattern)
+                .endAt(emailPattern + "\uf8ff")
+                .limit(1)
+            
+            val snapshot = query.get().await()
+            val user = snapshot.documents.firstOrNull()?.toObject(User::class.java)
+            
+            println("🔍 DEBUG - Busca por email pattern '$emailPattern': ${if (user != null) "encontrado" else "não encontrado"}")
+            Result.success(user)
+        } catch (e: Exception) {
+            println("🔍 DEBUG - Erro na busca por email pattern: ${e.message}")
+            analyticsManager.logError(e, "email_pattern_search_error")
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun findUserByPhonePattern(phonePattern: String): Result<User?> {
+        return try {
+            // Buscar usuários cujo ID contém o padrão do telefone
+            val query = usersCollection
+                .orderBy("id")
+                .startAt(phonePattern)
+                .endAt(phonePattern + "\uf8ff")
+                .limit(1)
+            
+            val snapshot = query.get().await()
+            val user = snapshot.documents.firstOrNull()?.toObject(User::class.java)
+            
+            println("🔍 DEBUG - Busca por phone pattern '$phonePattern': ${if (user != null) "encontrado" else "não encontrado"}")
+            Result.success(user)
+        } catch (e: Exception) {
+            println("🔍 DEBUG - Erro na busca por phone pattern: ${e.message}")
+            analyticsManager.logError(e, "phone_pattern_search_error")
+            Result.failure(e)
+        }
+    }
+    
+    suspend fun findUserByEmailOrPhone(email: String?, phoneNumber: String?): Result<User?> {
+        return try {
+            // Buscar por email se fornecido
+            if (!email.isNullOrBlank()) {
+                val emailQuery = usersCollection
+                    .whereEqualTo("email", email.lowercase())
+                    .limit(1)
+                
+                val emailSnapshot = emailQuery.get().await()
+                emailSnapshot.documents.firstOrNull()?.toObject(User::class.java)?.let { user ->
+                    println("🔍 DEBUG - Usuário encontrado por email: ${user.id}")
+                    return Result.success(user)
+                }
+            }
+            
+            // Buscar por telefone se fornecido
+            if (!phoneNumber.isNullOrBlank()) {
+                val phoneQuery = usersCollection
+                    .whereEqualTo("phoneNumber", phoneNumber)
+                    .limit(1)
+                
+                val phoneSnapshot = phoneQuery.get().await()
+                phoneSnapshot.documents.firstOrNull()?.toObject(User::class.java)?.let { user ->
+                    println("🔍 DEBUG - Usuário encontrado por telefone: ${user.id}")
+                    return Result.success(user)
+                }
+            }
+            
+            // Nenhum usuário encontrado
+            Result.success(null)
+        } catch (e: Exception) {
+            println("🔍 DEBUG - Erro na busca por email/telefone: ${e.message}")
+            analyticsManager.logError(e, "email_phone_search_error")
             Result.failure(e)
         }
     }

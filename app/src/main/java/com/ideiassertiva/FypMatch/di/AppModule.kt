@@ -3,6 +3,7 @@ package com.ideiassertiva.FypMatch.di
 import android.content.Context
 import com.ideiassertiva.FypMatch.data.repository.*
 import com.ideiassertiva.FypMatch.util.AnalyticsManager
+import com.ideiassertiva.FypMatch.util.LocationManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,6 +25,15 @@ object AppModule {
     @Singleton
     fun provideAnalyticsManager(@ApplicationContext context: Context): AnalyticsManager {
         return AnalyticsManager(context)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideLocationManager(
+        @ApplicationContext context: Context,
+        analyticsManager: AnalyticsManager
+    ): LocationManager {
+        return LocationManager(context, analyticsManager)
     }
     
     // === ARQUITETURA OTIMIZADA PLANO SPARK ===
@@ -52,9 +62,10 @@ object AppModule {
         @ApplicationContext context: Context,
         analyticsManager: AnalyticsManager,
         userRepository: UserRepository,
-        locationRepository: LocationRepository
+        locationRepository: LocationRepository,
+        accessControlRepository: AccessControlRepository
     ): AuthRepository {
-        return AuthRepository(context, analyticsManager, userRepository, locationRepository)
+        return AuthRepository(context, analyticsManager, userRepository, locationRepository, accessControlRepository)
     }
     
     @Provides

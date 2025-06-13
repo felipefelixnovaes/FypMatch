@@ -25,32 +25,46 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
-import com.ideiassertiva.FypMatch.data.TestUsers
+import com.ideiassertiva.FypMatch.ui.viewmodel.ProfileViewModel
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileEditScreen(
     onNavigateBack: () -> Unit,
     onSave: (User) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
-    // TODO: Carregar dados do usuário atual - por enquanto usando dados mockados
-    var user by remember {
-        mutableStateOf(
-            TestUsers.allUsers.first().copy(
-                profile = TestUsers.allUsers.first().profile.copy(
-                    aboutMe = TestUsers.allUsers.first().profile.aboutMe.ifBlank { 
-                        "Conte um pouco sobre você..." 
-                    }
-                )
-            )
-        )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDeletePhotoDialog by remember { mutableStateOf<Int?>(null) }
+    
+    // Observar mudanças no estado
+    LaunchedEffect(uiState.saveSuccess) {
+        if (uiState.saveSuccess) {
+            onSave(uiState.user!!)
+            viewModel.clearSaveSuccess()
+        }
     }
     
-    var showDeletePhotoDialog by remember { mutableStateOf<Int?>(null) }
+    // Mostrar erro se houver
+    uiState.error?.let { error ->
+        LaunchedEffect(error) {
+            // Aqui você pode mostrar um Snackbar ou Toast
+            // Por enquanto, apenas limpar o erro após um tempo
+            kotlinx.coroutines.delay(3000)
+            viewModel.clearError()
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -66,14 +80,74 @@ fun ProfileEditScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { onSave(user) }
+                        onClick = { 
+                            uiState.user?.let { user ->
+                                viewModel.saveProfile(user)
+                            }
+                        },
+                        enabled = !uiState.isSaving && uiState.user != null
                     ) {
+                        if (uiState.isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
                         Text("Salvar")
+                        }
                     }
                 }
             )
         }
     ) { paddingValues ->
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text("Carregando perfil...")
+                    }
+                }
+            }
+            
+            uiState.user == null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = uiState.error ?: "Perfil não encontrado",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Button(onClick = { viewModel.loadCurrentUser() }) {
+                            Text("Tentar novamente")
+                        }
+                    }
+                }
+            }
+            
+            else -> {
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -82,15 +156,26 @@ fun ProfileEditScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+                    // Mostrar erro se houver
+                    uiState.error?.let { error ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Text(
+                                text = error,
+                                modifier = Modifier.padding(16.dp),
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                    
             // Seção de fotos
             PhotoSection(
-                photos = user.profile.photos,
+                        photos = uiState.user!!.profile.photos,
                 onAddPhoto = { url ->
-                    user = user.copy(
-                        profile = user.profile.copy(
-                            photos = user.profile.photos + url
-                        )
-                    )
+                            viewModel.addPhoto(url)
                 },
                 onDeletePhoto = { index ->
                     showDeletePhotoDialog = index
@@ -99,49 +184,60 @@ fun ProfileEditScreen(
             
             // Informações básicas
             BasicInfoSection(
-                user = user,
-                onUserUpdate = { updatedUser -> user = updatedUser }
+                        user = uiState.user!!,
+                        onUserUpdate = { updatedUser -> 
+                            viewModel.updateUser(updatedUser)
+                        }
             )
             
             // Sobre mim
             AboutMeSection(
-                aboutMe = user.profile.aboutMe,
-                bio = user.profile.bio,
+                        aboutMe = uiState.user!!.profile.aboutMe,
+                        bio = uiState.user!!.profile.bio,
                 onAboutMeChange = { newAboutMe ->
-                    user = user.copy(
-                        profile = user.profile.copy(aboutMe = newAboutMe)
+                            val updatedUser = uiState.user!!.copy(
+                                profile = uiState.user!!.profile.copy(aboutMe = newAboutMe)
                     )
+                            viewModel.updateUser(updatedUser)
                 },
                 onBioChange = { newBio ->
-                    user = user.copy(
-                        profile = user.profile.copy(bio = newBio)
+                            val updatedUser = uiState.user!!.copy(
+                                profile = uiState.user!!.profile.copy(bio = newBio)
                     )
+                            viewModel.updateUser(updatedUser)
                 }
             )
             
             // Interesses
             InterestsSection(
-                interests = user.profile.interests,
+                        interests = uiState.user!!.profile.interests,
                 onInterestsChange = { newInterests ->
-                    user = user.copy(
-                        profile = user.profile.copy(interests = newInterests)
+                            val updatedUser = uiState.user!!.copy(
+                                profile = uiState.user!!.profile.copy(interests = newInterests)
                     )
+                            viewModel.updateUser(updatedUser)
                 }
             )
             
             // Informações pessoais
             PersonalInfoEditSection(
-                user = user,
-                onUserUpdate = { updatedUser -> user = updatedUser }
+                        user = uiState.user!!,
+                        onUserUpdate = { updatedUser -> 
+                            viewModel.updateUser(updatedUser)
+                        }
             )
             
             // Preferências culturais
             CulturalPreferencesEditSection(
-                user = user,
-                onUserUpdate = { updatedUser -> user = updatedUser }
+                        user = uiState.user!!,
+                        onUserUpdate = { updatedUser -> 
+                            viewModel.updateUser(updatedUser)
+                        }
             )
             
             Spacer(modifier = Modifier.height(32.dp))
+                }
+            }
         }
     }
     
@@ -155,13 +251,7 @@ fun ProfileEditScreen(
                 TextButton(
                     onClick = {
                         val index = showDeletePhotoDialog!!
-                        user = user.copy(
-                            profile = user.profile.copy(
-                                photos = user.profile.photos.toMutableList().apply {
-                                    removeAt(index)
-                                }
-                            )
-                        )
+                        viewModel.removePhoto(index)
                         showDeletePhotoDialog = null
                     }
                 ) {
@@ -699,7 +789,7 @@ private fun DropdownMenuField(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
         )
         
         ExposedDropdownMenu(

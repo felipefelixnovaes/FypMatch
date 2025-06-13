@@ -25,6 +25,11 @@ import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.WaitlistScreen
 import com.ideiassertiva.FypMatch.ui.viewmodel.WaitlistViewModel
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,7 +141,7 @@ private fun WaitlistFormScreen(
                 Text("🚀 Acesso antecipado garantido")
                 Text("🎁 Benefícios exclusivos por indicações")
                 Text("💕 Primeira experiência com IA inclusiva")
-                Text("🏆 Status de Early Adopter")
+                Text("�� Status de Early Adopter")
             }
         }
         
@@ -216,7 +221,7 @@ private fun WaitlistFormScreen(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showGenderDropdown) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             
             ExposedDropdownMenu(
@@ -246,11 +251,11 @@ private fun WaitlistFormScreen(
                 value = selectedOrientation.getDisplayName(),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Orientação Sexual") },
+                label = { Text("Orientação") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showOrientationDropdown) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             
             ExposedDropdownMenu(
@@ -284,7 +289,7 @@ private fun WaitlistFormScreen(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showIntentionDropdown) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             
             ExposedDropdownMenu(

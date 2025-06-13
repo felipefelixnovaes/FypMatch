@@ -11,6 +11,7 @@ sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Waitlist : Screen("waitlist") 
     object Login : Screen("login")
+    object PhotoUpload : Screen("photo_upload")
     object Discovery : Screen("discovery")
     object Profile : Screen("profile")
     object Matches : Screen("matches")
@@ -58,6 +59,11 @@ fun FypMatchNavigation(
         
         composable(Screen.Login.route) {
             LoginScreen(
+                onNavigateToPhotoUpload = {
+                    navController.navigate(Screen.PhotoUpload.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
                 onNavigateToProfile = {
                     navController.navigate(Screen.Profile.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
@@ -66,6 +72,16 @@ fun FypMatchNavigation(
                 onNavigateToDiscovery = {
                     navController.navigate(Screen.Discovery.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        composable(Screen.PhotoUpload.route) {
+            PhotoUploadScreen(
+                onNavigateToDiscovery = {
+                    navController.navigate(Screen.Discovery.route) {
+                        popUpTo(Screen.PhotoUpload.route) { inclusive = true }
                     }
                 }
             )
@@ -99,6 +115,11 @@ fun FypMatchNavigation(
         
         composable(Screen.Profile.route) {
             ProfileScreen(
+                onNavigateToPhotoUpload = {
+                    navController.navigate(Screen.PhotoUpload.route) {
+                        popUpTo(Screen.Profile.route) { inclusive = true }
+                    }
+                },
                 onNavigateToDiscovery = {
                     navController.navigate(Screen.Discovery.route) {
                         popUpTo(Screen.Profile.route) { inclusive = true }

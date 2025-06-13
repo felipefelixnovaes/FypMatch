@@ -17,15 +17,28 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
+import com.ideiassertiva.FypMatch.ui.viewmodel.ProfileViewModel
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    onNavigateToPhotoUpload: () -> Unit,
     onNavigateToDiscovery: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // Estados locais para edição
     var fullName by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
@@ -37,6 +50,49 @@ fun ProfileScreen(
     var showOrientationDropdown by remember { mutableStateOf(false) }
     var showIntentionDropdown by remember { mutableStateOf(false) }
     
+    // Carregar dados do usuário quando disponível
+    LaunchedEffect(uiState.user) {
+        uiState.user?.let { user ->
+            fullName = user.profile.fullName
+            age = if (user.profile.age > 0) user.profile.age.toString() else ""
+            bio = user.profile.bio
+            city = user.profile.location.city
+            selectedGender = user.profile.gender
+            selectedOrientation = user.profile.orientation
+            selectedIntention = user.profile.intention
+        }
+    }
+    
+    // Observar sucesso no salvamento
+    LaunchedEffect(uiState.saveSuccess) {
+        if (uiState.saveSuccess) {
+            val user = uiState.user
+            if (user != null && user.profile.photos.isEmpty()) {
+                onNavigateToPhotoUpload()
+            } else {
+                onNavigateToDiscovery()
+            }
+            viewModel.clearSaveSuccess()
+        }
+    }
+    
+    when {
+        uiState.isLoading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    CircularProgressIndicator()
+                    Text("Carregando perfil...")
+                }
+            }
+        }
+        
+        else -> {
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -56,7 +112,11 @@ fun ProfileScreen(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "Vamos criar seu perfil no FypMatch!",
+                    text = if (uiState.user?.profile?.fullName?.isNotBlank() == true) {
+                        "Finalize seu perfil no FypMatch!"
+                    } else {
+                        "Vamos criar seu perfil no FypMatch!"
+                    },
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -64,6 +124,24 @@ fun ProfileScreen(
         )
         
         Spacer(modifier = Modifier.height(32.dp))
+                
+                // Mostrar erro se houver
+                uiState.error?.let { error ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = error,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
         
         // Nome completo
         OutlinedTextField(
@@ -115,7 +193,7 @@ fun ProfileScreen(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showGenderDropdown) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             
             ExposedDropdownMenu(
@@ -145,11 +223,11 @@ fun ProfileScreen(
                 value = selectedOrientation.getDisplayName(),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Orientação Sexual") },
+                        label = { Text("Orientação") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showOrientationDropdown) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             
             ExposedDropdownMenu(
@@ -183,7 +261,7 @@ fun ProfileScreen(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showIntentionDropdown) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
             )
             
             ExposedDropdownMenu(
@@ -224,13 +302,28 @@ fun ProfileScreen(
         // Botão de continuar
         Button(
             onClick = {
-                // TODO: Salvar perfil
-                onNavigateToDiscovery()
+                        val currentUser = uiState.user
+                        if (currentUser != null) {
+                            val updatedUser = currentUser.copy(
+                                profile = currentUser.profile.copy(
+                                    fullName = fullName,
+                                    age = age.toIntOrNull() ?: 18,
+                                    bio = bio,
+                                    location = currentUser.profile.location.copy(city = city),
+                                    gender = selectedGender,
+                                    orientation = selectedOrientation,
+                                    intention = selectedIntention,
+                                    isProfileComplete = true
+                                )
+                            )
+                            viewModel.saveProfile(updatedUser)
+                        }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            enabled = fullName.isNotBlank() && 
+                    enabled = !uiState.isSaving && 
+                             fullName.isNotBlank() && 
                      age.isNotBlank() && 
                      city.isNotBlank() && 
                      selectedGender != Gender.NOT_SPECIFIED &&
@@ -238,10 +331,18 @@ fun ProfileScreen(
                      selectedIntention != Intention.NOT_SPECIFIED &&
                      bio.isNotBlank()
         ) {
+                    if (uiState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    } else {
             Text(
-                text = "🚀 Começar a Usar o FypMatch",
+                            text = "📝 Continuar para Foto",
                 style = MaterialTheme.typography.titleMedium
             )
+                    }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -253,11 +354,13 @@ fun ProfileScreen(
             )
         ) {
             Text(
-                text = "📸 Você poderá adicionar fotos na próxima versão!",
+                        text = "📸 Próximo passo: Adicionar sua foto de perfil!",
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
+                }
+            }
         }
     }
 }
@@ -267,6 +370,7 @@ fun ProfileScreen(
 fun ProfileScreenPreview() {
     FypMatchTheme {
         ProfileScreen(
+            onNavigateToPhotoUpload = {},
             onNavigateToDiscovery = {}
         )
     }

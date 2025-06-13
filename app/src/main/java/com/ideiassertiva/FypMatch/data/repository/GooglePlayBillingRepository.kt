@@ -60,7 +60,6 @@ class GooglePlayBillingRepository @Inject constructor(
     private fun initializeBilling() {
         billingClient = BillingClient.newBuilder(context)
             .setListener(this)
-            .enablePendingPurchases()
             .build()
         
         connectToBilling()

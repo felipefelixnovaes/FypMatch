@@ -112,12 +112,11 @@ class LoginViewModel @Inject constructor(
         }
     }
     
-    // Método para obter o Intent de login interativo
+    // Métodos de fallback para quando Credential Manager falha
     fun getGoogleSignInIntent(): Intent {
         return authRepository.getGoogleSignInIntent()
     }
     
-    // Método para processar resultado do Intent
     fun handleGoogleSignInResult(data: Intent?) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
@@ -129,7 +128,7 @@ class LoginViewModel @Inject constructor(
             
             result.fold(
                 onSuccess = { user ->
-                    println("🔍 DEBUG - Login interativo bem-sucedido: ${user.email}")
+                    println("🔍 DEBUG - Login fallback bem-sucedido: ${user.email}")
                     
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -138,14 +137,14 @@ class LoginViewModel @Inject constructor(
                     )
                     
                     // Analytics
-                    analyticsManager.logCustomCrash("google_signin_interactive_success", mapOf(
+                    analyticsManager.logCustomCrash("google_signin_fallback_success", mapOf(
                         "user_id" to user.id
                     ))
                 },
                 onFailure = { error ->
-                    val errorMessage = error.message ?: "Erro no login interativo"
+                    val errorMessage = error.message ?: "Erro no login fallback"
                     
-                    println("🔍 DEBUG - Erro no login interativo: $errorMessage")
+                    println("🔍 DEBUG - Erro no login fallback: $errorMessage")
                     
                     if (errorMessage.contains("cancelado", ignoreCase = true)) {
                         _uiState.value = _uiState.value.copy(
@@ -159,7 +158,7 @@ class LoginViewModel @Inject constructor(
                         )
                     }
                     
-                    analyticsManager.logError(error, "google_signin_interactive_failure")
+                    analyticsManager.logError(error, "google_signin_fallback_failure")
                 }
             )
         }

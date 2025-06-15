@@ -84,8 +84,8 @@ object AppModule {
     
     @Provides
     @Singleton
-    fun provideAICounselorRepository(): AICounselorRepository {
-        return AICounselorRepository()
+    fun provideAICounselorRepository(geminiRepository: GeminiRepository): AICounselorRepository {
+        return AICounselorRepository(geminiRepository)
     }
     
     @Provides

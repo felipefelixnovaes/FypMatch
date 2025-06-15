@@ -70,39 +70,57 @@ class ProfileViewModel @Inject constructor(
         }
     }
     
-    private suspend fun loadUserFromFirestore(userId: String) {
+    private suspend fun loadUserFromFirestore(firebaseUserId: String) {
         try {
-            println("🔍 DEBUG - ProfileViewModel: Buscando usuário no Firestore com ID: $userId")
-            val result = userRepository.getUserFromFirestore(userId)
-            result.fold(
+            println("🔍 DEBUG - ProfileViewModel: Buscando usuário no Firestore com Firebase ID: $firebaseUserId")
+            
+            // ESTRATÉGIA 1: Tentar buscar diretamente pelo Firebase UID
+            val directResult = userRepository.getUserFromFirestore(firebaseUserId)
+            directResult.fold(
                 onSuccess = { user ->
                     if (user != null) {
-                        println("🔍 DEBUG - ProfileViewModel: ✅ Usuário encontrado no Firestore: ${user.id}")
-                        println("🔍 DEBUG - ProfileViewModel: Nome: ${user.profile.fullName}, Email: ${user.email}")
+                        println("🔍 DEBUG - ProfileViewModel: ✅ Usuário encontrado diretamente: ${user.id}")
                         _uiState.value = _uiState.value.copy(
                             user = user,
                             isLoading = false,
                             error = null
                         )
-                        
-                        // Atualizar também o AuthRepository
                         authRepository.updateCurrentUser(user)
-                    } else {
-                        println("🔍 DEBUG - ProfileViewModel: ❌ Usuário não encontrado no Firestore")
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = "Perfil não encontrado - complete seu cadastro"
-                        )
+                        return
                     }
                 },
-                onFailure = { error ->
-                    println("🔍 DEBUG - ProfileViewModel: ❌ Erro ao buscar no Firestore: ${error.message}")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "Erro ao buscar perfil: ${error.message}"
-                    )
-                }
+                onFailure = { /* Continuar para próxima estratégia */ }
             )
+            
+            // ESTRATÉGIA 2: Buscar pelo email do Firebase User
+            val firebaseUser = authRepository.getCurrentFirebaseUser()
+            if (firebaseUser != null && !firebaseUser.email.isNullOrBlank()) {
+                println("🔍 DEBUG - ProfileViewModel: Tentando buscar por email: ${firebaseUser.email}")
+                val emailResult = userRepository.findUserByEmailOrPhone(firebaseUser.email!!, null)
+                emailResult.fold(
+                    onSuccess = { user ->
+                        if (user != null) {
+                            println("🔍 DEBUG - ProfileViewModel: ✅ Usuário encontrado por email: ${user.id}")
+                            _uiState.value = _uiState.value.copy(
+                                user = user,
+                                isLoading = false,
+                                error = null
+                            )
+                            authRepository.updateCurrentUser(user)
+                            return
+                        }
+                    },
+                    onFailure = { /* Continuar para próxima estratégia */ }
+                )
+            }
+            
+            // ESTRATÉGIA 3: Se nenhuma funcionou, usuário não encontrado
+            println("🔍 DEBUG - ProfileViewModel: ❌ Usuário não encontrado em nenhuma estratégia")
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                error = "Perfil não encontrado - faça login novamente"
+            )
+            
         } catch (e: Exception) {
             println("🔍 DEBUG - ProfileViewModel: ❌ Exceção ao buscar usuário: ${e.message}")
             _uiState.value = _uiState.value.copy(

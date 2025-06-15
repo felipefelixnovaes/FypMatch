@@ -4,11 +4,17 @@ import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.delay
 import java.util.Date
 import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AICounselorRepository {
+@Singleton
+class AICounselorRepository @Inject constructor(
+    private val geminiRepository: GeminiRepository
+) {
     
     private val adsRepository = AdsRepository()
     
@@ -195,30 +201,115 @@ class AICounselorRepository {
         )
     }
     
-    private fun generateAIResponse(message: String, session: CounselorSession): CounselorMessage {
+    private suspend fun generateAIResponse(message: String, session: CounselorSession): CounselorMessage {
         val needsHelp = message.lowercase().contains("suicida") || 
-                       message.lowercase().contains("depressão severa")
+                       message.lowercase().contains("depressão severa") ||
+                       message.lowercase().contains("me matar") ||
+                       message.lowercase().contains("não aguento mais")
         
-        val response = when {
-            needsHelp -> {
-                "Agradeço por compartilhar isso. Recomendo buscar ajuda de um profissional " +
-                "qualificado como psicólogo ou psiquiatra. Você merece o melhor cuidado. 💙"
-            }
-            message.lowercase().contains("ansioso") -> {
-                "Ansiedade em relacionamentos é normal. Vamos trabalhar algumas técnicas " +
-                "de respiração e preparação mental para encontros."
-            }
-            else -> {
-                "Entendo sua situação. Relacionamentos são complexos. " +
-                "Vamos focar no que você pode controlar - suas ações e reações."
-            }
+        // Se detectar sinais de risco, resposta imediata de segurança
+        if (needsHelp) {
+            return CounselorMessage(
+                content = "Agradeço por compartilhar isso comigo. É muito importante que você busque ajuda de um profissional qualificado como psicólogo ou psiquiatra. Você merece o melhor cuidado e apoio. 💙\n\nCVV: 188 (24h gratuito)\nCaps: Centros de Atenção Psicossocial",
+                sender = MessageSender.AI_COUNSELOR,
+                containsWarning = true
+            )
         }
         
-        return CounselorMessage(
-            content = response,
-            sender = MessageSender.AI_COUNSELOR,
-            containsWarning = needsHelp
-        )
+        return try {
+            // Criar contexto da sessão para a IA
+            val sessionContext = buildSessionContext(session, message)
+            
+            // Chamar API real do Gemini
+            val aiResponse = geminiRepository.sendMessage(sessionContext).first()
+            
+            CounselorMessage(
+                content = aiResponse,
+                sender = MessageSender.AI_COUNSELOR,
+                containsWarning = false
+            )
+            
+        } catch (e: Exception) {
+            // Fallback em caso de erro na API
+            val fallbackResponse = generateFallbackResponse(message)
+            
+            CounselorMessage(
+                content = fallbackResponse,
+                sender = MessageSender.AI_COUNSELOR,
+                containsWarning = false
+            )
+        }
+    }
+    
+    private fun buildSessionContext(session: CounselorSession, currentMessage: String): String {
+        val sessionTypeContext = when (session.sessionType) {
+            SessionType.DATING_ANXIETY -> "O usuário está buscando ajuda com ansiedade em encontros."
+            SessionType.COMMUNICATION -> "O usuário quer melhorar suas habilidades de comunicação."
+            SessionType.SELF_ESTEEM -> "O usuário está trabalhando autoestima e confiança."
+            SessionType.RELATIONSHIP_GOALS -> "O usuário está definindo objetivos de relacionamento."
+            else -> "Conversa geral sobre relacionamentos e encontros."
+        }
+        
+        val moodContext = session.mood?.let { mood ->
+            when (mood) {
+                UserMood.ANXIOUS -> "O usuário está se sentindo ansioso."
+                UserMood.CONFUSED -> "O usuário está confuso sobre sua situação."
+                UserMood.LONELY -> "O usuário está se sentindo sozinho."
+                UserMood.FRUSTRATED -> "O usuário está frustrado."
+                UserMood.HOPEFUL -> "O usuário está esperançoso."
+                else -> ""
+            }
+        } ?: ""
+        
+        val recentMessages = session.messages.takeLast(3).joinToString("\n") { msg ->
+            "${if (msg.sender == MessageSender.USER) "Usuário" else "Conselheiro"}: ${msg.content}"
+        }
+        
+        return """
+            Você é um conselheiro especializado em relacionamentos do FypMatch.
+            
+            CONTEXTO DA SESSÃO:
+            - Tipo: $sessionTypeContext
+            - Estado emocional: $moodContext
+            
+            HISTÓRICO RECENTE:
+            $recentMessages
+            
+            MENSAGEM ATUAL DO USUÁRIO: $currentMessage
+            
+            INSTRUÇÕES:
+            - Seja empático, acolhedor e profissional
+            - Dê conselhos práticos e específicos
+            - Use linguagem natural do português brasileiro
+            - Mantenha respostas entre 50-150 palavras
+            - Use emojis ocasionalmente (máximo 2)
+            - Foque em soluções e crescimento pessoal
+            - Se necessário, recomende ajuda profissional
+            
+            Responda como um conselheiro experiente daria um conselho personalizado.
+        """.trimIndent()
+    }
+    
+    private fun generateFallbackResponse(message: String): String {
+        val message = message.lowercase()
+        
+        return when {
+            message.contains("ansioso") || message.contains("nervoso") -> {
+                "É completamente normal sentir ansiedade em relacionamentos! 💕 Respire fundo e lembre-se: você tem qualidades únicas. A pessoa certa vai valorizar sua autenticidade."
+            }
+            message.contains("conversa") || message.contains("falar") -> {
+                "Para conversas envolventes, faça perguntas abertas sobre os interesses da pessoa! 😊 Mostre curiosidade genuína e escute ativamente. Isso cria conexões reais."
+            }
+            message.contains("match") || message.contains("primeira mensagem") -> {
+                "Parabéns pelo match! 💕 Mencione algo específico do perfil da pessoa para mostrar interesse genuíno. Evite apenas 'oi, tudo bem?' - seja criativo mas autêntico!"
+            }
+            message.contains("autoestima") || message.contains("confiança") -> {
+                "Sua autoestima é seu bem mais precioso! 💕 Faça uma lista das suas qualidades, cuide bem de si mesmo(a) e lembre-se: você merece amor e respeito."
+            }
+            else -> {
+                "Entendo sua situação! 💕 Relacionamentos podem ser desafiadores, mas cada experiência nos ensina algo valioso. Que aspecto específico você gostaria de explorar mais?"
+            }
+        }
     }
     
     // Atualizar estatísticas do usuário

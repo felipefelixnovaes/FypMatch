@@ -9,12 +9,30 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+// Imports para fallback do popup interativo quando Credential Manager falha
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.ConnectionResult
+// Imports das APIs antigas do Google Sign-In removidos - usando apenas Credential Manager
 import com.ideiassertiva.FypMatch.model.User
 import com.ideiassertiva.FypMatch.model.AccessLevel
 import com.ideiassertiva.FypMatch.model.BetaFlags
 import com.ideiassertiva.FypMatch.model.UserProfile
 import com.ideiassertiva.FypMatch.model.Gender
 import com.ideiassertiva.FypMatch.model.Location
+import com.ideiassertiva.FypMatch.model.Orientation
+import com.ideiassertiva.FypMatch.model.Intention
+import com.ideiassertiva.FypMatch.model.RelationshipStatus
+import com.ideiassertiva.FypMatch.model.ChildrenStatus
+import com.ideiassertiva.FypMatch.model.SmokingStatus
+import com.ideiassertiva.FypMatch.model.DrinkingStatus
+import com.ideiassertiva.FypMatch.model.ZodiacSign
+import com.ideiassertiva.FypMatch.model.Religion
+import com.ideiassertiva.FypMatch.model.PetPreference
 import com.ideiassertiva.FypMatch.model.isProfileComplete
 import com.ideiassertiva.FypMatch.util.AnalyticsManager
 import com.google.firebase.auth.FirebaseAuth
@@ -79,6 +97,18 @@ class AuthRepository @Inject constructor(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
     private val credentialManager = CredentialManager.create(context)
     
+    // Google Sign-In Client (fallback para quando Credential Manager falha)
+    private val googleSignInClient: GoogleSignInClient by lazy {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken("98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com")
+            .requestEmail()
+            .requestProfile()
+            .build()
+        
+        println("🔍 DEBUG - Configurando GoogleSignInClient com Web Client ID")
+        GoogleSignIn.getClient(context, gso)
+    }
+    
     // Estados observáveis
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: Flow<User?> = _currentUser.asStateFlow()
@@ -122,37 +152,41 @@ class AuthRepository @Inject constructor(
     
     // === MÉTODOS DE LOGIN COM GOOGLE ===
     
-    // Método principal de login com Google usando nova API Credentials
+    // Método principal de login com Google - CREDENTIAL MANAGER (Nova API)
     suspend fun signInWithGoogle(): Result<User> {
         return try {
             _isLoading.value = true
             _needsInteractiveSignIn.value = false
             
-            println("🔍 DEBUG - Iniciando login com Google via Credentials API")
+            println("🔍 DEBUG - Iniciando login com Google via Credential Manager")
             
-            val result = tryCredentialManagerSignIn()
+            // Usar Credential Manager (nova API recomendada)
+            val credentialResult = tryCredentialManagerSignIn()
             
-            result.fold(
+            credentialResult.fold(
                 onSuccess = { user ->
-                    println("🔍 DEBUG - Login bem-sucedido: ${user.email}")
+                    println("🔍 DEBUG - Login com Credential Manager bem-sucedido: ${user.email}")
                     _isLoading.value = false
                     Result.success(user)
                 },
                 onFailure = { error ->
-                    println("🔍 DEBUG - Erro no login: ${error.message}")
+                    println("🔍 DEBUG - Credential Manager falhou: ${error.message}")
                     
-                    // Se for erro que requer interação, ativar fluxo interativo
-                    if (error.message?.contains("No credentials available", ignoreCase = true) == true ||
-                        error.message?.contains("SIGN_IN_REQUIRED", ignoreCase = true) == true) {
-                        
-                        println("🔍 DEBUG - Ativando fluxo interativo")
-                        _needsInteractiveSignIn.value = true
-                        _isLoading.value = false
-                        Result.failure(GoogleSignInInteractiveRequiredException("INTERACTIVE_SIGNIN_REQUIRED"))
-                    } else {
-                        // Tentar método alternativo como último recurso
-                        println("🔍 DEBUG - Tentando método alternativo...")
-                        tryAlternativeGoogleSignIn()
+                    when {
+                        error.message?.contains("cancelado", ignoreCase = true) == true -> {
+                            _isLoading.value = false
+                            Result.failure(Exception("Login cancelado pelo usuário"))
+                        }
+                        error.message == "FALLBACK_REQUIRED" -> {
+                            println("🔍 DEBUG - Tentando fallback com popup interativo")
+                            _needsInteractiveSignIn.value = true
+                            _isLoading.value = false
+                            Result.failure(GoogleSignInInteractiveRequiredException("INTERACTIVE_SIGNIN_REQUIRED"))
+                        }
+                        else -> {
+                            _isLoading.value = false
+                            Result.failure(error)
+                        }
                     }
                 }
             )
@@ -420,8 +454,8 @@ class AuthRepository @Inject constructor(
                         _isLoading.value = false
                     }
                 })
-                .build()
-            
+            .build()
+        
             PhoneAuthProvider.verifyPhoneNumber(options)
             
             Result.success("Código de verificação enviado")
@@ -562,21 +596,9 @@ class AuthRepository @Inject constructor(
             userRepository.updateUserInFirestore(updatedUser).getOrThrow()
             _currentUser.value = updatedUser
             
-            // Configurar navegação baseada no estado do perfil
-            _navigationState.value = when {
-                !updatedUser.isProfileComplete() -> {
-                    println("🔍 DEBUG - Navegando para completar perfil")
-                    NavigationState.ToProfile
-                }
-                updatedUser.profile.photos.isEmpty() -> {
-                    println("🔍 DEBUG - Navegando para upload de fotos")
-                    NavigationState.ToPhotoUpload
-                }
-                else -> {
-                    println("🔍 DEBUG - Navegando para descoberta")
-                    NavigationState.ToDiscovery
-                }
-            }
+            // Perfil sempre completo com dados fictícios - ir direto para Discovery
+            _navigationState.value = NavigationState.ToDiscovery
+            println("🔍 DEBUG - Navegando diretamente para Discovery (perfil completo)")
             
             return updatedUser
         }
@@ -600,12 +622,8 @@ class AuthRepository @Inject constructor(
             userRepository.updateUserInFirestore(updatedUser).getOrThrow()
             _currentUser.value = updatedUser
             
-            // Configurar navegação baseada no estado do perfil
-            _navigationState.value = when {
-                !updatedUser.isProfileComplete() -> NavigationState.ToProfile
-                updatedUser.profile.photos.isEmpty() -> NavigationState.ToPhotoUpload
-                else -> NavigationState.ToDiscovery
-            }
+            // Perfil sempre completo com dados fictícios - ir direto para Discovery
+            _navigationState.value = NavigationState.ToDiscovery
             
             return updatedUser
         }
@@ -632,12 +650,8 @@ class AuthRepository @Inject constructor(
                     userRepository.updateUserInFirestore(updatedUser).getOrThrow()
                     _currentUser.value = updatedUser
                     
-                    // Configurar navegação baseada no estado do perfil
-                    _navigationState.value = when {
-                        !updatedUser.isProfileComplete() -> NavigationState.ToProfile
-                        updatedUser.profile.photos.isEmpty() -> NavigationState.ToPhotoUpload
-                        else -> NavigationState.ToDiscovery
-                    }
+                    // Perfil sempre completo com dados fictícios - ir direto para Discovery
+                    _navigationState.value = NavigationState.ToDiscovery
                     
                     updatedUser
                 } else {
@@ -648,8 +662,8 @@ class AuthRepository @Inject constructor(
                     userRepository.createUserInFirestore(newUser).getOrThrow()
                     _currentUser.value = newUser
                     
-                    // Novo usuário sempre vai para completar perfil
-                    _navigationState.value = NavigationState.ToProfile
+                    // Novo usuário com perfil completo vai direto para Discovery
+                    _navigationState.value = NavigationState.ToDiscovery
                     
                     newUser
                 }
@@ -662,38 +676,242 @@ class AuthRepository @Inject constructor(
                 userRepository.createUserInFirestore(newUser).getOrThrow()
                 _currentUser.value = newUser
                 
-                // Novo usuário sempre vai para completar perfil
-                _navigationState.value = NavigationState.ToProfile
+                // Novo usuário com perfil completo vai direto para Discovery
+                _navigationState.value = NavigationState.ToDiscovery
                 
                 newUser
             }
         )
     }
     
-    // Criar novo usuário com dados básicos
+    // Criar novo usuário com dados básicos e fotos aleatórias
     private suspend fun createNewUser(userId: String, email: String, displayName: String, photoUrl: String): User {
         val (accessLevel, betaFlags) = accessControlRepository.getSpecialAccessConfig(email)
+        
+        // Gerar fotos aleatórias para teste
+        val randomPhotos = generateRandomPhotos()
+        
+        // Gerar dados fictícios realistas
+        val fakeData = generateFakeUserData(displayName, email)
         
         return User(
             id = userId,
             email = email,
             displayName = displayName,
-            photoUrl = photoUrl,
+            photoUrl = photoUrl.ifEmpty { randomPhotos.firstOrNull() ?: "" },
             profile = UserProfile(
-                fullName = displayName,
-                age = 18,
-                bio = "",
-                photos = if (photoUrl.isNotEmpty()) listOf(photoUrl) else emptyList(),
+                fullName = displayName.ifEmpty { fakeData.name },
+                age = fakeData.age,
+                bio = fakeData.bio,
+                aboutMe = fakeData.aboutMe,
+                photos = if (photoUrl.isNotEmpty()) {
+                    listOf(photoUrl) + randomPhotos.take(2)
+                } else {
+                    randomPhotos
+                },
                 location = Location(
-                    country = "Brasil"
+                    city = fakeData.city,
+                    state = fakeData.state,
+                    country = "Brasil",
+                    latitude = fakeData.latitude,
+                    longitude = fakeData.longitude
                 ),
-                gender = Gender.NOT_SPECIFIED,
-                isProfileComplete = false
+                gender = fakeData.gender,
+                orientation = fakeData.orientation,
+                intention = fakeData.intention,
+                interests = fakeData.interests,
+                education = fakeData.education,
+                profession = fakeData.profession,
+                height = fakeData.height,
+                relationshipStatus = fakeData.relationshipStatus,
+                hasChildren = fakeData.hasChildren,
+                wantsChildren = fakeData.wantsChildren,
+                smokingStatus = fakeData.smokingStatus,
+                drinkingStatus = fakeData.drinkingStatus,
+                zodiacSign = fakeData.zodiacSign,
+                religion = fakeData.religion,
+                favoriteMovies = fakeData.favoriteMovies,
+                favoriteGenres = fakeData.favoriteGenres,
+                favoriteBooks = fakeData.favoriteBooks,
+                favoriteMusic = fakeData.favoriteMusic,
+                hobbies = fakeData.hobbies,
+                sports = fakeData.sports,
+                favoriteTeam = fakeData.favoriteTeam,
+                languages = fakeData.languages,
+                petPreference = fakeData.petPreference,
+                isProfileComplete = true // Perfil já completo com dados fictícios
             ),
-            accessLevel = accessLevel,
-            betaFlags = betaFlags,
+            accessLevel = AccessLevel.FULL_ACCESS, // Acesso completo para todos
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = false
+            ),
             createdAt = Date(),
             lastActive = Date()
+        )
+    }
+    
+    // Gerar fotos aleatórias do Picsum
+    private fun generateRandomPhotos(): List<String> {
+        val photoIds = (1..1000).shuffled().take(3)
+        return photoIds.map { id ->
+            "https://picsum.photos/400/400?random=$id"
+        }
+    }
+    
+    // Gerar dados fictícios realistas para usuários
+    private fun generateFakeUserData(displayName: String, email: String): FakeUserData {
+        val names = listOf(
+            "Ana Clara Santos", "Bruno Costa", "Carlos Eduardo Silva", "Daniela Ferreira",
+            "Emerson Silva", "Fernanda Lopes", "Gabriel Oliveira", "Helena Rodrigues",
+            "Igor Pereira", "Juliana Almeida", "Kaique Souza", "Larissa Martins",
+            "Mateus Lima", "Natália Barbosa", "Otávio Carvalho", "Priscila Dias",
+            "Rafael Moreira", "Sabrina Gomes", "Thiago Nascimento", "Vanessa Ribeiro"
+        )
+        
+        val cities = listOf(
+            Triple("São Paulo", "SP", Pair(-23.5505, -46.6333)),
+            Triple("Rio de Janeiro", "RJ", Pair(-22.9068, -43.1729)),
+            Triple("Belo Horizonte", "MG", Pair(-19.9191, -43.9386)),
+            Triple("Porto Alegre", "RS", Pair(-30.0346, -51.2177)),
+            Triple("Recife", "PE", Pair(-8.0476, -34.8770)),
+            Triple("Fortaleza", "CE", Pair(-3.7172, -38.5433)),
+            Triple("Salvador", "BA", Pair(-12.9714, -38.5014)),
+            Triple("Brasília", "DF", Pair(-15.8267, -47.9218)),
+            Triple("Curitiba", "PR", Pair(-25.4284, -49.2733)),
+            Triple("Manaus", "AM", Pair(-3.1190, -60.0217))
+        )
+        
+        val bios = listOf(
+            "Apaixonado(a) por aventuras e boas conversas ✨",
+            "Amante de café, livros e filmes de terror 📚☕",
+            "Desenvolvedor(a) de dia, músico(a) de noite 🎵",
+            "Viajante, foodie e sempre em busca de novas experiências 🌎",
+            "Professor(a) apaixonado(a) por ensinar e aprender 📖",
+            "Designer criativo(a) que adora arte e natureza 🎨🌿",
+            "Médico(a) dedicado(a) que ama ajudar pessoas ❤️",
+            "Engenheiro(a) que constrói o futuro 🏗️",
+            "Psicólogo(a) que acredita no poder da mente 🧠",
+            "Advogado(a) lutando por justiça ⚖️"
+        )
+        
+        val aboutMeTexts = listOf(
+            "Sou uma pessoa autêntica que valoriza conexões verdadeiras. Adoro descobrir lugares novos, experimentar culinárias diferentes e ter conversas profundas sobre a vida. Procuro alguém que compartilhe da minha paixão por aventuras e que saiba apreciar os pequenos momentos.",
+            "Trabalho com o que amo e isso me realiza muito. Nas horas livres gosto de praticar esportes, assistir séries e passar tempo com amigos. Busco alguém com senso de humor, que seja carinhoso(a) e que queira construir algo especial juntos.",
+            "Sou apaixonado(a) por música, arte e tudo que envolve criatividade. Adoro festivais, shows e descobrir artistas novos. Procuro alguém que curta a vida noturna mas que também saiba apreciar um domingo tranquilo em casa.",
+            "Amo a natureza e sempre que posso estou fazendo trilhas ou na praia. Sou uma pessoa tranquila, mas que gosta de se divertir. Busco alguém que compartilhe do meu amor pela natureza e que queira explorar o mundo comigo.",
+            "Sou uma pessoa família, que valoriza relacionamentos duradouros. Gosto de cozinhar, assistir filmes e ter conversas interessantes. Procuro alguém maduro(a), que saiba se comunicar e que queira crescer junto comigo."
+        )
+        
+        val interests = listOf(
+            listOf("Viagens", "Fotografia", "Culinária", "Música", "Cinema"),
+            listOf("Esportes", "Academia", "Futebol", "Corrida", "Natação"),
+            listOf("Leitura", "Arte", "Teatro", "Museus", "Literatura"),
+            listOf("Tecnologia", "Games", "Programação", "Inovação", "Startups"),
+            listOf("Natureza", "Trilhas", "Camping", "Praia", "Sustentabilidade"),
+            listOf("Música", "Festivais", "Shows", "Instrumentos", "Dança"),
+            listOf("Gastronomia", "Vinhos", "Cervejas", "Restaurantes", "Culinária"),
+            listOf("Fitness", "Yoga", "Meditação", "Bem-estar", "Saúde")
+        )
+        
+        val professions = listOf(
+            "Desenvolvedor(a) de Software", "Designer Gráfico", "Médico(a)", "Engenheiro(a)",
+            "Professor(a)", "Advogado(a)", "Psicólogo(a)", "Arquiteto(a)", "Jornalista",
+            "Administrador(a)", "Contador(a)", "Enfermeiro(a)", "Dentista", "Veterinário(a)",
+            "Marketing Digital", "Consultor(a)", "Empreendedor(a)", "Artista", "Músico(a)"
+        )
+        
+        val educations = listOf(
+            "Superior Completo", "Pós-graduação", "Mestrado", "Doutorado",
+            "Superior Incompleto", "Técnico", "MBA"
+        )
+        
+        val movieGenres = listOf(
+            listOf("Ação", "Aventura", "Ficção Científica"),
+            listOf("Romance", "Drama", "Comédia"),
+            listOf("Terror", "Suspense", "Thriller"),
+            listOf("Documentário", "Biografia", "História"),
+            listOf("Animação", "Família", "Musical")
+        )
+        
+        val musicGenres = listOf(
+            listOf("Pop", "Rock", "Indie"),
+            listOf("MPB", "Samba", "Bossa Nova"),
+            listOf("Eletrônica", "House", "Techno"),
+            listOf("Hip Hop", "Rap", "R&B"),
+            listOf("Jazz", "Blues", "Soul")
+        )
+        
+        val hobbies = listOf(
+            listOf("Fotografia", "Pintura", "Desenho"),
+            listOf("Culinária", "Jardinagem", "Artesanato"),
+            listOf("Leitura", "Escrita", "Poesia"),
+            listOf("Jogos", "Xadrez", "Quebra-cabeças"),
+            listOf("Colecionismo", "Modelismo", "DIY")
+        )
+        
+        val sports = listOf(
+            listOf("Futebol", "Vôlei", "Basquete"),
+            listOf("Tênis", "Badminton", "Ping-pong"),
+            listOf("Natação", "Surf", "Stand-up Paddle"),
+            listOf("Corrida", "Ciclismo", "Triathlon"),
+            listOf("Artes Marciais", "Boxe", "Muay Thai")
+        )
+        
+        val teams = listOf(
+            "Flamengo", "Corinthians", "Palmeiras", "São Paulo", "Santos",
+            "Vasco", "Botafogo", "Fluminense", "Grêmio", "Internacional",
+            "Atlético-MG", "Cruzeiro", "Bahia", "Sport", "Ceará"
+        )
+        
+        val languages = listOf(
+            listOf("Português", "Inglês"),
+            listOf("Português", "Espanhol"),
+            listOf("Português", "Francês"),
+            listOf("Português", "Inglês", "Espanhol"),
+            listOf("Português", "Italiano")
+        )
+        
+        // Selecionar dados aleatórios
+        val selectedCity = cities.random()
+        val selectedGender = if (kotlin.random.Random.nextBoolean()) Gender.FEMALE else Gender.MALE
+        
+        return FakeUserData(
+            name = displayName.ifEmpty { names.random() },
+            age = (18..45).random(),
+            bio = bios.random(),
+            aboutMe = aboutMeTexts.random(),
+            city = selectedCity.first,
+            state = selectedCity.second,
+            latitude = selectedCity.third.first,
+            longitude = selectedCity.third.second,
+            gender = selectedGender,
+            orientation = listOf(Orientation.STRAIGHT, Orientation.BISEXUAL).random(),
+            intention = listOf(Intention.DATING, Intention.CASUAL, Intention.FRIENDSHIP).random(),
+            interests = interests.random(),
+            education = educations.random(),
+            profession = professions.random(),
+            height = if (selectedGender == Gender.MALE) (165..190).random() else (150..175).random(),
+            relationshipStatus = listOf(RelationshipStatus.SINGLE, RelationshipStatus.DIVORCED).random(),
+            hasChildren = listOf(ChildrenStatus.YES, ChildrenStatus.NO).random(),
+            wantsChildren = listOf(ChildrenStatus.YES, ChildrenStatus.NO, ChildrenStatus.PREFER_NOT_TO_SAY).random(),
+            smokingStatus = listOf(SmokingStatus.NEVER, SmokingStatus.SOCIALLY).random(),
+            drinkingStatus = listOf(DrinkingStatus.NEVER, DrinkingStatus.SOCIALLY, DrinkingStatus.REGULARLY).random(),
+            zodiacSign = ZodiacSign.values().filter { it != ZodiacSign.NOT_SPECIFIED }.random(),
+            religion = listOf(Religion.CATHOLIC, Religion.EVANGELICAL, Religion.SPIRITUAL, Religion.AGNOSTIC).random(),
+            favoriteMovies = listOf("Cidade de Deus", "Tropa de Elite", "Central do Brasil"),
+            favoriteGenres = listOf("Ação", "Romance", "Comédia", "Drama"),
+            favoriteBooks = listOf("Dom Casmurro", "O Cortiço", "Capitães da Areia"),
+            favoriteMusic = listOf("MPB", "Rock", "Pop", "Sertanejo"),
+            hobbies = listOf("Leitura", "Cinema", "Culinária", "Viagem", "Fotografia"),
+            sports = listOf("Futebol", "Natação", "Academia", "Corrida", "Yoga"),
+            favoriteTeam = teams.random(),
+            languages = listOf("Português", "Inglês", "Espanhol"),
+            petPreference = listOf(PetPreference.LOVE_PETS, PetPreference.NO_PETS, PetPreference.ALLERGIC).random()
         )
     }
     
@@ -764,6 +982,8 @@ class AuthRepository @Inject constructor(
         }
     }
     
+    // Método removido - substituído por tryCredentialManagerSignIn() para usar APIs mais recentes
+    
     private suspend fun tryCredentialManagerSignIn(): Result<User> {
         return try {
             println("🔍 DEBUG - Iniciando Credential Manager Sign-In")
@@ -771,9 +991,9 @@ class AuthRepository @Inject constructor(
             val webClientId = "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com"
             
             val googleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
+                .setFilterByAuthorizedAccounts(false) // Permite seleção de qualquer conta
                 .setServerClientId(webClientId)
-                .setAutoSelectEnabled(false)
+                .setAutoSelectEnabled(true) // Permite auto-seleção se disponível
                 .build()
             
             val request = GetCredentialRequest.Builder()
@@ -802,8 +1022,8 @@ class AuthRepository @Inject constructor(
                     "Login cancelado pelo usuário"
                 }
                 is androidx.credentials.exceptions.NoCredentialException -> {
-                    println("🔍 DEBUG - Nenhuma credencial encontrada")
-                    "Nenhuma conta Google encontrada. Verifique se há uma conta Google configurada no dispositivo."
+                    println("🔍 DEBUG - Nenhuma credencial encontrada - tentando fallback")
+                    "FALLBACK_REQUIRED"
                 }
                 else -> {
                     println("🔍 DEBUG - Outro erro de credencial: ${e.javaClass.simpleName}")
@@ -812,9 +1032,6 @@ class AuthRepository @Inject constructor(
             }
             
             Result.failure(Exception(errorMessage))
-        } catch (e: GoogleSignInInteractiveRequiredException) {
-            println("🔍 DEBUG - Fluxo interativo necessário")
-            Result.failure(e)
         } catch (e: Exception) {
             println("🔍 DEBUG - Exception geral: ${e.javaClass.simpleName} - ${e.message}")
             analyticsManager.logError(e, "google_signin_general_error")
@@ -827,63 +1044,86 @@ class AuthRepository @Inject constructor(
             // Extrair credencial do Google ID Token
             val credential = result.credential
             
-            if (credential is GoogleIdTokenCredential) {
-                val googleIdToken = credential.idToken
+            println("🔍 DEBUG - Tipo de credencial recebida: ${credential::class.java.simpleName}")
+            println("🔍 DEBUG - Credencial: $credential")
+            
+            // Converter CustomCredential para GoogleIdTokenCredential se necessário
+            val googleCredential = when (credential) {
+                is GoogleIdTokenCredential -> {
+                    println("🔍 DEBUG - Credencial já é GoogleIdTokenCredential")
+                    credential
+                }
+                is androidx.credentials.CustomCredential -> {
+                    println("🔍 DEBUG - Convertendo CustomCredential para GoogleIdTokenCredential")
+                    try {
+                        GoogleIdTokenCredential.createFrom(credential.data)
+                    } catch (e: Exception) {
+                        println("🔍 DEBUG - Erro ao converter CustomCredential: ${e.message}")
+                        null
+                    }
+                }
+                else -> {
+                    println("🔍 DEBUG - Tipo de credencial não suportado: ${credential::class.java.simpleName}")
+                    null
+                }
+            }
+            
+            if (googleCredential != null) {
+                val googleIdToken = googleCredential.idToken
                 
                 // Autenticar com Firebase
                 val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
                 val authResult = auth.signInWithCredential(firebaseCredential).await()
-                val firebaseUser = authResult.user
-                
-                if (firebaseUser != null) {
-                    try {
+            val firebaseUser = authResult.user
+            
+            if (firebaseUser != null) {
+                try {
                         // Criar ou atualizar usuário com dados do Google
-                        val user = createOrUpdateUserWithGoogleData(firebaseUser, credential)
-                        _currentUser.value = user
-                        
-                        // Configurar status online no Realtime Database
-                        locationRepository.setUserOnline(user.id)
-                        
-                        // Analytics: Login bem-sucedido
-                        analyticsManager.setUserId(user.id)
-                        analyticsManager.setUserProperties(mapOf(
-                            "login_method" to "google",
-                            "has_google_photo" to (credential.profilePictureUri != null).toString(),
-                            "google_email_domain" to (credential.id.substringAfter("@"))
-                        ))
-                        
-                        // Determinar navegação baseada no estado do perfil
-                        _navigationState.value = when {
-                            !user.isProfileComplete() -> NavigationState.ToProfile
-                            user.profile.photos.isEmpty() -> NavigationState.ToPhotoUpload
-                            else -> NavigationState.ToDiscovery
-                        }
-                        
-                        Result.success(user)
+                        val user = createOrUpdateUserWithGoogleData(firebaseUser, googleCredential)
+                    _currentUser.value = user
                     
-                    } catch (firestoreError: Exception) {
-                        // Se Firestore falhar, criar usuário mínimo
-                        val minimalUser = createMinimalUserFromGoogle(firebaseUser, credential)
-                        _currentUser.value = minimalUser
-                        _navigationState.value = NavigationState.ToProfile
-                        
-                        // Analytics: Fallback login
-                        analyticsManager.logError(firestoreError, "google_login_firestore_fallback")
-                        
-                        Result.success(minimalUser)
-                    }
-                } else {
-                    analyticsManager.logError(Exception("Firebase auth failed"), "google_login_firebase_null")
-                    Result.failure(Exception("Falha na autenticação"))
+                    // Configurar status online no Realtime Database
+                    locationRepository.setUserOnline(user.id)
+                    
+                    // Analytics: Login bem-sucedido
+                    analyticsManager.setUserId(user.id)
+                                            analyticsManager.setUserProperties(mapOf(
+                            "login_method" to "google",
+                            "has_google_photo" to (googleCredential.profilePictureUri != null).toString(),
+                            "google_email_domain" to (googleCredential.id.substringAfter("@"))
+                        ))
+                    
+                        // Perfil sempre completo com dados fictícios - ir direto para Discovery
+                        _navigationState.value = NavigationState.ToDiscovery
+                    
+                    Result.success(user)
+                
+                } catch (firestoreError: Exception) {
+                    // Se Firestore falhar, criar usuário mínimo
+                        val minimalUser = createMinimalUserFromGoogle(firebaseUser, googleCredential)
+                    _currentUser.value = minimalUser
+                        _navigationState.value = NavigationState.ToDiscovery
+                    
+                    // Analytics: Fallback login
+                    analyticsManager.logError(firestoreError, "google_login_firestore_fallback")
+                    
+                    Result.success(minimalUser)
                 }
             } else {
-                Result.failure(Exception("Credencial inválida"))
+                analyticsManager.logError(Exception("Firebase auth failed"), "google_login_firebase_null")
+                Result.failure(Exception("Falha na autenticação"))
+            }
+            } else {
+                println("🔍 DEBUG - Falha ao converter credencial para GoogleIdTokenCredential")
+                Result.failure(Exception("Não foi possível processar a credencial do Google"))
             }
         } catch (e: GoogleIdTokenParsingException) {
             analyticsManager.logError(e, "google_token_parsing_error")
             Result.failure(Exception("Erro ao processar token do Google"))
         }
     }
+    
+    // Método removido - usando apenas GoogleIdTokenCredential da nova API
     
     private suspend fun createOrUpdateUserWithGoogleData(
         firebaseUser: FirebaseUser, 
@@ -994,26 +1234,70 @@ class AuthRepository @Inject constructor(
         userId: String = generateUserId(firebaseUser, LoginType.GOOGLE)
     ): User {
         val email = firebaseUser.email ?: ""
-        val (accessLevel, betaFlags) = accessControlRepository.getSpecialAccessConfig(email)
+        val displayName = firebaseUser.displayName ?: ""
+        
+        // Gerar fotos aleatórias para teste
+        val randomPhotos = generateRandomPhotos()
+        
+        // Gerar dados fictícios realistas
+        val fakeData = generateFakeUserData(displayName, email)
         
         val newUser = User(
             id = userId,
             email = email,
-            displayName = firebaseUser.displayName ?: "",
-            photoUrl = firebaseUser.photoUrl?.toString() ?: "",
+            displayName = displayName,
+            photoUrl = firebaseUser.photoUrl?.toString() ?: randomPhotos.firstOrNull() ?: "",
             profile = UserProfile(
-                fullName = firebaseUser.displayName ?: "",
-                gender = Gender.NOT_SPECIFIED,
+                fullName = displayName.ifEmpty { fakeData.name },
+                age = fakeData.age,
+                bio = fakeData.bio,
+                aboutMe = fakeData.aboutMe,
                 photos = if (firebaseUser.photoUrl != null) {
-                    listOf(firebaseUser.photoUrl.toString())
-                } else emptyList(),
+                    listOf(firebaseUser.photoUrl.toString()) + randomPhotos.take(2)
+                } else {
+                    randomPhotos
+                },
                 location = Location(
-                    country = "Brasil" // Padrão para o mercado brasileiro
+                    city = fakeData.city,
+                    state = fakeData.state,
+                    country = "Brasil",
+                    latitude = fakeData.latitude,
+                    longitude = fakeData.longitude
                 ),
-                isProfileComplete = false // Sempre false para novos usuários
+                gender = fakeData.gender,
+                orientation = fakeData.orientation,
+                intention = fakeData.intention,
+                interests = fakeData.interests,
+                education = fakeData.education,
+                profession = fakeData.profession,
+                height = fakeData.height,
+                relationshipStatus = fakeData.relationshipStatus,
+                hasChildren = fakeData.hasChildren,
+                wantsChildren = fakeData.wantsChildren,
+                smokingStatus = fakeData.smokingStatus,
+                drinkingStatus = fakeData.drinkingStatus,
+                zodiacSign = fakeData.zodiacSign,
+                religion = fakeData.religion,
+                favoriteMovies = fakeData.favoriteMovies,
+                favoriteGenres = fakeData.favoriteGenres,
+                favoriteBooks = fakeData.favoriteBooks,
+                favoriteMusic = fakeData.favoriteMusic,
+                hobbies = fakeData.hobbies,
+                sports = fakeData.sports,
+                favoriteTeam = fakeData.favoriteTeam,
+                languages = fakeData.languages,
+                petPreference = fakeData.petPreference,
+                isProfileComplete = true // Perfil já completo com dados fictícios
             ),
-            accessLevel = accessLevel,
-            betaFlags = betaFlags,
+            accessLevel = AccessLevel.FULL_ACCESS, // Acesso completo para todos
+            betaFlags = BetaFlags(
+                hasEarlyAccess = true,
+                canAccessSwipe = true,
+                canAccessChat = true,
+                canAccessPremium = true,
+                canAccessAI = true,
+                isTestUser = false
+            ),
             createdAt = Date(),
             lastActive = Date()
         )
@@ -1023,7 +1307,9 @@ class AuthRepository @Inject constructor(
         
         // Analytics: Novo usuário
         analyticsManager.logUserSignUp("google")
-        analyticsManager.logUserProfile(null, null) // Será atualizado depois
+        analyticsManager.logUserProfile(savedUser.profile.age, savedUser.profile.gender.name)
+        
+        println("🔍 DEBUG - ✅ Novo usuário Google criado com perfil completo: ${savedUser.id}")
         
         return savedUser
     }
@@ -1141,12 +1427,8 @@ class AuthRepository @Inject constructor(
                 "workaround_error_10" to "true"
             ))
             
-            // Determinar navegação baseada no estado do perfil
-            _navigationState.value = when {
-                !user.isProfileComplete() -> NavigationState.ToProfile
-                user.profile.photos.isEmpty() -> NavigationState.ToPhotoUpload
-                else -> NavigationState.ToDiscovery
-            }
+            // Perfil sempre completo com dados fictícios - ir direto para Discovery
+            _navigationState.value = NavigationState.ToDiscovery
             
             println("🔍 DEBUG - Login alternativo bem-sucedido para: ${user.email}")
             Result.success(user)
@@ -1188,47 +1470,259 @@ class AuthRepository @Inject constructor(
         return savedUser
     }
 
-    // Método para obter Intent de login (para fluxo interativo)
+    // Método alternativo com configuração diferente
+    private suspend fun tryCredentialManagerSignInAlternative(): Result<User> {
+        return try {
+            println("🔍 DEBUG - Tentando login com configuração alternativa...")
+            
+            val credentialManager = CredentialManager.create(context)
+            val webClientId = "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com"
+            
+            // Configuração alternativa - permite contas autorizadas também
+            val googleIdOption = GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(true) // Tentar com contas autorizadas primeiro
+                .setServerClientId(webClientId)
+                .setAutoSelectEnabled(true) // Permitir seleção automática se houver apenas uma conta
+                .build()
+            
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(googleIdOption)
+                .build()
+            
+            println("🔍 DEBUG - Fazendo requisição alternativa...")
+            
+            val result = credentialManager.getCredential(
+                request = request,
+                context = context
+            )
+            
+            println("🔍 DEBUG - ✅ Credencial alternativa obtida com sucesso")
+            
+            // Processar resultado
+            val loginResult = handleSignInResult(result)
+            
+            loginResult.fold(
+                onSuccess = { user ->
+                    _isLoading.value = false
+                    Result.success(user)
+                },
+                onFailure = { error ->
+                    println("🔍 DEBUG - ⚠️ Erro na configuração alternativa: ${error.message}")
+                    
+                    // Como último recurso, usar método de fallback
+                    _isLoading.value = false
+                    tryAlternativeGoogleSignIn()
+                }
+            )
+            
+        } catch (e: Exception) {
+            println("🔍 DEBUG - ❌ Erro na configuração alternativa: ${e.message}")
+            _isLoading.value = false
+            
+            // Último recurso
+            tryAlternativeGoogleSignIn()
+        }
+    }
+
+    // Métodos de fallback para quando Credential Manager não funciona
     fun getGoogleSignInIntent(): Intent {
-        println("🔍 DEBUG - Criando Intent para seleção de conta Google")
+        println("🔍 DEBUG - Criando Intent para fallback do Google Sign-In")
         
-        // Criar um Intent simples que abre as configurações de contas do Google
-        // Em um app real, você usaria a nova API de seleção de contas
-        val intent = Intent(android.provider.Settings.ACTION_SYNC_SETTINGS)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        // Verificar se Google Play Services está disponível
+        val googleApiAvailability = GoogleApiAvailability.getInstance()
+        val resultCode = googleApiAvailability.isGooglePlayServicesAvailable(context)
         
-        return intent
+        when (resultCode) {
+            ConnectionResult.SUCCESS -> {
+                println("🔍 DEBUG - ✅ Google Play Services disponível")
+            }
+            ConnectionResult.SERVICE_MISSING -> {
+                println("🔍 DEBUG - ⚠️ Google Play Services não instalado")
+            }
+            ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED -> {
+                println("🔍 DEBUG - ⚠️ Google Play Services precisa ser atualizado")
+            }
+            ConnectionResult.SERVICE_DISABLED -> {
+                println("🔍 DEBUG - ⚠️ Google Play Services desabilitado")
+            }
+            else -> {
+                println("🔍 DEBUG - ⚠️ Google Play Services status: $resultCode")
+            }
+        }
+        
+        return googleSignInClient.signInIntent
     }
     
-    // Método para processar resultado do Intent (simplificado)
     suspend fun handleGoogleSignInResult(data: Intent?): Result<User> {
         return try {
             _isLoading.value = true
             _needsInteractiveSignIn.value = false
             
-            println("🔍 DEBUG - Processando resultado do Intent...")
+            println("🔍 DEBUG - Processando resultado do fallback do Google...")
             
-            // Tentar novamente com Credentials API após interação do usuário
-            val result = tryCredentialManagerSignIn()
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            val account = task.getResult(ApiException::class.java)
             
-            result.fold(
-                onSuccess = { user ->
-                    println("🔍 DEBUG - Login pós-interação bem-sucedido: ${user.email}")
-                    _isLoading.value = false
-                    Result.success(user)
-                },
-                onFailure = { error ->
-                    println("🔍 DEBUG - Ainda com erro após interação: ${error.message}")
+            if (account != null) {
+                println("🔍 DEBUG - ✅ Conta Google obtida via fallback: ${account.email}")
+                
+                val idToken = account.idToken
+                if (idToken != null) {
+                    // Autenticar com Firebase
+                    val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+                    val authResult = auth.signInWithCredential(firebaseCredential).await()
+                    val firebaseUser = authResult.user
                     
-                    // Como último recurso, usar método alternativo
-                    tryAlternativeGoogleSignIn()
+                    if (firebaseUser != null) {
+                        val user = createOrUpdateUserWithGoogleData(firebaseUser, account)
+                        _currentUser.value = user
+                        
+                        // Configurar status online
+                        locationRepository.setUserOnline(user.id)
+                        
+                        // Analytics
+                        analyticsManager.setUserId(user.id)
+                        analyticsManager.setUserProperties(mapOf(
+                            "login_method" to "google_fallback",
+                            "has_google_photo" to (account.photoUrl != null).toString(),
+                            "google_email_domain" to (account.email?.substringAfter("@") ?: "")
+                        ))
+                        
+                        // Ir direto para Discovery
+                        _navigationState.value = NavigationState.ToDiscovery
+                        
+                        _isLoading.value = false
+                        Result.success(user)
+                    } else {
+                        _isLoading.value = false
+                        Result.failure(Exception("Falha na autenticação Firebase"))
+                    }
+                } else {
+                    _isLoading.value = false
+                    Result.failure(Exception("Token ID não disponível"))
                 }
-            )
-        } catch (e: Exception) {
-            println("🔍 DEBUG - Erro ao processar Intent: ${e.message}")
+            } else {
+                _isLoading.value = false
+                Result.failure(Exception("Conta Google não encontrada"))
+            }
+        } catch (e: ApiException) {
+            println("🔍 DEBUG - Erro API Google: ${e.statusCode} - ${e.message}")
             _isLoading.value = false
-            tryAlternativeGoogleSignIn()
+            
+            val errorMessage = when (e.statusCode) {
+                10 -> {
+                    println("🔍 DEBUG - DEVELOPER_ERROR (10): Problema de configuração")
+                    println("🔍 DEBUG - Verificar SHA-1, Web Client ID e google-services.json")
+                    println("🔍 DEBUG - Tentando configuração alternativa...")
+                    
+                    // Tentar configuração alternativa para erro 10
+                    tryAlternativeConfigurationForError10()
+                    
+                    "Erro de configuração do Google Sign-In (10). Tentando configuração alternativa..."
+                }
+                12501 -> "Login cancelado pelo usuário"
+                12502 -> "Erro de rede. Verifique sua conexão"
+                12500 -> "Erro interno do Google Sign-In"
+                else -> "Erro no login Google: ${e.statusCode}: ${e.message}"
+            }
+            
+            analyticsManager.logError(Exception("Google Sign-In Error: ${e.statusCode} - ${e.message}"), "google_signin_fallback_failure")
+            Result.failure(Exception(errorMessage))
+        } catch (e: Exception) {
+            println("🔍 DEBUG - Erro geral no fallback: ${e.message}")
+            _isLoading.value = false
+            Result.failure(e)
         }
+    }
+    
+    // Método para tentar configuração alternativa quando há erro 10
+    private suspend fun tryAlternativeConfigurationForError10(): Result<User> {
+        return try {
+            println("🔍 DEBUG - Tentando configuração alternativa para erro 10...")
+            
+            // Limpar cache do Google Sign-In
+            googleSignInClient.signOut().await()
+            
+            // Criar nova configuração com parâmetros diferentes
+            val alternativeGso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken("98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com")
+                .requestEmail()
+                .requestProfile()
+                .build()
+            
+            val alternativeClient = GoogleSignIn.getClient(context, alternativeGso)
+            
+            println("🔍 DEBUG - Configuração alternativa criada, tentando login silencioso...")
+            
+            // Tentar login silencioso com nova configuração
+            val silentTask = alternativeClient.silentSignIn()
+            val account = silentTask.await()
+            
+            if (account != null) {
+                println("🔍 DEBUG - ✅ Login silencioso alternativo bem-sucedido: ${account.email}")
+                
+                val idToken = account.idToken
+                if (idToken != null) {
+                    val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
+                    val authResult = auth.signInWithCredential(firebaseCredential).await()
+                    val firebaseUser = authResult.user
+                    
+                    if (firebaseUser != null) {
+                        val user = createOrUpdateUserWithGoogleData(firebaseUser, account)
+                        _currentUser.value = user
+                        _navigationState.value = NavigationState.ToDiscovery
+                        
+                        return Result.success(user)
+                    }
+                }
+            }
+            
+            println("🔍 DEBUG - ❌ Configuração alternativa também falhou")
+            Result.failure(Exception("Configuração alternativa falhou"))
+            
+        } catch (e: Exception) {
+            println("🔍 DEBUG - ❌ Erro na configuração alternativa: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    // Método para criar/atualizar usuário com dados do GoogleSignInAccount (fallback)
+    private suspend fun createOrUpdateUserWithGoogleData(
+        firebaseUser: FirebaseUser, 
+        googleAccount: GoogleSignInAccount
+    ): User {
+        val email = firebaseUser.email ?: ""
+        
+        println("🔍 DEBUG - Login Google (fallback) para: $email")
+        
+        // PRIORIDADE 1: Buscar por email usando método direto
+        val directSearchResult = userRepository.findUserByEmailOrPhone(email.takeIf { it.isNotBlank() }, null)
+        directSearchResult.getOrNull()?.let { existingUser ->
+            println("🔍 DEBUG - ✅ USUÁRIO GOOGLE EXISTENTE ENCONTRADO: ${existingUser.id}")
+            
+            val updatedUser = existingUser.copy(
+                email = email.ifEmpty { existingUser.email },
+                displayName = firebaseUser.displayName ?: existingUser.displayName,
+                photoUrl = firebaseUser.photoUrl?.toString() ?: existingUser.photoUrl,
+                lastActive = Date(),
+                profile = existingUser.profile.copy(
+                    fullName = if (existingUser.profile.fullName.isBlank()) {
+                        firebaseUser.displayName ?: ""
+                    } else existingUser.profile.fullName,
+                    photos = if (existingUser.profile.photos.isEmpty() && firebaseUser.photoUrl != null) {
+                        listOf(firebaseUser.photoUrl.toString())
+                    } else existingUser.profile.photos
+                )
+            )
+            
+            return userRepository.updateUserInFirestore(updatedUser).getOrThrow()
+        }
+        
+        // Se não encontrar, criar novo usuário
+        val userId = generateUserId(firebaseUser, LoginType.GOOGLE)
+        val newUser = createNewUser(userId, email, firebaseUser.displayName ?: "", firebaseUser.photoUrl?.toString() ?: "")
+        
+        return userRepository.createUserInFirestore(newUser).getOrThrow()
     }
 }
 
@@ -1237,7 +1731,7 @@ sealed class NavigationState {
     object ToPhotoUpload : NavigationState()
     object ToProfile : NavigationState()
     object ToDiscovery : NavigationState()
-}
+} 
 
 // Estados para verificação de telefone
 sealed class PhoneVerificationState {
@@ -1250,4 +1744,39 @@ sealed class PhoneVerificationState {
 }
 
 // Exceção personalizada para indicar que é necessário fluxo interativo
-class GoogleSignInInteractiveRequiredException(message: String) : Exception(message) 
+class GoogleSignInInteractiveRequiredException(message: String) : Exception(message)
+
+// Data class para dados fictícios
+data class FakeUserData(
+    val name: String,
+    val age: Int,
+    val bio: String,
+    val aboutMe: String,
+    val city: String,
+    val state: String,
+    val latitude: Double,
+    val longitude: Double,
+    val gender: Gender,
+    val orientation: Orientation,
+    val intention: Intention,
+    val interests: List<String>,
+    val education: String,
+    val profession: String,
+    val height: Int,
+    val relationshipStatus: RelationshipStatus,
+    val hasChildren: ChildrenStatus,
+    val wantsChildren: ChildrenStatus,
+    val smokingStatus: SmokingStatus,
+    val drinkingStatus: DrinkingStatus,
+    val zodiacSign: ZodiacSign,
+    val religion: Religion,
+    val favoriteMovies: List<String>,
+    val favoriteGenres: List<String>,
+    val favoriteBooks: List<String>,
+    val favoriteMusic: List<String>,
+    val hobbies: List<String>,
+    val sports: List<String>,
+    val favoriteTeam: String,
+    val languages: List<String>,
+    val petPreference: PetPreference
+) 

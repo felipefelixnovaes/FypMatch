@@ -1,0 +1,273 @@
+// FypMatch Android Jetpack Compose .cursorrules
+// Otimizado para o projeto FypMatch - App de namoro com IA
+// Sistema de Login/Cadastro Automático (sem lista de espera)
+
+// ===== ESTRUTURA DO PROJETO FYPMATCH =====
+
+const projectStructure = `
+app/src/main/java/com/ideiassertiva/FypMatch/
+├── data/repository/          # Camada de dados (Firebase, APIs)
+│   ├── AuthRepository.kt     # Autenticação (Google, Email, Phone)
+│   ├── UserRepository.kt     # Gestão de usuários
+│   ├── LocationRepository.kt # GPS e proximidade
+│   ├── ChatRepository.kt     # Sistema de chat
+│   ├── DiscoveryRepository.kt # Swipe e matches
+│   ├── PhotoRepository.kt    # Upload de fotos
+│   └── AICounselorRepository.kt # IA conselheira
+├── model/                    # Modelos de domínio
+│   ├── User.kt              # Modelo principal do usuário
+│   ├── Match.kt             # Modelo de matches
+│   ├── Message.kt           # Modelo de mensagens
+│   └── AccessLevel.kt       # Controle de acesso
+├── ui/
+│   ├── screens/             # Telas Compose
+│   │   ├── WelcomeScreen.kt
+│   │   ├── LoginScreen.kt
+│   │   ├── SignUpScreen.kt  # Nova tela de cadastro
+│   │   ├── DiscoveryScreen.kt
+│   │   ├── ChatScreen.kt
+│   │   └── ProfileScreen.kt
+│   ├── navigation/          # Sistema de navegação
+│   │   └── FypMatchNavigation.kt
+│   ├── theme/               # Tema Material Design 3
+│   │   ├── Theme.kt
+│   │   ├── Color.kt
+│   │   └── Type.kt
+│   └── viewmodel/           # ViewModels com Hilt
+│       ├── LoginViewModel.kt
+│       ├── SignUpViewModel.kt # Novo ViewModel
+│       ├── DiscoveryViewModel.kt
+│       └── ProfileViewModel.kt
+├── di/                      # Dependency Injection (Hilt)
+│   └── AppModule.kt
+└── util/                    # Utilitários
+    ├── AnalyticsManager.kt
+    ├── LocationManager.kt
+    └── AdMobConfig.kt
+`;
+
+// ===== FLUXO DE AUTENTICAÇÃO FYPMATCH =====
+
+const authFlow = `
+1. GOOGLE LOGIN:
+   - Login automático com Google
+   - Se perfil existe → Discovery
+   - Se perfil não existe → Criar perfil automaticamente → Discovery
+
+2. EMAIL LOGIN:
+   - Verificar se email existe
+   - Se existe → Login → Discovery
+   - Se não existe → Tela de cadastro
+
+3. PHONE LOGIN:
+   - Verificar se telefone existe
+   - Se existe → Login → Discovery
+   - Se não existe → Tela de cadastro
+
+4. CRIAÇÃO AUTOMÁTICA DE PERFIL:
+   - Dados básicos do Google/Email/Phone
+   - Fotos aleatórias para teste
+   - Localização padrão (São Paulo)
+   - AccessLevel.FULL_ACCESS automático
+`;
+
+// ===== GUIDELINES ESPECÍFICAS DO FYPMATCH =====
+
+const fypMatchGuidelines = `
+1. AUTENTICAÇÃO SEM LISTA DE ESPERA:
+   - Google: Criação automática de perfil
+   - Email/Phone: Direcionamento para cadastro se não existir
+   - Todos os usuários têm acesso completo
+   - Usar AnalyticsManager para tracking
+
+2. FIREBASE INTEGRATION:
+   - Firestore para dados de perfil e preferências
+   - Realtime Database para chat e status online
+   - Firebase Storage para fotos (com URLs aleatórias para teste)
+   - Implementar offline support com cache local
+
+3. UI/UX PATTERNS:
+   - Usar Material Design 3 com tema rosa/roxo personalizado
+   - Implementar gradientes para telas premium
+   - Seguir padrão de cards para exibição de perfis
+   - Usar emojis consistentemente na UI (💕, 🔐, 📍, etc.)
+
+4. ESTADO E NAVEGAÇÃO:
+   - Usar sealed classes para estados (LoginUiState, SignUpUiState)
+   - Implementar navegação automática baseada em perfil
+   - Gerenciar loading states em todos os ViewModels
+   - Usar collectAsStateWithLifecycle() para observar estados
+
+5. TESTING COM DADOS FICTÍCIOS:
+   - Criar usuários de teste automaticamente
+   - Usar fotos aleatórias do Picsum/Lorem Picsum
+   - Coordenadas reais de São Paulo
+   - Perfis completos para teste de funcionalidades
+
+6. PERFORMANCE:
+   - Usar LazyColumn/LazyRow para listas
+   - Implementar paginação para discovery
+   - Otimizar imagens com thumbnails
+   - Usar remember() adequadamente para evitar recomposições
+`;
+
+// ===== COMPOSE BEST PRACTICES FYPMATCH =====
+
+const composeBestPractices = [
+    "Usar @HiltViewModel em todos os ViewModels",
+    "Implementar @Preview para todas as telas",
+    "Seguir naming convention: NomeScreen.kt, NomeViewModel.kt",
+    "Usar collectAsStateWithLifecycle() para StateFlow",
+    "Implementar proper state hoisting",
+    "Usar MaterialTheme.colorScheme para cores",
+    "Implementar proper error handling com try-catch",
+    "Usar Modifier.fillMaxSize() consistentemente",
+    "Implementar loading states com CircularProgressIndicator",
+    "Usar proper spacing com Spacer(Modifier.height())"
+];
+
+// ===== FIREBASE PATTERNS FYPMATCH =====
+
+const firebasePatterns = `
+1. REPOSITORY PATTERN:
+   - Sempre retornar Result<T> para operações Firebase
+   - Implementar try-catch em todas as operações
+   - Usar .await() para operações síncronas
+   - Implementar Flow para dados em tempo real
+
+2. FIRESTORE STRUCTURE:
+   users/{userId} - Dados principais do usuário
+   profiles/{userId} - Perfil detalhado
+   preferences/{userId} - Preferências de match
+   matches/{matchId} - Dados de matches
+   conversations/{conversationId} - Metadados de conversas
+
+3. REALTIME DATABASE STRUCTURE:
+   usuarios_online/{userId} - Status online/offline
+   localizacoes/{userId} - Localização GPS atual
+   conversas/{conversationId}/mensagens - Mensagens em tempo real
+
+4. ERROR HANDLING:
+   - Usar AnalyticsManager.logError() para tracking
+   - Implementar fallbacks para operações críticas
+   - Mostrar mensagens de erro user-friendly
+   - Implementar retry logic quando apropriado
+`;
+
+// ===== DADOS FICTÍCIOS PARA TESTE =====
+
+const testDataPatterns = `
+1. FOTOS ALEATÓRIAS:
+   - Usar Picsum Photos: https://picsum.photos/400/400?random=1
+   - Gerar URLs diferentes para cada usuário
+   - Implementar fallback para fotos padrão
+
+2. PERFIS DE TESTE:
+   - Nomes brasileiros realistas
+   - Idades entre 18-45 anos
+   - Bios interessantes e variadas
+   - Localizações em São Paulo
+
+3. COORDENADAS DE SÃO PAULO:
+   - Centro: -23.5505, -46.6333
+   - Paulista: -23.5613, -46.6565
+   - Vila Madalena: -23.5368, -46.6890
+   - Ibirapuera: -23.5873, -46.6573
+
+4. DADOS REALISTAS:
+   - Profissões variadas
+   - Interesses diversos
+   - Educação completa
+   - Preferências de match configuradas
+`;
+
+// ===== TESTING PATTERNS FYPMATCH =====
+
+const testingPatterns = [
+    "Usar TestScope.runTest para testes de coroutines",
+    "Implementar mocks com MockK relaxed = true",
+    "Testar com coordenadas reais de São Paulo",
+    "Usar Truth assertions para melhor legibilidade",
+    "Implementar testes de integração com Firebase Emulator",
+    "Testar estados de loading, success e error",
+    "Usar InstantTaskExecutorRule para LiveData/StateFlow",
+    "Implementar testes de UI com ComposeTestRule"
+];
+
+// ===== SECURITY & PRIVACY FYPMATCH =====
+
+const securityGuidelines = [
+    "Todos os usuários têm AccessLevel.FULL_ACCESS",
+    "Validar permissões de localização antes de usar GPS",
+    "Implementar rate limiting para operações sensíveis",
+    "Usar Firebase Security Rules para proteção de dados",
+    "Implementar validação de entrada em todos os formulários",
+    "Usar HTTPS para todas as comunicações",
+    "Implementar logout automático por inatividade"
+];
+
+// ===== PERFORMANCE OPTIMIZATION FYPMATCH =====
+
+const performanceOptimization = [
+    "Usar paginação para lista de usuários no Discovery",
+    "Implementar cache local para perfis visualizados",
+    "Otimizar imagens com diferentes resoluções",
+    "Usar lazy loading para fotos de perfil",
+    "Implementar debounce para busca de usuários",
+    "Usar background processing para upload de fotos",
+    "Implementar proper memory management para bitmaps",
+    "Usar ProGuard/R8 para ofuscação e otimização"
+];
+
+// ===== AI INTEGRATION FYPMATCH =====
+
+const aiIntegration = [
+    "Usar Gemini API para funcionalidades de IA",
+    "Implementar sistema de créditos para IA",
+    "Usar AICounselorRepository para gerenciar sessões",
+    "Implementar fallbacks quando IA não está disponível",
+    "Usar analytics para tracking de uso da IA",
+    "Implementar rate limiting para chamadas da IA",
+    "Usar context apropriado para prompts da IA",
+    "Implementar error handling robusto para IA"
+];
+
+// ===== MONETIZATION PATTERNS FYPMATCH =====
+
+const monetizationPatterns = [
+    "Usar Google Play Billing para assinaturas",
+    "Implementar AdMob para anúncios recompensados",
+    "Usar SubscriptionStatus enum para controle de acesso",
+    "Implementar sistema de créditos para funcionalidades premium",
+    "Usar analytics para tracking de conversões",
+    "Implementar A/B testing para preços",
+    "Usar proper error handling para transações",
+    "Implementar restore purchases functionality"
+];
+
+// ===== CODE STYLE FYPMATCH =====
+
+const codeStyle = [
+    "Usar PascalCase para classes e arquivos",
+    "Usar camelCase para funções e variáveis",
+    "Usar UPPER_SNAKE_CASE para constantes",
+    "Prefixar ViewModels com nome da tela (LoginViewModel)",
+    "Usar sufixo Repository para classes de dados",
+    "Usar sufixo Screen para Composables de tela",
+    "Implementar proper documentation com KDoc",
+    "Usar meaningful variable names",
+    "Implementar proper error messages em português",
+    "Usar emojis consistentemente para melhor UX"
+];
+
+// INSTRUÇÕES FINAIS:
+// 1. Remover completamente sistema de lista de espera
+// 2. Implementar login/cadastro automático
+// 3. Criar perfis automaticamente para Google
+// 4. Direcionar para cadastro se email/phone não existir
+// 5. Usar dados fictícios realistas para teste
+// 6. Implementar fotos aleatórias
+// 7. Dar acesso completo a todos os usuários
+// 8. Testar fluxo completo de autenticação
+// 9. Verificar salvamento no Firebase
+// 10. Manter consistência com código existente 

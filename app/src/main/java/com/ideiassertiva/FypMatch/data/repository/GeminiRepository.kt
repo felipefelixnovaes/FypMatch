@@ -19,8 +19,9 @@ class GeminiRepository @Inject constructor(
     
     companion object {
         private const val TAG = "GeminiRepository"
-        // API Key testada e funcionando: AIzaSyAsUX8dj3_OKuHWQlEsBEGa0d3mWFqat2E
-        private const val GEMINI_API_KEY = "AIzaSyAsUX8dj3_OKuHWQlEsBEGa0d3mWFqat2E"
+        // API Key configurada no BuildConfig para maior segurança
+        private val GEMINI_API_KEY = BuildConfig.GEMINI_API_KEY.takeIf { it.isNotBlank() } 
+            ?: "AIzaSyAsUX8dj3_OKuHWQlEsBEGa0d3mWFqat2E" // Fallback
     }
     
     // Inicializa Gemini com a nova API

@@ -1,0 +1,245 @@
+/**
+ * 🧪 SCRIPT DE EXECUÇÃO AUTOMÁTICA DE TESTES - FypMatch
+ * 
+ * Este script executa todos os testes do projeto e gera relatórios detalhados.
+ * 
+ * Uso:
+ * ./gradlew runFypMatchTests
+ * ./gradlew runFypMatchTestsWithReport
+ * ./gradlew runFypMatchTestsContinuous
+ */
+
+// Tarefa para executar todos os testes
+task runFypMatchTests {
+    group = 'FypMatch Tests'
+    description = 'Executa todos os testes do FypMatch'
+    
+    dependsOn 'test'
+    
+    doLast {
+        println """
+        
+        🧪 ===============================================
+        🧪 EXECUÇÃO DE TESTES FINALIZADA - FypMatch
+        🧪 ===============================================
+        
+        📊 Relatórios disponíveis em:
+        📄 app/build/reports/tests/testDebugUnitTest/index.html
+        📊 app/build/test-results/testDebugUnitTest/
+        
+        🎯 Para executar testes específicos:
+        ./gradlew test --tests "AuthRepositoryTest"
+        ./gradlew test --tests "LocationViewModelTest"
+        ./gradlew test --tests "ProfileViewModelTest"
+        
+        """.stripIndent()
+    }
+}
+
+// Tarefa para executar testes com relatório detalhado
+task runFypMatchTestsWithReport {
+    group = 'FypMatch Tests'
+    description = 'Executa todos os testes com relatório detalhado'
+    
+    dependsOn 'test'
+    
+    doLast {
+        // Gerar relatório customizado
+        def testResultsDir = file("app/build/test-results/testDebugUnitTest")
+        def reportsDir = file("app/build/reports/tests/testDebugUnitTest")
+        
+        if (testResultsDir.exists()) {
+            println """
+            
+            🎉 ===============================================
+            🎉 RELATÓRIO DE TESTES - FypMatch
+            🎉 ===============================================
+            
+            📊 Resultados dos Testes:
+            """.stripIndent()
+            
+            // Processar arquivos XML de resultado
+            testResultsDir.listFiles().findAll { it.name.endsWith('.xml') }.each { file ->
+                def xml = new XmlSlurper().parse(file)
+                def testSuite = xml.@name
+                def tests = xml.@tests as Integer
+                def failures = xml.@failures as Integer
+                def errors = xml.@errors as Integer
+                def passed = tests - failures - errors
+                
+                def status = (failures + errors) == 0 ? "✅" : "❌"
+                println "   $status $testSuite: $passed/$tests passou (${failures + errors} falhas)"
+            }
+            
+            println """
+            
+            📄 Relatório HTML: file://${reportsDir.absolutePath}/index.html
+            📊 Resultados XML: ${testResultsDir.absolutePath}
+            
+            """.stripIndent()
+        }
+    }
+}
+
+// Tarefa para execução contínua de testes
+task runFypMatchTestsContinuous {
+    group = 'FypMatch Tests'
+    description = 'Executa testes continuamente (watch mode)'
+    
+    doLast {
+        println """
+        
+        🔄 ===============================================
+        🔄 MODO CONTÍNUO DE TESTES - FypMatch
+        🔄 ===============================================
+        
+        Os testes serão executados automaticamente sempre que
+        você modificar arquivos de código ou teste.
+        
+        Para parar, pressione Ctrl+C
+        
+        """.stripIndent()
+        
+        // Implementar watch mode seria mais complexo
+        // Por enquanto, apenas executar os testes uma vez
+        project.tasks.test.execute()
+    }
+}
+
+// Configuração adicional para testes
+test {
+    // Usar JUnit Platform
+    useJUnitPlatform()
+    
+    // Configurações de memória
+    maxHeapSize = "2g"
+    jvmArgs '-XX:MaxPermSize=512m'
+    
+    // Configurações de relatório
+    reports {
+        html.enabled = true
+        junitXml.enabled = true
+    }
+    
+    // Configurações de logging
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
+        showCauses true
+        showExceptions true
+        showStackTraces true
+        
+        // Mostrar resultados detalhados
+        afterSuite { desc, result ->
+            if (!desc.parent) {
+                def output = "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped)"
+                def startItem = '|  ', endItem = '  |'
+                def repeatLength = startItem.length() + output.length() + endItem.length()
+                
+                println('\n' + ('-' * repeatLength) + '\n' + startItem + output + endItem + '\n' + ('-' * repeatLength))
+            }
+        }
+    }
+    
+    // Executar em paralelo para melhor performance
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    
+    // Configurações específicas do FypMatch
+    systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'
+    systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
+    
+    // Variáveis de ambiente para testes
+    environment 'FYPMATCH_TEST_MODE', 'true'
+    environment 'FIREBASE_TEST_MODE', 'true'
+}
+
+// Tarefa para limpar e executar testes
+task cleanAndTest {
+    group = 'FypMatch Tests'
+    description = 'Limpa o projeto e executa todos os testes'
+    
+    dependsOn 'clean', 'test'
+    
+    tasks.findByName('test').mustRunAfter 'clean'
+}
+
+// Tarefa para executar apenas testes rápidos
+task runFastTests {
+    group = 'FypMatch Tests'
+    description = 'Executa apenas testes rápidos (unit tests)'
+    
+    doLast {
+        project.tasks.test.include '**/auth/**Test.class'
+        project.tasks.test.include '**/profile/**Test.class'
+        project.tasks.test.exclude '**/integration/**Test.class'
+        project.tasks.test.execute()
+    }
+}
+
+// Tarefa para executar testes de integração
+task runIntegrationTests {
+    group = 'FypMatch Tests'
+    description = 'Executa testes de integração'
+    
+    doLast {
+        project.tasks.test.include '**/integration/**Test.class'
+        project.tasks.test.execute()
+    }
+}
+
+// Configuração para executar testes automaticamente após build
+build.finalizedBy runFypMatchTests
+
+// Adicionar informações úteis
+task testInfo {
+    group = 'FypMatch Tests'
+    description = 'Mostra informações sobre os testes disponíveis'
+    
+    doLast {
+        println """
+        
+        🧪 ===============================================
+        🧪 INFORMAÇÕES DE TESTES - FypMatch
+        🧪 ===============================================
+        
+        📋 Categorias de Testes Disponíveis:
+        
+        🔐 Autenticação:
+           - AuthRepositoryTest
+           - LoginViewModelTest
+           - GoogleSignInTest
+           - EmailSignInTest
+           - PhoneSignInTest
+        
+        👤 Perfil:
+           - ProfileViewModelTest
+           - ProfileRepositoryTest
+           - UserRepositoryTest
+        
+        📍 Localização:
+           - LocationViewModelTest
+           - LocationRepositoryTest
+           - LocationServiceTest
+           - LocationManagerTest
+           - DistanceCalculationTest
+        
+        🎯 Comandos Úteis:
+        
+        ./gradlew runFypMatchTests              # Todos os testes
+        ./gradlew runFypMatchTestsWithReport    # Com relatório detalhado
+        ./gradlew runFastTests                  # Apenas testes rápidos
+        ./gradlew runIntegrationTests           # Testes de integração
+        ./gradlew cleanAndTest                  # Limpar e testar
+        
+        ./gradlew test --tests "AuthRepositoryTest"     # Teste específico
+        ./gradlew test --tests "*Location*"            # Testes de localização
+        ./gradlew test --continuous                     # Modo contínuo
+        
+        📊 Relatórios:
+        - HTML: app/build/reports/tests/testDebugUnitTest/index.html
+        - XML:  app/build/test-results/testDebugUnitTest/
+        - Logs: app/build/reports/tests/testDebugUnitTest/classes/
+        
+        """.stripIndent()
+    }
+} 

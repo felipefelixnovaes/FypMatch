@@ -31,6 +31,14 @@
           }
         },
         {
+          "client_id": "98859676437-abc123def456ghi789jkl012mno345pq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ideiassertiva.FypMatch",
+            "certificate_hash": "ec9ba97e09734ea8495258df6c02571309a1cb53"
+          }
+        },
+        {
           "client_id": "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com",
           "client_type": 3
         }

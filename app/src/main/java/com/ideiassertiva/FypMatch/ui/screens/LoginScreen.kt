@@ -65,11 +65,11 @@ fun LoginScreen(
         emailVerificationSent = uiState.emailVerificationSent
     }
     
-    // Launcher para o Intent de login do Google
+    // Launcher para fallback quando Credential Manager falha
     val googleSignInLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        println("🔍 DEBUG - Resultado do launcher: resultCode=${result.resultCode}, data=${result.data != null}")
+        println("🔍 DEBUG - Resultado do launcher fallback: resultCode=${result.resultCode}, data=${result.data != null}")
         viewModel.handleGoogleSignInResult(result.data)
     }
     
@@ -92,15 +92,15 @@ fun LoginScreen(
         }
     }
     
-    // Lidar com necessidade de fluxo interativo
+    // Fallback para quando Credential Manager falha
     LaunchedEffect(needsInteractiveSignIn) {
         if (needsInteractiveSignIn) {
-            println("🔍 DEBUG - Iniciando fluxo interativo do Google Sign-In")
+            println("🔍 DEBUG - Iniciando fallback do Google Sign-In")
             try {
                 val signInIntent = viewModel.getGoogleSignInIntent()
                 googleSignInLauncher.launch(signInIntent)
             } catch (e: Exception) {
-                println("🔍 DEBUG - Erro ao obter Intent: ${e.message}")
+                println("🔍 DEBUG - Erro ao obter Intent fallback: ${e.message}")
                 viewModel.handleSignInError("Erro ao iniciar login: ${e.message}")
             }
         }
@@ -167,7 +167,7 @@ fun LoginScreen(
                 
                 // Botões de seleção
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     LoginModeButton(
@@ -262,9 +262,9 @@ fun LoginScreen(
         // Mensagens de sucesso
         uiState.successMessage?.let { message ->
             Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
             ) {
                 Text(
                     text = message,
@@ -324,28 +324,28 @@ private fun GoogleLoginSection(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
         ) {
-            Text(
-                text = "✨ Por que escolher o FypMatch?",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Text("🤖 IA para compatibilidade real")
-            Text("🌈 Assistente para neurodiversidade")
-            Text("🏆 Sistema de verificação inclusivo")
-            Text("💕 Relacionamentos autênticos")
-            Text("🔒 Privacidade e segurança")
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                Text(
+                    text = "✨ Por que escolher o FypMatch?",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text("🤖 IA para compatibilidade real")
+                Text("🌈 Assistente para neurodiversidade")
+                Text("🏆 Sistema de verificação inclusivo")
+                Text("💕 Relacionamentos autênticos")
+                Text("🔒 Privacidade e segurança")
+            }
         }
-    }
-    
+        
     Spacer(modifier = Modifier.height(24.dp))
-    
+        
     Button(
         onClick = onSignIn,
         modifier = Modifier
@@ -361,7 +361,7 @@ private fun GoogleLoginSection(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Abrindo seletor de contas...")
+                    Text("Escolha sua conta Google...")
                 }
             }
             uiState.isLoading -> {
@@ -576,10 +576,10 @@ private fun EmailVerificationSection(
         ) {
             if (isLoading) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Verificando...")
                 }
@@ -681,8 +681,8 @@ private fun PhoneLoginSection(
                         Text("📱")
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Enviar código")
-                    }
-                }
+            }
+        }
             }
         } else {
             // Segunda etapa: inserir código de verificação
@@ -717,8 +717,8 @@ private fun PhoneLoginSection(
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             color = MaterialTheme.colorScheme.onPrimary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                         Text("Verificando...")
                     }
                 } else {

@@ -160,8 +160,8 @@ class UserRepository @Inject constructor(
             
             // Analytics
             analyticsManager.logCustomCrash("user_preferences_updated", mapOf(
-                "min_age" to preferences.ageRange.first.toString(),
-                "max_age" to preferences.ageRange.last.toString(),
+                "min_age" to preferences.minAge.toString(),
+                "max_age" to preferences.maxAge.toString(),
                 "max_distance" to preferences.maxDistance.toString(),
                 "show_me" to preferences.showMe.name
             ))
@@ -253,7 +253,7 @@ class UserRepository @Inject constructor(
             // Filtrar por preferências (idade, distância, etc.)
             val filteredUsers = users.filter { user ->
                 val age = user.profile.age
-                age in preferences.ageRange.first..preferences.ageRange.last &&
+                age in preferences.minAge..preferences.maxAge &&
                 (preferences.showMe == ShowMe.EVERYONE || 
                  (preferences.showMe == ShowMe.MEN && user.profile.gender == Gender.MALE) ||
                  (preferences.showMe == ShowMe.WOMEN && user.profile.gender == Gender.FEMALE))
@@ -263,8 +263,8 @@ class UserRepository @Inject constructor(
             analyticsManager.logCustomCrash("users_search_completed", mapOf(
                 "total_found" to users.size.toString(),
                 "filtered_count" to filteredUsers.size.toString(),
-                "preferences_age_min" to preferences.ageRange.first.toString(),
-                "preferences_age_max" to preferences.ageRange.last.toString()
+                "preferences_age_min" to preferences.minAge.toString(),
+                "preferences_age_max" to preferences.maxAge.toString()
             ))
             
             Result.success(filteredUsers)

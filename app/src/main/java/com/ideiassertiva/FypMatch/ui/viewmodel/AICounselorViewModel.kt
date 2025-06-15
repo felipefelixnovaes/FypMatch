@@ -7,10 +7,13 @@ import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.data.repository.AdStats
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class AICounselorViewModel : ViewModel() {
-    
-    private val counselorRepository = AICounselorRepository()
+@HiltViewModel
+class AICounselorViewModel @Inject constructor(
+    private val counselorRepository: AICounselorRepository
+) : ViewModel() {
     
     // Estado da UI
     private val _uiState = MutableStateFlow(AICounselorUiState())

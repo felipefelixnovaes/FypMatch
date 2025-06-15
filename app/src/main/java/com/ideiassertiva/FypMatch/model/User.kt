@@ -177,13 +177,18 @@ enum class ShowMe {
 }
 
 data class UserPreferences(
-    val ageRange: IntRange = 18..99,
+    val minAge: Int = 18,
+    val maxAge: Int = 99,
     val maxDistance: Int = 50, // em km
     val genderPreference: List<Gender> = emptyList(),
     val intentionPreference: List<Intention> = emptyList(),
     val showMe: ShowMe = ShowMe.EVERYONE,
     val onlyVerified: Boolean = false
-)
+) {
+    // Propriedade computada para compatibilidade
+    val ageRange: IntRange
+        get() = minAge..maxAge
+}
 
 enum class SubscriptionStatus {
     FREE,

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Firebase App Check Debug Token -->
+    <string name="firebase_app_check_debug_token">7D4B82AF-E94C-4B29-B015-DDDD0620E68C</string>
+</resources> 

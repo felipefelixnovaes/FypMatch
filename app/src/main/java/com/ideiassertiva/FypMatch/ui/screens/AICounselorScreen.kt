@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.AICounselorViewModel
@@ -39,7 +40,7 @@ import kotlinx.coroutines.delay
 fun AICounselorScreen(
     onNavigateBack: () -> Unit = {},
     userId: String = "",
-    viewModel: AICounselorViewModel = viewModel()
+    viewModel: AICounselorViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentSession by viewModel.currentSession.collectAsState(initial = null)

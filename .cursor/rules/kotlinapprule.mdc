@@ -1,0 +1,528 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+// Android Jetpack Compose .cursorrules
+
+// Flexibility Notice
+
+// Note: This is a recommended project structure, but be flexible and adapt to existing project structures.
+// Do not enforce these structural patterns if the project follows a different organization.
+// Focus on maintaining consistency with the existing project architecture while applying Jetpack Compose best practices.
+
+// Project Architecture and Best Practices
+
+const androidJetpackComposeBestPractices = [
+    "Adapt to existing project architecture while maintaining clean code principles",
+    "Follow Material Design 3 guidelines and components",
+    "Implement clean architecture with domain, data, and presentation layers",
+    "Use Kotlin coroutines and Flow for asynchronous operations",
+    "Implement dependency injection using Hilt",
+    "Follow unidirectional data flow with ViewModel and UI State",
+    "Use Compose navigation for screen management",
+    "Implement proper state hoisting and composition",
+];
+
+// Folder Structure
+
+// Note: This is a reference structure. Adapt to the project's existing organization
+
+const projectStructure = `
+app/
+  src/
+    main/
+      java/com/package/
+        data/
+          repository/
+          datasource/
+          models/
+        domain/
+          usecases/
+          models/
+          repository/
+        presentation/
+          screens/
+          components/
+          theme/
+          viewmodels/
+        di/
+        utils/
+      res/
+        values/
+        drawable/
+        mipmap/
+    test/
+    androidTest/
+`;
+
+// Compose UI Guidelines
+
+const composeGuidelines = `
+1. Use remember and derivedStateOf appropriately
+2. Implement proper recomposition optimization
+3. Use proper Compose modifiers ordering
+4. Follow composable function naming conventions
+5. Implement proper preview annotations
+6. Use proper state management with MutableState
+7. Implement proper error handling and loading states
+8. Use proper theming with MaterialTheme
+9. Follow accessibility guidelines
+10. Implement proper animation patterns
+`;
+
+// Testing Guidelines
+
+const testingGuidelines = `
+1. Write unit tests for ViewModels and UseCases
+2. Implement UI tests using Compose testing framework
+3. Use fake repositories for testing
+4. Implement proper test coverage
+5. Use proper testing coroutine dispatchers
+`;
+
+// Performance Guidelines
+
+const performanceGuidelines = `
+1. Minimize recomposition using proper keys
+2. Use proper lazy loading with LazyColumn and LazyRow
+3. Implement efficient image loading
+4. Use proper state management to prevent unnecessary updates
+5. Follow proper lifecycle awareness
+6. Implement proper memory management
+7. Use proper background processing
+`; {
+  "projectStructure": """
+  app/src/main/java/com/ideiassertiva/FypMatch/
+  ├── data/model/              # DTOs específicos da API ou Firebase
+  ├── domain/model/            # Modelos puros usados em UseCases e UI
+  ├── data/repository/         # Camada de dados (Firebase, APIs)
+  │   ├── AuthRepository.kt
+  │   ├── UserRepository.kt
+  │   ├── LocationRepository.kt
+  │   ├── ChatRepository.kt
+  │   ├── DiscoveryRepository.kt
+  │   ├── PhotoRepository.kt
+  │   └── AICounselorRepository.kt
+  ├── ui/screens/
+  │   ├── discovery/           # Tela de discovery
+  │   ├── auth/                # Tela de login e cadastro
+  │   ├── chat/
+  │   ├── profile/
+  ├── ui/navigation/FypMatchNavigation.kt
+  ├── ui/theme/Theme.kt, Color.kt, Type.kt
+  ├── ui/viewmodel/LoginViewModel.kt, DiscoveryViewModel.kt
+  ├── di/AppModule.kt
+  └── util/AnalyticsManager.kt, LocationManager.kt, AdMobConfig.kt
+  """,
+
+  "architecture": [
+    "Seguir arquitetura MVVM com Repository Pattern",
+    "Usar Hilt para Dependency Injection em todos os ViewModels",
+    "Implementar StateFlow para gerenciamento de estado reativo",
+    "Usar Firebase Firestore para dados estruturados",
+    "Usar Firebase Realtime Database para chat em tempo real",
+    "Implementar Clean Architecture com separação clara de responsabilidades",
+    "Usar Mappers entre DTOs, Models e UIModels",
+    "Evitar lógica de negócio em Repositories ou ViewModels",
+    "Usar Result<T> para modelar operações falhas com fallback",
+    "Implementar AnalyticsManager em todas as ações-chave"
+  ],
+
+  "composeBestPractices": [
+    "Usar @HiltViewModel em todos os ViewModels",
+    "Implementar @Preview para todas as telas",
+    "Usar collectAsStateWithLifecycle() para StateFlow",
+    "Evitar recomposition com rememberUpdatedState em callbacks",
+    "Usar derivedStateOf para lógica derivada na UI",
+    "Usar Modifier.fillMaxSize() e Spacer() para espaçamento",
+    "Seguir padrão de nomenclatura: NomeScreen.kt, NomeViewModel.kt",
+    "CircularProgressIndicator para loading",
+    "MaterialTheme.colorScheme para cores",
+    "Erro com try-catch e feedback amigável ao usuário"
+  ],
+
+  "firebasePatterns": [
+    "Usar Firestore para perfis e preferências",
+    "Realtime DB para status online e mensagens",
+    "Storage para upload de fotos com fallback",
+    "Estrutura clara: users/, profiles/, matches/, conversations/",
+    "Sempre retornar Result<T> com try-catch",
+    "Evitar listeners sem cancelamento",
+    "Usar transações para dados críticos (ex: match)"
+  ],
+
+  "testing": [
+    "Usar TestScope.runTest para testes de coroutines",
+    "Mocks com MockK relaxed = true",
+    "ComposeTestRule para UI tests",
+    "Firebase Emulator para integração",
+    "Testar todos os estados: loading, success, error",
+    "InstantTaskExecutorRule para LiveData/StateFlow",
+    "Testar navegação e conversão de estados"
+  ],
+
+  "security": [
+    "AccessLevel enum para controle de acesso",
+    "Firebase Security Rules configuradas",
+    "Validação de permissão de GPS",
+    "Rate limiting para endpoints sensíveis",
+    "Logout automático por inatividade",
+    "Criptografar tokens/local storage",
+    "Ofuscação de dados sensíveis nos logs"
+  ],
+
+  "performance": [
+    "Paginação em discovery com lazy loading",
+    "Cache local de perfis visualizados",
+    "Imagens otimizadas e em várias resoluções",
+    "remember(), rememberUpdatedState e composition condicional",
+    "Debounce na busca de usuários",
+    "Background processing para uploads",
+    "Uso de Benchmarking Library e Systrace"
+  ],
+
+  "aiIntegration": [
+    "Usar Gemini API para respostas e conselhos",
+    "Rate limiting e controle de sessão",
+    "Fallback se IA estiver indisponível",
+    "Sistema de créditos por uso da IA",
+    "Logs e analytics de uso de IA",
+    "Prompts com contexto delimitado por tokens"
+  ],
+
+  "monetization": [
+    "Google Billing para assinaturas",
+    "AdMob com anúncios recompensados",
+    "SubscriptionStatus enum para controle",
+    "Funções premium com sistema de créditos",
+    "Analytics de conversão e funil",
+    "A/B testing com Firebase Remote Config",
+    "Recuperar compras antigas (restore purchases)"
+  ],
+
+  "style": [
+    "PascalCase para classes, camelCase para variáveis, SNAKE_CASE para constantes",
+    "ViewModel prefixado pela tela (ex: ChatViewModel)",
+    "KDoc obrigatório em classes públicas",
+    "Mensagens de erro legíveis e localizadas em português",
+    "Nomes de variáveis claros (evitar 'data', 'temp')",
+    "Sealed classes para representar estados e ações"
+  ],
+
+  "accessibility": [
+    "contentDescription em imagens",
+    "Contrast ratio ideal em todos os temas",
+    "Keyboard navigation e screen reader support",
+    "Focus management e navegação acessível",
+    "Uso de semantics tags"
+  ],
+
+  "localization": [
+    "strings.xml obrigatório para todos os textos",
+    "Formatos de data, hora e número locais",
+    "Suporte a pluralização e ordenação regional",
+    "RTL e múltiplos idiomas preparados"
+  ],
+
+  "analytics": [
+    "Tracking com AnalyticsManager para eventos-chave",
+    "Crashlytics configurado com logs adicionais",
+    "Funnel analysis com eventos customizados",
+    "Monitoramento de performance com Firebase",
+    "Tracking de propriedades do usuário (premium, onboarding, etc.)"
+  ],
+
+  "deployment": [
+    "Variants debug/release com configs separadas",
+    "Assinatura de app com key segura",
+    "Controle de versão semântico (major.minor.patch)",
+    "ProGuard ativado e configurado",
+    "CI/CD com GitHub Actions e Firebase Distribution",
+    "Notas de versão e validação com Firebase Test Lab"
+  ]
+}// FypMatch Android Jetpack Compose .cursorrules
+// Otimizado para o projeto FypMatch - App de namoro com IA
+
+// ===== ESTRUTURA DO PROJETO FYPMATCH =====
+
+const projectStructure = `
+app/src/main/java/com/ideiassertiva/FypMatch/
+├── data/repository/          # Camada de dados (Firebase, APIs)
+│   ├── AuthRepository.kt     # Autenticação (Google, Email, Phone)
+│   ├── UserRepository.kt     # Gestão de usuários
+│   ├── LocationRepository.kt # GPS e proximidade
+│   ├── ChatRepository.kt     # Sistema de chat
+│   ├── DiscoveryRepository.kt # Swipe e matches
+│   ├── PhotoRepository.kt    # Upload de fotos
+│   └── AICounselorRepository.kt # IA conselheira
+├── model/                    # Modelos de domínio
+│   ├── User.kt              # Modelo principal do usuário
+│   ├── Match.kt             # Modelo de matches
+│   ├── Message.kt           # Modelo de mensagens
+│   └── AccessLevel.kt       # Controle de acesso
+├── ui/
+│   ├── screens/             # Telas Compose
+│   │   ├── WelcomeScreen.kt
+│   │   ├── LoginScreen.kt
+│   │   ├── DiscoveryScreen.kt
+│   │   ├── ChatScreen.kt
+│   │   └── ProfileScreen.kt
+│   ├── navigation/          # Sistema de navegação
+│   │   └── FypMatchNavigation.kt
+│   ├── theme/               # Tema Material Design 3
+│   │   ├── Theme.kt
+│   │   ├── Color.kt
+│   │   └── Type.kt
+│   └── viewmodel/           # ViewModels com Hilt
+│       ├── LoginViewModel.kt
+│       ├── DiscoveryViewModel.kt
+│       └── ProfileViewModel.kt
+├── di/                      # Dependency Injection (Hilt)
+│   └── AppModule.kt
+└── util/                    # Utilitários
+    ├── AnalyticsManager.kt
+    ├── LocationManager.kt
+    └── AdMobConfig.kt
+`;
+
+// ===== ARQUITETURA E PADRÕES FYPMATCH =====
+
+const fypMatchArchitecture = [
+    "Seguir arquitetura MVVM com Repository Pattern",
+    "Usar Hilt para Dependency Injection em todos os ViewModels",
+    "Implementar StateFlow para gerenciamento de estado reativo",
+    "Usar Firebase Firestore para dados estruturados",
+    "Usar Firebase Realtime Database para chat em tempo real",
+    "Implementar Clean Architecture com separação clara de responsabilidades",
+    "Seguir padrão unidirectional data flow",
+    "Usar Result<T> para operações que podem falhar",
+    "Implementar analytics com AnalyticsManager em todas as ações importantes"
+];
+
+// ===== GUIDELINES ESPECÍFICAS DO FYPMATCH =====
+
+const fypMatchGuidelines = `
+1. AUTENTICAÇÃO:
+   - Sempre usar AuthRepository para operações de login
+   - Implementar Google Sign-In, Email e Phone Auth
+   - Gerenciar estados com NavigationState enum
+   - Usar AnalyticsManager para tracking de eventos
+
+2. FIREBASE INTEGRATION:
+   - Firestore para dados de perfil e preferências
+   - Realtime Database para chat e status online
+   - Firebase Storage para fotos (com fallback para URLs externas)
+   - Implementar offline support com cache local
+
+3. UI/UX PATTERNS:
+   - Usar Material Design 3 com tema rosa/roxo personalizado
+   - Implementar gradientes para telas premium
+   - Seguir padrão de cards para exibição de perfis
+   - Usar emojis consistentemente na UI (💕, 🔐, 📍, etc.)
+
+4. ESTADO E NAVEGAÇÃO:
+   - Usar sealed classes para estados (LoginUiState, DiscoveryUiState)
+   - Implementar navegação com popUpTo para limpar stack
+   - Gerenciar loading states em todos os ViewModels
+   - Usar collectAsStateWithLifecycle() para observar estados
+
+5. TESTING:
+   - Implementar testes unitários para ViewModels
+   - Usar MockK para mocking de repositories
+   - Testar com coordenadas reais de São Paulo
+   - Implementar testes de UI com Compose Testing
+
+6. PERFORMANCE:
+   - Usar LazyColumn/LazyRow para listas
+   - Implementar paginação para discovery
+   - Otimizar imagens com thumbnails
+   - Usar remember() adequadamente para evitar recomposições
+`;
+
+// ===== COMPOSE BEST PRACTICES FYPMATCH =====
+
+const composeBestPractices = [
+    "Usar @HiltViewModel em todos os ViewModels",
+    "Implementar @Preview para todas as telas",
+    "Seguir naming convention: NomeScreen.kt, NomeViewModel.kt",
+    "Usar collectAsStateWithLifecycle() para StateFlow",
+    "Implementar proper state hoisting",
+    "Usar MaterialTheme.colorScheme para cores",
+    "Implementar proper error handling com try-catch",
+    "Usar Modifier.fillMaxSize() consistentemente",
+    "Implementar loading states com CircularProgressIndicator",
+    "Usar proper spacing com Spacer(Modifier.height())"
+];
+
+// ===== FIREBASE PATTERNS FYPMATCH =====
+
+const firebasePatterns = `
+1. REPOSITORY PATTERN:
+   - Sempre retornar Result<T> para operações Firebase
+   - Implementar try-catch em todas as operações
+   - Usar .await() para operações síncronas
+   - Implementar Flow para dados em tempo real
+
+2. FIRESTORE STRUCTURE:
+   users/{userId} - Dados principais do usuário
+   profiles/{userId} - Perfil detalhado
+   preferences/{userId} - Preferências de match
+   matches/{matchId} - Dados de matches
+   conversations/{conversationId} - Metadados de conversas
+
+3. REALTIME DATABASE STRUCTURE:
+   usuarios_online/{userId} - Status online/offline
+   localizacoes/{userId} - Localização GPS atual
+   conversas/{conversationId}/mensagens - Mensagens em tempo real
+
+4. ERROR HANDLING:
+   - Usar AnalyticsManager.logError() para tracking
+   - Implementar fallbacks para operações críticas
+   - Mostrar mensagens de erro user-friendly
+   - Implementar retry logic quando apropriado
+`;
+
+// ===== TESTING PATTERNS FYPMATCH =====
+
+const testingPatterns = [
+    "Usar TestScope.runTest para testes de coroutines",
+    "Implementar mocks com MockK relaxed = true",
+    "Testar com coordenadas reais de São Paulo",
+    "Usar Truth assertions para melhor legibilidade",
+    "Implementar testes de integração com Firebase Emulator",
+    "Testar estados de loading, success e error",
+    "Usar InstantTaskExecutorRule para LiveData/StateFlow",
+    "Implementar testes de UI com ComposeTestRule"
+];
+
+// ===== SECURITY & PRIVACY FYPMATCH =====
+
+const securityGuidelines = [
+    "Implementar validação de acesso com AccessLevel enum",
+    "Usar BetaFlags para controle de funcionalidades",
+    "Validar permissões de localização antes de usar GPS",
+    "Implementar rate limiting para operações sensíveis",
+    "Usar Firebase Security Rules para proteção de dados",
+    "Implementar validação de entrada em todos os formulários",
+    "Usar HTTPS para todas as comunicações",
+    "Implementar logout automático por inatividade"
+];
+
+// ===== PERFORMANCE OPTIMIZATION FYPMATCH =====
+
+const performanceOptimization = [
+    "Usar paginação para lista de usuários no Discovery",
+    "Implementar cache local para perfis visualizados",
+    "Otimizar imagens com diferentes resoluções",
+    "Usar lazy loading para fotos de perfil",
+    "Implementar debounce para busca de usuários",
+    "Usar background processing para upload de fotos",
+    "Implementar proper memory management para bitmaps",
+    "Usar ProGuard/R8 para ofuscação e otimização"
+];
+
+// ===== AI INTEGRATION FYPMATCH =====
+
+const aiIntegration = [
+    "Usar Gemini API para funcionalidades de IA",
+    "Implementar sistema de créditos para IA",
+    "Usar AICounselorRepository para gerenciar sessões",
+    "Implementar fallbacks quando IA não está disponível",
+    "Usar analytics para tracking de uso da IA",
+    "Implementar rate limiting para chamadas da IA",
+    "Usar context apropriado para prompts da IA",
+    "Implementar error handling robusto para IA"
+];
+
+// ===== MONETIZATION PATTERNS FYPMATCH =====
+
+const monetizationPatterns = [
+    "Usar Google Play Billing para assinaturas",
+    "Implementar AdMob para anúncios recompensados",
+    "Usar SubscriptionStatus enum para controle de acesso",
+    "Implementar sistema de créditos para funcionalidades premium",
+    "Usar analytics para tracking de conversões",
+    "Implementar A/B testing para preços",
+    "Usar proper error handling para transações",
+    "Implementar restore purchases functionality"
+];
+
+// ===== CODE STYLE FYPMATCH =====
+
+const codeStyle = [
+    "Usar PascalCase para classes e arquivos",
+    "Usar camelCase para funções e variáveis",
+    "Usar UPPER_SNAKE_CASE para constantes",
+    "Prefixar ViewModels com nome da tela (LoginViewModel)",
+    "Usar sufixo Repository para classes de dados",
+    "Usar sufixo Screen para Composables de tela",
+    "Implementar proper documentation com KDoc",
+    "Usar meaningful variable names",
+    "Implementar proper error messages em português",
+    "Usar emojis consistentemente para melhor UX"
+];
+
+// ===== ACCESSIBILITY FYPMATCH =====
+
+const accessibilityGuidelines = [
+    "Implementar contentDescription para todas as imagens",
+    "Usar semantics para melhor navegação",
+    "Implementar proper contrast ratios",
+    "Usar text scaling appropriately",
+    "Implementar keyboard navigation",
+    "Usar proper focus management",
+    "Implementar screen reader support",
+    "Usar meaningful button labels"
+];
+
+// ===== LOCALIZATION FYPMATCH =====
+
+const localizationGuidelines = [
+    "Usar strings.xml para todos os textos",
+    "Implementar proper date/time formatting",
+    "Usar proper number formatting",
+    "Implementar RTL support quando necessário",
+    "Usar proper currency formatting",
+    "Implementar proper plurals handling",
+    "Usar proper locale-specific sorting",
+    "Implementar proper timezone handling"
+];
+
+// ===== DEBUGGING & ANALYTICS FYPMATCH =====
+
+const debuggingGuidelines = [
+    "Usar AnalyticsManager para tracking de eventos",
+    "Implementar proper logging com diferentes níveis",
+    "Usar Firebase Crashlytics para crash reporting",
+    "Implementar custom events para funnel analysis",
+    "Usar proper error tracking",
+    "Implementar performance monitoring",
+    "Usar proper user property tracking",
+    "Implementar A/B testing com Firebase Remote Config"
+];
+
+// ===== DEPLOYMENT FYPMATCH =====
+
+const deploymentGuidelines = [
+    "Usar diferentes build variants (debug, release)",
+    "Implementar proper signing configuration",
+    "Usar proper versioning strategy",
+    "Implementar proper backup rules",
+    "Usar proper network security config",
+    "Implementar proper ProGuard rules",
+    "Usar proper app bundle optimization",
+    "Implementar proper release notes"
+];
+
+// INSTRUÇÕES FINAIS:
+// 1. Sempre seguir a estrutura existente do projeto FypMatch
+// 2. Usar Hilt para DI em todos os novos componentes
+// 3. Implementar analytics em todas as ações importantes
+// 4. Seguir padrões de UI/UX estabelecidos (gradientes, emojis, cores)
+// 5. Usar Firebase adequadamente (Firestore + Realtime Database)
+// 6. Implementar testes para todas as novas funcionalidades
+// 7. Seguir padrões de segurança e privacidade
+// 8. Otimizar performance desde o início
+// 9. Implementar proper error handling
+// 10. Manter consistência com o código existente 

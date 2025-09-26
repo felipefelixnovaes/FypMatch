@@ -26,13 +26,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ideiassertiva.FypMatch.model.SubscriptionStatus
+import com.ideiassertiva.FypMatch.model.PhotoUploadLimits
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PremiumScreen(
     onNavigateBack: () -> Unit = {},
-    onPurchase: (SubscriptionStatus) -> Unit = {}
+    onPurchase: (SubscriptionStatus) -> Unit = {},
+    onNavigateToPhotoManager: () -> Unit = {},
+    onNavigateToFilters: () -> Unit = {},
+    onNavigateToAnalytics: () -> Unit = {},
+    currentSubscription: SubscriptionStatus = SubscriptionStatus.FREE
 ) {
     var selectedPlan by remember { mutableStateOf(SubscriptionStatus.PREMIUM) }
     
@@ -76,6 +81,18 @@ fun PremiumScreen(
             item {
                 // Benefícios
                 PremiumBenefits()
+            }
+            
+            // Phase 5 Premium Features (only show if user has premium)
+            if (currentSubscription != SubscriptionStatus.FREE) {
+                item {
+                    Phase5FeaturesSection(
+                        onNavigateToPhotoManager = onNavigateToPhotoManager,
+                        onNavigateToFilters = onNavigateToFilters,
+                        onNavigateToAnalytics = onNavigateToAnalytics,
+                        subscription = currentSubscription
+                    )
+                }
             }
             
             item {
@@ -396,6 +413,165 @@ private data class BenefitItem(
     val title: String,
     val description: String
 )
+
+@Composable
+private fun Phase5FeaturesSection(
+    onNavigateToPhotoManager: () -> Unit,
+    onNavigateToFilters: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
+    subscription: SubscriptionStatus
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFFF9800),
+                    modifier = Modifier.size(28.dp)
+                )
+                Text(
+                    text = "Recursos Premium Avançados",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "Aproveite todos os recursos exclusivos da sua assinatura ${subscription.name}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // Feature Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                FeatureButton(
+                    modifier = Modifier.weight(1f),
+                    title = "Fotos",
+                    subtitle = "Gerenciar",
+                    icon = Icons.Default.Image,
+                    color = Color(0xFF4CAF50),
+                    onClick = onNavigateToPhotoManager
+                )
+                
+                FeatureButton(
+                    modifier = Modifier.weight(1f),
+                    title = "Filtros",
+                    subtitle = "Avançados",
+                    icon = Icons.Default.FilterList,
+                    color = Color(0xFF2196F3),
+                    onClick = onNavigateToFilters
+                )
+                
+                FeatureButton(
+                    modifier = Modifier.weight(1f),
+                    title = "Analytics",
+                    subtitle = "Estatísticas",
+                    icon = Icons.Default.Analytics,
+                    color = Color(0xFF9C27B0),
+                    onClick = onNavigateToAnalytics
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Premium features list
+            val premiumFeatures = listOf(
+                "Até ${PhotoUploadLimits.forSubscription(subscription).maxPhotos} fotos em alta qualidade",
+                "Filtros avançados por estilo de vida",
+                "Analytics detalhado do seu perfil",
+                "Boosts ${if (subscription == SubscriptionStatus.VIP) "ilimitados" else "mensais"}",
+                "Prioridade no algoritmo de descoberta"
+            )
+            
+            premiumFeatures.forEach { feature ->
+                Row(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = Color(0xFF4CAF50),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = feature,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeatureButton(
+    modifier: Modifier = Modifier,
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .aspectRatio(1f)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = color.copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = color,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

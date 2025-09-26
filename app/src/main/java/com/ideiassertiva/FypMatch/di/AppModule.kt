@@ -74,4 +74,10 @@ object AppModule {
     fun provideDiscoveryRepository(): DiscoveryRepository {
         return DiscoveryRepository()
     }
+    
+    @Provides
+    @Singleton
+    fun provideAffiliateRepository(): AffiliateRepository {
+        return AffiliateRepository()
+    }
 } 

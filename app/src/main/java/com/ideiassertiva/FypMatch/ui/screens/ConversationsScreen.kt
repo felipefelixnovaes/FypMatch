@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,7 @@ import java.time.format.DateTimeFormatter
 fun ConversationsScreen(
     currentUserId: String,
     onConversationClick: (String) -> Unit,
+    onNavigateToPhase3Demo: () -> Unit = {},
     viewModel: ConversationsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -40,51 +42,70 @@ fun ConversationsScreen(
         viewModel.loadConversations(currentUserId)
     }
     
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        TopAppBar(
-            title = {
-                Text(
-                    text = "Conversas",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        )
-        
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Conversas",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-            }
+            )
             
-            uiState.conversations.isEmpty() -> {
-                EmptyConversationsState()
-            }
-            
-            else -> {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(uiState.conversations) { conversation ->
-                        ConversationItem(
-                            conversation = conversation,
-                            otherUser = uiState.users[conversation.getOtherParticipant(currentUserId)?.userId],
-                            currentUserId = currentUserId,
-                            onClick = { onConversationClick(conversation.id) }
-                        )
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                
+                uiState.conversations.isEmpty() -> {
+                    EmptyConversationsState()
+                }
+                
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(uiState.conversations) { conversation ->
+                            ConversationItem(
+                                conversation = conversation,
+                                otherUser = uiState.users[conversation.getOtherParticipant(currentUserId)?.userId],
+                                currentUserId = currentUserId,
+                                onClick = { onConversationClick(conversation.id) }
+                            )
+                        }
                     }
                 }
             }
+        }
+        
+        // Floating Action Button para demonstração da Phase 3
+        FloatingActionButton(
+            onClick = onNavigateToPhase3Demo,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSecondary
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Chat,
+                contentDescription = "Demo Phase 3 - Chat"
+            )
         }
     }
 }

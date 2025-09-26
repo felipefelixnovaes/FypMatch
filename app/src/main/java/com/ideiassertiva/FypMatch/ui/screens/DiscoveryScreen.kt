@@ -53,6 +53,7 @@ fun DiscoveryScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToUserDetails: (String) -> Unit = {},
     onNavigateToChat: (String) -> Unit = {},
+    onNavigateToPhase3Demo: () -> Unit = {},
     viewModel: DiscoveryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -91,7 +92,8 @@ fun DiscoveryScreen(
             onSettingsClick = { /* TODO: Implementar settings */ },
             onMatchesClick = onNavigateToMatches,
             onAICounselorClick = { onNavigateToAICounselor("current_user_id") },
-            onProfileClick = onNavigateToProfile
+            onProfileClick = onNavigateToProfile,
+            onPhase3DemoClick = onNavigateToPhase3Demo
         )
         
         // Área dos cards
@@ -144,7 +146,8 @@ private fun DiscoveryTopBar(
     onSettingsClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onAICounselorClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onPhase3DemoClick: () -> Unit = {}
 ) {
     Row(
         modifier = Modifier
@@ -181,26 +184,55 @@ private fun DiscoveryTopBar(
                 contentScale = ContentScale.Fit
             )
             
-            // Botão do conselheiro VIP
-            OutlinedButton(
-                onClick = onAICounselorClick,
-                modifier = Modifier.height(32.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Conselheiro",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium
-                )
+                // Botão do conselheiro VIP
+                OutlinedButton(
+                    onClick = onAICounselorClick,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(12.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "IA",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                
+                // Botão Phase 3 Demo - NOVO!
+                OutlinedButton(
+                    onClick = onPhase3DemoClick,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Chat,
+                        contentDescription = null,
+                        modifier = Modifier.size(12.dp),
+                        tint = MaterialTheme.colorScheme.secondary
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "Chat",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
         

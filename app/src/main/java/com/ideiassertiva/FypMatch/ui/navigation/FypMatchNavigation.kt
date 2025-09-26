@@ -26,6 +26,9 @@ sealed class Screen(val route: String) {
     object AICounselor : Screen("ai_counselor/{userId}") {
         fun createRoute(userId: String) = "ai_counselor/$userId"
     }
+    object Phase4AI : Screen("phase4_ai/{userId}") {
+        fun createRoute(userId: String) = "phase4_ai/$userId"
+    }
     object AccessCode : Screen("access_code")
     object UserDetails : Screen("user_details/{userId}") {
         fun createRoute(userId: String) = "user_details/$userId"
@@ -84,6 +87,9 @@ fun FypMatchNavigation(
                 },
                 onNavigateToAICounselor = { userId ->
                     navController.navigate(Screen.AICounselor.createRoute(userId))
+                },
+                onNavigateToPhase4AI = { userId ->
+                    navController.navigate(Screen.Phase4AI.createRoute(userId))
                 },
                 onNavigateToProfile = {
                     navController.navigate(Screen.ProfileEdit.route)
@@ -186,6 +192,16 @@ fun FypMatchNavigation(
         composable(Screen.AICounselor.route) { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             AICounselorScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                userId = userId
+            )
+        }
+        
+        composable(Screen.Phase4AI.route) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            Phase4AIScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 },

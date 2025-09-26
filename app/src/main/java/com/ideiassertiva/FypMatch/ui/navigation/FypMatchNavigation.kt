@@ -18,6 +18,10 @@ sealed class Screen(val route: String) {
     object Chat : Screen("chat/{conversationId}") {
         fun createRoute(conversationId: String) = "chat/$conversationId"
     }
+    object EnhancedChat : Screen("enhanced_chat/{conversationId}/{useFirebase}") {
+        fun createRoute(conversationId: String, useFirebase: Boolean = true) = "enhanced_chat/$conversationId/$useFirebase"
+    }
+    object Phase3Demo : Screen("phase3_demo")
     object Premium : Screen("premium")
     object AICounselor : Screen("ai_counselor/{userId}") {
         fun createRoute(userId: String) = "ai_counselor/$userId"
@@ -88,7 +92,10 @@ fun FypMatchNavigation(
                     navController.navigate(Screen.UserDetails.createRoute(userId))
                 },
                 onNavigateToChat = { conversationId ->
-                    navController.navigate(Screen.Chat.createRoute(conversationId))
+                    navController.navigate(Screen.EnhancedChat.createRoute(conversationId, true))
+                },
+                onNavigateToPhase3Demo = {
+                    navController.navigate(Screen.Phase3Demo.route)
                 }
             )
         }
@@ -118,7 +125,10 @@ fun FypMatchNavigation(
             ConversationsScreen(
                 currentUserId = "current_user_123", // Em um app real, viria da autenticação
                 onConversationClick = { conversationId ->
-                    navController.navigate(Screen.Chat.createRoute(conversationId))
+                    navController.navigate(Screen.EnhancedChat.createRoute(conversationId, true))
+                },
+                onNavigateToPhase3Demo = {
+                    navController.navigate(Screen.Phase3Demo.route)
                 }
             )
         }
@@ -128,6 +138,33 @@ fun FypMatchNavigation(
             ChatScreen(
                 conversationId = conversationId,
                 currentUserId = "current_user_123", // Em um app real, viria da autenticação
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.EnhancedChat.route) { backStackEntry ->
+            val conversationId = backStackEntry.arguments?.getString("conversationId") ?: ""
+            val useFirebase = backStackEntry.arguments?.getString("useFirebase")?.toBooleanStrictOrNull() ?: true
+            EnhancedChatScreen(
+                conversationId = conversationId,
+                currentUserId = "current_user_123", // Em um app real, viria da autenticação
+                useFirebase = useFirebase,
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable(Screen.Phase3Demo.route) {
+            Phase3DemoScreen(
+                onNavigateToMockChat = { conversationId, userId ->
+                    navController.navigate(Screen.EnhancedChat.createRoute(conversationId, false))
+                },
+                onNavigateToFirebaseChat = { conversationId, userId ->
+                    navController.navigate(Screen.EnhancedChat.createRoute(conversationId, true))
+                },
                 onBackClick = {
                     navController.popBackStack()
                 }

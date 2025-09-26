@@ -50,6 +50,7 @@ fun DiscoveryScreen(
     onNavigateToMatches: () -> Unit = {},
     onNavigateToPremium: () -> Unit = {},
     onNavigateToAICounselor: (String) -> Unit = {},
+    onNavigateToPhase4AI: (String) -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToUserDetails: (String) -> Unit = {},
     onNavigateToChat: (String) -> Unit = {},
@@ -92,6 +93,7 @@ fun DiscoveryScreen(
             onSettingsClick = { /* TODO: Implementar settings */ },
             onMatchesClick = onNavigateToMatches,
             onAICounselorClick = { onNavigateToAICounselor("current_user_id") },
+            onPhase4AIClick = { onNavigateToPhase4AI("current_user_id") },
             onProfileClick = onNavigateToProfile,
             onPhase3DemoClick = onNavigateToPhase3Demo
         )
@@ -146,6 +148,7 @@ private fun DiscoveryTopBar(
     onSettingsClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onAICounselorClick: () -> Unit = {},
+    onPhase4AIClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     onPhase3DemoClick: () -> Unit = {}
 ) {
@@ -231,6 +234,31 @@ private fun DiscoveryTopBar(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Medium
+                    )
+                }
+                
+                // Botão Phase 4 AI - NOVO!
+                OutlinedButton(
+                    onClick = onPhase4AIClick,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 6.dp),
+                    border = BorderStroke(1.dp, Color(0xFF9C27B0)), // Purple color for Phase 4
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFF9C27B0)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Psychology,
+                        contentDescription = null,
+                        modifier = Modifier.size(12.dp),
+                        tint = Color(0xFF9C27B0)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(
+                        text = "AI+",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF9C27B0),
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }

@@ -206,8 +206,13 @@ data class ActionItem(
     val deadline: String? = null
 )
 
-// Conselheiro de IA inteligente
+// Enhanced Phase 4 AI Counselor with ML capabilities
 class SmartAICounselor {
+    
+    // Integration with Phase 4 ML systems
+    private val compatibilityEngine = CompatibilityMLEngine()
+    private val personalityAnalyzer = PersonalityAnalyzer()
+    private val neuroConversationAnalyzer = NeuroConversationAnalyzer()
     
     fun analyzeUserComprehensively(context: UserContext): List<CounselorResponse> {
         val advice = mutableListOf<CounselorResponse>()
@@ -468,5 +473,189 @@ class SmartAICounselor {
         openers.add("Oi! Adorei seu perfil, principalmente [mencionar algo específico]. Como está sendo seu dia?")
         
         return openers.take(3)
+    }
+    
+    // Enhanced Phase 4 methods
+    fun generateNeuroFriendlyAdvice(
+        context: UserContext,
+        neuroProfile: NeuroProfile?
+    ): List<CounselorResponse> {
+        val advice = mutableListOf<CounselorResponse>()
+        
+        if (neuroProfile != null) {
+            // Neurodiversity-specific advice
+            if (neuroProfile.preferences.needsClearCommunication) {
+                advice.add(
+                    CounselorResponse(
+                        type = AIAdviceType.ConversationImprovement,
+                        title = "Comunicação Clara e Direta",
+                        content = "Baseado no seu perfil, você se beneficia de comunicação direta. Nas conversas, seja específico sobre o que você quer saber ou compartilhar. Evite linguagem ambígua como 'talvez' ou 'meio que'.",
+                        actionItems = listOf(
+                            ActionItem("Use frases como 'Quero saber...' ou 'Estou interessado em...'"),
+                            ActionItem("Seja específico: em vez de 'gosto de música', diga 'gosto de rock dos anos 80'"),
+                            ActionItem("Faça uma pergunta clara por mensagem")
+                        ),
+                        examples = listOf(
+                            "Em vez de: 'Você gosta de filme?' → 'Qual gênero de filme você mais gosta?'",
+                            "Em vez de: 'Talvez a gente possa se encontrar' → 'Gostaria de marcar um café no sábado?'"
+                        ),
+                        priority = CounselorResponse.Priority.HIGH
+                    )
+                )
+            }
+            
+            if (neuroProfile.preferences.sensitiveToCriticism) {
+                advice.add(
+                    CounselorResponse(
+                        type = AIAdviceType.GeneralDating,
+                        title = "Lidando com Rejeição de Forma Saudável",
+                        content = "Você pode ser mais sensível a críticas, o que é totalmente normal. Lembre-se: nem sempre dar match significa compatibilidade. Foque nas conexões que fluem naturalmente.",
+                        actionItems = listOf(
+                            ActionItem("Pratique autocompaixão: trate-se como trataria um bom amigo"),
+                            ActionItem("Lembre-se: rejeição no app não é sobre seu valor como pessoa"),
+                            ActionItem("Celebre as conversas positivas, mesmo que não virem encontros")
+                        ),
+                        priority = CounselorResponse.Priority.MEDIUM
+                    )
+                )
+            }
+            
+            if (neuroProfile.preferences.needsRoutine) {
+                advice.add(
+                    CounselorResponse(
+                        type = AIAdviceType.MatchingStrategy,
+                        title = "Criando Rotinas Saudáveis no App",
+                        content = "Você funciona melhor com rotinas. Crie uma estrutura para usar o app que não interfira na sua rotina diária.",
+                        actionItems = listOf(
+                            ActionItem("Defina horários específicos para usar o app (ex: 19h-20h)"),
+                            ActionItem("Limite o tempo diário no app (30-45 minutos máximo)"),
+                            ActionItem("Use o mesmo padrão para responder mensagens"),
+                            ActionItem("Tenha um 'script mental' para primeiras mensagens")
+                        ),
+                        priority = CounselorResponse.Priority.HIGH
+                    )
+                )
+            }
+        }
+        
+        return advice
+    }
+    
+    fun generateCompatibilityInsights(
+        userProfile: UserProfile,
+        targetProfile: UserProfile,
+        compatibilityScore: CompatibilityScore
+    ): CounselorResponse {
+        val insights = mutableListOf<String>()
+        val actionItems = mutableListOf<ActionItem>()
+        
+        // Analyze compatibility factors
+        compatibilityScore.factors.forEach { factor ->
+            when {
+                factor.score >= 0.8f -> {
+                    insights.add("✅ ${factor.name}: ${factor.description} (${(factor.score * 100).toInt()}%)")
+                }
+                factor.score >= 0.6f -> {
+                    insights.add("⚠️ ${factor.name}: ${factor.description} (${(factor.score * 100).toInt()}%)")
+                }
+                else -> {
+                    insights.add("❌ ${factor.name}: ${factor.description} (${(factor.score * 100).toInt()}%)")
+                }
+            }
+        }
+        
+        // Generate actionable advice based on compatibility
+        if (compatibilityScore.personalityMatch < 0.6f) {
+            actionItems.add(ActionItem(
+                "Foque em encontrar interesses em comum para compensar diferenças de personalidade"
+            ))
+        }
+        
+        if (compatibilityScore.communicationMatch < 0.6f) {
+            actionItems.add(ActionItem(
+                "Adapte seu estilo de comunicação: seja mais direto ou mais emotivo conforme necessário"
+            ))
+        }
+        
+        val overallAdvice = when {
+            compatibilityScore.overall >= 0.8f -> "Alta compatibilidade! Vocês têm potencial para uma conexão forte."
+            compatibilityScore.overall >= 0.6f -> "Boa compatibilidade! Algumas áreas podem precisar de atenção."
+            compatibilityScore.overall >= 0.4f -> "Compatibilidade moderada. Foque nos pontos fortes em comum."
+            else -> "Baixa compatibilidade. Considerem se vale investir energia nesta conexão."
+        }
+        
+        return CounselorResponse(
+            type = AIAdviceType.MatchingStrategy,
+            title = "Análise de Compatibilidade AI",
+            content = "$overallAdvice\n\nAnálise detalhada:\n${insights.joinToString("\n")}",
+            actionItems = actionItems,
+            priority = if (compatibilityScore.overall >= 0.7f) CounselorResponse.Priority.HIGH else CounselorResponse.Priority.MEDIUM
+        )
+    }
+    
+    fun generatePersonalityBasedConversationTips(
+        userPersonality: PersonalityProfile,
+        targetPersonality: PersonalityProfile?
+    ): List<CounselorResponse> {
+        val tips = mutableListOf<CounselorResponse>()
+        
+        if (targetPersonality != null) {
+            // Extraversion-based tips
+            if (targetPersonality.traits.extraversion > 0.7f && userPersonality.traits.extraversion < 0.4f) {
+                tips.add(
+                    CounselorResponse(
+                        type = AIAdviceType.ConversationImprovement,
+                        title = "Conversando com uma Pessoa Extrovertida",
+                        content = "A pessoa tem perfil extrovertido enquanto você é mais introvertido. Isso pode ser uma combinação interessante!",
+                        actionItems = listOf(
+                            ActionItem("Sugira atividades sociais ou em grupo"),
+                            ActionItem("Compartilhe suas experiências em eventos sociais"),
+                            ActionItem("Mostre interesse nas histórias sociais dela"),
+                            ActionItem("Não tenha medo de ser mais animado nas mensagens")
+                        ),
+                        priority = CounselorResponse.Priority.MEDIUM
+                    )
+                )
+            }
+            
+            // Openness-based tips
+            if (targetPersonality.traits.openness > 0.7f) {
+                tips.add(
+                    CounselorResponse(
+                        type = AIAdviceType.ConversationImprovement,
+                        title = "Conversando com uma Pessoa Aberta a Experiências",
+                        content = "A pessoa é muito aberta a novas experiências. Ela provavelmente gosta de novidades e aventuras.",
+                        actionItems = listOf(
+                            ActionItem("Compartilhe experiências únicas que você teve"),
+                            ActionItem("Sugira atividades diferentes ou lugares novos"),
+                            ActionItem("Pergunte sobre os sonhos e planos futuros dela"),
+                            ActionItem("Compartilhe suas próprias ideias criativas")
+                        ),
+                        priority = CounselorResponse.Priority.MEDIUM
+                    )
+                )
+            }
+            
+            // Communication style tips
+            if (targetPersonality.communicationStyle.emotionality > 0.7f && 
+                userPersonality.communicationStyle.emotionality < 0.4f) {
+                tips.add(
+                    CounselorResponse(
+                        type = AIAdviceType.ConversationImprovement,
+                        title = "Ajustando seu Estilo Emocional",
+                        content = "A pessoa é mais expressiva emocionalmente que você. Tente ser um pouco mais caloroso.",
+                        actionItems = listOf(
+                            ActionItem("Use mais emojis nas mensagens"),
+                            ActionItem("Expresse como você se sente sobre as coisas"),
+                            ActionItem("Faça mais elogios genuínos"),
+                            ActionItem("Compartilhe momentos que te deixaram feliz/emocionado")
+                        ),
+                        priority = CounselorResponse.Priority.HIGH
+                    )
+                )
+            }
+        }
+        
+        return tips
     }
 } 

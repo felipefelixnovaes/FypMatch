@@ -1,12 +1,10 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.20"
     id("com.google.gms.google-services") version "4.4.2"
     kotlin("kapt")
     id("com.google.dagger.hilt.android")
-    // id("kotlin-kapt")
-    // id("dagger.hilt.android.plugin")
 }
 
 android {
@@ -96,6 +94,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     
     // Coil para carregamento de imagens - Segunda Fase

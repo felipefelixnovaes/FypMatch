@@ -1,5 +1,7 @@
 package com.ideiassertiva.FypMatch.di
 
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.FirebaseMessaging
 import com.ideiassertiva.FypMatch.data.repository.*
 import dagger.Module
 import dagger.Provides
@@ -43,8 +45,28 @@ object AppModule {
     
     @Provides
     @Singleton
-    fun provideChatRepository(): ChatRepository {
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideFirebaseMessaging(): FirebaseMessaging {
+        return FirebaseMessaging.getInstance()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideChatRepository(firestore: FirebaseFirestore): ChatRepository {
+        // For now, return the existing mock implementation
+        // In a future iteration, we can create an interface and switch implementations
         return ChatRepository()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideFirebaseChatRepository(firestore: FirebaseFirestore): FirebaseChatRepository {
+        return FirebaseChatRepository(firestore)
     }
     
     @Provides

@@ -333,6 +333,116 @@ extension FirebaseService: MessagingDelegate {
     }
 }
 
+// MARK: - Discovery and Matching
+
+extension FirebaseService {
+    /// Fetch discovery users based on user preferences
+    func fetchDiscoveryUsers(limit: Int = 20) async throws -> [User] {
+        guard let currentUser = currentUser else {
+            throw FirebaseServiceError.notAuthenticated
+        }
+        
+        // Query users based on preferences
+        var query = db.collection("users")
+            .whereField("id", isNotEqualTo: currentUser.id)
+            .limit(to: limit)
+        
+        // Filter by gender interest
+        if currentUser.genderInterest != .all {
+            query = query.whereField("gender", isEqualTo: currentUser.genderInterest.rawValue)
+        }
+        
+        // Filter by age range
+        query = query.whereField("age", isGreaterThanOrEqualTo: currentUser.ageRangeMin)
+        query = query.whereField("age", isLessThanOrEqualTo: currentUser.ageRangeMax)
+        
+        let snapshot = try await query.getDocuments()
+        
+        return snapshot.documents.compactMap { doc in
+            try? doc.data(as: User.self)
+        }
+    }
+    
+    /// Record a swipe action
+    func recordSwipe(_ swipe: SwipeRecord) async throws {
+        let encoder = Firestore.Encoder()
+        let data = try encoder.encode(swipe)
+        try await db.collection("swipes").document(swipe.id).setData(data)
+    }
+    
+    /// Check if there's a reciprocal like
+    func checkReciprocalLike(userId: String, targetUserId: String) async throws -> Bool {
+        let snapshot = try await db.collection("swipes")
+            .whereField("userId", isEqualTo: targetUserId)
+            .whereField("targetUserId", isEqualTo: userId)
+            .whereField("action", isEqualTo: SwipeAction.like.rawValue)
+            .getDocuments()
+        
+        return !snapshot.documents.isEmpty
+    }
+    
+    /// Create a match
+    func createMatch(_ match: Match) async throws {
+        let encoder = Firestore.Encoder()
+        let data = try encoder.encode(match)
+        try await db.collection("matches").document(match.id).setData(data)
+        
+        // Create conversation for the match
+        let conversation = Conversation(
+            matchId: match.id,
+            participant1Id: match.user1Id,
+            participant2Id: match.user2Id
+        )
+        
+        let conversationData = try encoder.encode(conversation)
+        try await db.collection("conversations").document(conversation.id).setData(conversationData)
+    }
+    
+    /// Get user matches
+    func getUserMatches(userId: String, limit: Int = 50) async throws -> [Match] {
+        let snapshot1 = try await db.collection("matches")
+            .whereField("user1Id", isEqualTo: userId)
+            .whereField("isActive", isEqualTo: true)
+            .limit(to: limit)
+            .getDocuments()
+        
+        let snapshot2 = try await db.collection("matches")
+            .whereField("user2Id", isEqualTo: userId)
+            .whereField("isActive", isEqualTo: true)
+            .limit(to: limit)
+            .getDocuments()
+        
+        let matches1 = snapshot1.documents.compactMap { try? $0.data(as: Match.self) }
+        let matches2 = snapshot2.documents.compactMap { try? $0.data(as: Match.self) }
+        
+        return (matches1 + matches2).sorted { $0.matchedAt > $1.matchedAt }
+    }
+    
+    /// Get user conversations
+    func getUserConversations(userId: String, limit: Int = 50) async throws -> [Conversation] {
+        let snapshot1 = try await db.collection("conversations")
+            .whereField("participant1Id", isEqualTo: userId)
+            .whereField("isActive", isEqualTo: true)
+            .order(by: "lastActivity", descending: true)
+            .limit(to: limit)
+            .getDocuments()
+        
+        let snapshot2 = try await db.collection("conversations")
+            .whereField("participant2Id", isEqualTo: userId)
+            .whereField("isActive", isEqualTo: true)
+            .order(by: "lastActivity", descending: true)
+            .limit(to: limit)
+            .getDocuments()
+        
+        let conversations1 = snapshot1.documents.compactMap { try? $0.data(as: Conversation.self) }
+        let conversations2 = snapshot2.documents.compactMap { try? $0.data(as: Conversation.self) }
+        
+        return (conversations1 + conversations2).sorted { 
+            ($0.lastActivity) > ($1.lastActivity) 
+        }
+    }
+}
+
 // MARK: - Errors
 
 enum FirebaseServiceError: LocalizedError {

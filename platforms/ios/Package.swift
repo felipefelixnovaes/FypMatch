@@ -42,7 +42,11 @@ let package = Package(
         ),
         .testTarget(
             name: "FypMatch-iOSTests",
-            dependencies: ["FypMatch-iOS"]
+            dependencies: [
+                "FypMatch-iOS",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+            ],
+            path: "Tests/FypMatchTests"
         )
     ]
 )

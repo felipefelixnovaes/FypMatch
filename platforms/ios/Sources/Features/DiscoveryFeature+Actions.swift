@@ -1,143 +1,154 @@
 // DiscoveryFeature+Actions.swift — FypMatch iOS
-// Extensão com todas as actions do DiscoveryFeature
+// Extensões de FirebaseService para o sistema de Discovery
+// NOTA: A implementação principal está em DiscoveryFeature.swift
 
 import Foundation
+import FirebaseFirestore
 import ComposableArchitecture
 
-// Completando as ações e reducer do DiscoveryFeature
-extension DiscoveryFeature {
-    // MARK: - Body (Reducer)
-    var body: some ReducerOf<Self> {
-        BindingReducer()
-        Reduce { state, action in
-            switch action {
-            case .loadDiscoveryUsers:
-                state.isLoadingUsers = true
-                state.loadingError = nil
-                return .run { send in
-                    do {
-                        let users = try await firebaseService.loadDiscoveryUsers()
-                        await send(.usersLoaded(.success(users)))
-                    } catch {
-                        await send(.usersLoaded(.failure(error)))
-                    }
-                }
-
-            case let .usersLoaded(.success(users)):
-                state.isLoadingUsers = false
-                state.discoveryUsers = users
-                return .none
-
-            case let .usersLoaded(.failure(error)):
-                state.isLoadingUsers = false
-                state.loadingError = error.localizedDescription
-                return .none
-
-            case let .swipeRight(user):
-                state.swipeCount += 1
-                guard let idx = state.discoveryUsers.firstIndex(where: { $0.id == user.id }) else { return .none }
-                state.discoveryUsers.remove(at: idx)
-                return .run { [currentUserId = state.currentUser?.id] send in
-                    guard let myId = currentUserId else { return }
-                    let matched = try? await firebaseService.recordLike(fromUser: myId, toUser: user.id)
-                    if let match = matched {
-                        await send(.matchOccurred(match))
-                    }
-                    // Load more if running low
-                    if state.discoveryUsers.count < 3 {
-                        await send(.loadDiscoveryUsers)
-                    }
-                }
-
-            case let .swipeLeft(user):
-                state.swipeCount += 1
-                state.discoveryUsers.removeAll { $0.id == user.id }
-                return .run { _ in
-                    // Record pass (optional, for ML improvement)
-                }
-
-            case let .superLike(user):
-                guard state.currentUser?.isActivePremium == true else {
-                    state.showingPremiumUpsell = true
-                    state.upsellReason = .dailyLimitReached
-                    return .none
-                }
-                state.discoveryUsers.removeAll { $0.id == user.id }
-                return .none
-
-            case let .matchOccurred(match):
-                state.newMatch = match
-                state.showingMatchAnimation = true
-                return .none
-
-            case .dismissMatchAnimation:
-                state.showingMatchAnimation = false
-                state.newMatch = nil
-                return .none
-
-            case .activateBoost:
-                guard state.currentUser?.isActivePremium == true else {
-                    state.showingPremiumUpsell = true
-                    state.upsellReason = .dailyLimitReached
-                    return .none
-                }
-                return .none
-
-            case let .showFilters(show):
-                state.isShowingFilters = show
-                return .none
-
-            case .applyFilters:
-                state.isShowingFilters = false
-                return .run { send in
-                    await send(.loadDiscoveryUsers)
-                }
-
-            case let .showPremiumUpsell(reason):
-                state.showingPremiumUpsell = true
-                state.upsellReason = reason
-                return .none
-
-            case .binding:
-                return .none
-            }
-        }
-    }
-}
-
-// MARK: - DiscoveryFeature Actions
-
-extension DiscoveryFeature {
-    enum Action: BindableAction, Equatable {
-        case binding(BindingAction<State>)
-        case loadDiscoveryUsers
-        case usersLoaded(Result<[User], Error>)
-        case swipeRight(User)
-        case swipeLeft(User)
-        case superLike(User)
-        case matchOccurred(Match)
-        case dismissMatchAnimation
-        case activateBoost
-        case showFilters(Bool)
-        case applyFilters
-        case showPremiumUpsell(PremiumUpsellReason)
-    }
-}
-
-// MARK: - Dependencies
-
-extension DiscoveryFeature {
-    @Dependency(\.firebaseService) var firebaseService
-}
+// MARK: - FirebaseService Extensions para Discovery
 
 extension FirebaseService {
-    func loadDiscoveryUsers() async throws -> [User] {
-        // Firestore query with filters
-        return []
+
+    /// Registra um like e verifica match mútuo
+    func recordLike(fromUser myId: String, toUser targetId: String) async throws -> Match? {
+        let db = Firestore.firestore()
+
+        // 1. Salvar o like na coleção de likes
+        try await db.collection("likes")
+            .document("\(myId)_\(targetId)")
+            .setData([
+                "fromUserId": myId,
+                "toUserId": targetId,
+                "likedAt": Timestamp(date: Date()),
+                "type": "like"
+            ])
+
+        // 2. Verificar se o outro usuário já curtiu de volta (match mútuo)
+        let mutualDoc = try await db.collection("likes")
+            .document("\(targetId)_\(myId)")
+            .getDocument()
+
+        guard mutualDoc.exists else { return nil }
+
+        // 3. Criar match
+        let matchId = [myId, targetId].sorted().joined(separator: "_")
+        let conversationId = UUID().uuidString
+
+        let matchData: [String: Any] = [
+            "id": matchId,
+            "user1Id": min(myId, targetId),
+            "user2Id": max(myId, targetId),
+            "matchedAt": Timestamp(date: Date()),
+            "isActive": true,
+            "conversationId": conversationId,
+            "user1SwipedAt": Timestamp(date: Date()),
+            "user2SwipedAt": Timestamp(date: Date()),
+            "compatibilityScore": Double.random(in: 70...95),
+            "matchType": "regular",
+            "hasUser1ViewedMatch": false,
+            "hasUser2ViewedMatch": false,
+            "isBlocked": false,
+            "createdAt": Timestamp(date: Date()),
+            "updatedAt": Timestamp(date: Date())
+        ]
+
+        try await db.collection("matches").document(matchId).setData(matchData)
+
+        // 4. Criar conversa associada
+        try await db.collection("conversations").document(conversationId).setData([
+            "id": conversationId,
+            "matchId": matchId,
+            "participant1Id": min(myId, targetId),
+            "participant2Id": max(myId, targetId),
+            "isActive": true,
+            "isArchived": false,
+            "unreadCountUser1": 0,
+            "unreadCountUser2": 0,
+            "isTypingUser1": false,
+            "isTypingUser2": false,
+            "createdAt": Timestamp(date: Date()),
+            "updatedAt": Timestamp(date: Date())
+        ])
+
+        return Match(
+            id: matchId,
+            user1Id: min(myId, targetId),
+            user2Id: max(myId, targetId),
+            matchedAt: Date(),
+            isActive: true,
+            conversationId: conversationId,
+            user1SwipedAt: Date(),
+            user2SwipedAt: Date(),
+            compatibilityScore: 85.0,
+            matchType: .regular
+        )
     }
 
-    func recordLike(fromUser: String, toUser: String) async throws -> Match? {
-        // Check for mutual like and create match
-        return nil
+    /// Carrega matches do usuário
+    func loadMatches(userId: String) async throws -> [Match] {
+        let db = Firestore.firestore()
+
+        let snapshot = try await db.collection("matches")
+            .whereFilter(Filter.orFilter([
+                Filter.whereField("user1Id", isEqualTo: userId),
+                Filter.whereField("user2Id", isEqualTo: userId)
+            ]))
+            .whereField("isActive", isEqualTo: true)
+            .order(by: "matchedAt", descending: true)
+            .getDocuments()
+
+        return try snapshot.documents.compactMap { doc in
+            let data = doc.data()
+            return Match(
+                id: doc.documentID,
+                user1Id: data["user1Id"] as? String ?? "",
+                user2Id: data["user2Id"] as? String ?? "",
+                matchedAt: (data["matchedAt"] as? Timestamp)?.dateValue() ?? Date(),
+                isActive: data["isActive"] as? Bool ?? true,
+                conversationId: data["conversationId"] as? String,
+                user1SwipedAt: (data["user1SwipedAt"] as? Timestamp)?.dateValue() ?? Date(),
+                user2SwipedAt: (data["user2SwipedAt"] as? Timestamp)?.dateValue() ?? Date(),
+                compatibilityScore: data["compatibilityScore"] as? Double ?? 0,
+                matchType: MatchType(rawValue: data["matchType"] as? String ?? "regular") ?? .regular,
+                hasUser1ViewedMatch: data["hasUser1ViewedMatch"] as? Bool ?? false,
+                hasUser2ViewedMatch: data["hasUser2ViewedMatch"] as? Bool ?? false,
+                isBlocked: data["isBlocked"] as? Bool ?? false
+            )
+        }
+    }
+
+    /// Registra super like
+    func recordSuperLike(fromUser myId: String, toUser targetId: String) async throws -> Match? {
+        let db = Firestore.firestore()
+
+        try await db.collection("likes")
+            .document("\(myId)_\(targetId)")
+            .setData([
+                "fromUserId": myId,
+                "toUserId": targetId,
+                "likedAt": Timestamp(date: Date()),
+                "type": "super_like"
+            ])
+
+        let mutualDoc = try await db.collection("likes")
+            .document("\(targetId)_\(myId)")
+            .getDocument()
+
+        guard mutualDoc.exists else { return nil }
+
+        return try await recordLike(fromUser: myId, toUser: targetId)
+    }
+
+    /// Registra passe (pass/skip)
+    func recordPass(fromUser myId: String, toUser targetId: String) async {
+        let db = Firestore.firestore()
+        try? await db.collection("passes")
+            .document("\(myId)_\(targetId)")
+            .setData([
+                "fromUserId": myId,
+                "toUserId": targetId,
+                "passedAt": Timestamp(date: Date())
+            ])
     }
 }

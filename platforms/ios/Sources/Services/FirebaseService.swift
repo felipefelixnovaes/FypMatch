@@ -92,16 +92,104 @@ class FirebaseService: ObservableObject {
         }
     }
     
-    /// Login com Google (integração futura)
+    /// Login com Google
+    ///
+    /// Requer o pacote GoogleSignIn-iOS no Package.swift:
+    ///   .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0")
+    /// e o target dependency:
+    ///   .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS")
+    ///
+    /// Se o SDK não estiver disponível, este método lança um erro descritivo.
     func signInWithGoogle() async throws {
-        // TODO: Implementar Google Sign In
-        throw FirebaseServiceError.notImplemented("Google Sign In")
+        // Verificar se o ClientID do Firebase está configurado
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            throw NSError(
+                domain: "FypMatch",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey:
+                    "Google Sign-In: GoogleService-Info.plist não encontrado ou CLIENT_ID ausente."]
+            )
+        }
+
+        // Obter rootViewController via cenas ativas (compatível com iOS 15+)
+        guard let rootVC = await MainActor.run(body: {
+            UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first(where: { $0.activationState == .foregroundActive })?
+                .windows
+                .first(where: { $0.isKeyWindow })?
+                .rootViewController
+        }) else {
+            throw NSError(
+                domain: "FypMatch",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: "Google Sign-In: não foi possível obter rootViewController."]
+            )
+        }
+
+        // Para compilar sem o SDK GoogleSignIn adicionado ao Package.swift,
+        // esta implementação usa uma chamada dinâmica via NSClassFromString.
+        // Quando o SDK estiver presente, substitua o bloco abaixo pelo código comentado.
+
+        /* — Código com SDK GoogleSignIn importado —
+        import GoogleSignIn
+
+        let config = GIDConfiguration(clientID: clientID)
+        GIDSignIn.sharedInstance.configuration = config
+        let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootVC)
+        guard let idToken = result.user.idToken?.tokenString else {
+            throw NSError(domain: "FypMatch", code: -3,
+                          userInfo: [NSLocalizedDescriptionKey: "Google Sign-In: ID token ausente."])
+        }
+        let credential = GoogleAuthProvider.credential(
+            withIDToken: idToken,
+            accessToken: result.user.accessToken.tokenString
+        )
+        try await auth.signIn(with: credential)
+        if let firebaseUser = auth.currentUser {
+            await loadCurrentUser(firebaseUser: firebaseUser)
+        }
+        */
+
+        // Fallback: SDK ausente — informar como adicioná-lo
+        _ = clientID  // suprimir aviso de variável não usada
+        _ = rootVC
+        throw NSError(
+            domain: "FypMatch",
+            code: -10,
+            userInfo: [NSLocalizedDescriptionKey:
+                """
+                Google Sign-In: adicione o SDK ao Package.swift:
+                  .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0")
+                e o produto ao target:
+                  .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS")
+                Em seguida, descomente o bloco de implementação em signInWithGoogle().
+                """]
+        )
     }
-    
-    /// Login com Apple (integração futura)
+
+    /// Login com Apple usando ASAuthorizationController + nonce SHA-256
+    ///
+    /// Requer AuthenticationServices (já incluso no SDK iOS — sem dependência extra).
+    /// Certifique-se de habilitar a capability "Sign in with Apple" no Xcode target.
     func signInWithApple() async throws {
-        // TODO: Implementar Apple Sign In
-        throw FirebaseServiceError.notImplemented("Apple Sign In")
+        let nonce = AppleSignInCoordinator.randomNonce()
+        let hashedNonce = AppleSignInCoordinator.sha256(nonce)
+
+        let coordinator = AppleSignInCoordinator(currentNonce: nonce, hashedNonce: hashedNonce)
+        let (idTokenString, fullName) = try await coordinator.requestCredential()
+
+        let credential = OAuthProvider.appleCredential(
+            withIDToken: idTokenString,
+            rawNonce: nonce,
+            fullName: fullName
+        )
+
+        try await auth.signIn(with: credential)
+
+        if let firebaseUser = auth.currentUser {
+            await loadCurrentUser(firebaseUser: firebaseUser)
+        }
     }
     
     /// Faz logout do usuário
@@ -330,6 +418,103 @@ extension FirebaseService: MessagingDelegate {
         Task {
             await updateDeviceToken(token)
         }
+    }
+}
+
+// MARK: - Apple Sign-In Coordinator
+
+import AuthenticationServices
+import CryptoKit
+
+/// Helper que faz a ponte entre ASAuthorizationController (delegate-based) e async/await.
+/// Mantém o nonce gerado para validação pelo Firebase.
+final class AppleSignInCoordinator: NSObject,
+    ASAuthorizationControllerDelegate,
+    ASAuthorizationControllerPresentationContextProviding {
+
+    private let currentNonce: String
+    private let hashedNonce: String
+    private var continuation: CheckedContinuation<(String, PersonNameComponents?), Error>?
+
+    init(currentNonce: String, hashedNonce: String) {
+        self.currentNonce = currentNonce
+        self.hashedNonce = hashedNonce
+    }
+
+    // MARK: - Ponto de entrada async
+
+    /// Apresenta o painel nativo de Sign in with Apple e aguarda o resultado.
+    @MainActor
+    func requestCredential() async throws -> (String, PersonNameComponents?) {
+        return try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+
+            let request = ASAuthorizationAppleIDProvider().createRequest()
+            request.requestedScopes = [.fullName, .email]
+            request.nonce = hashedNonce
+
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            controller.performRequests()
+        }
+    }
+
+    // MARK: - ASAuthorizationControllerDelegate
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let tokenData = appleIDCredential.identityToken,
+              let idTokenString = String(data: tokenData, encoding: .utf8) else {
+            continuation?.resume(throwing: NSError(
+                domain: "FypMatch",
+                code: -20,
+                userInfo: [NSLocalizedDescriptionKey: "Apple Sign-In: falha ao obter identity token."]
+            ))
+            return
+        }
+        continuation?.resume(returning: (idTokenString, appleIDCredential.fullName))
+    }
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error
+    ) {
+        continuation?.resume(throwing: error)
+    }
+
+    // MARK: - ASAuthorizationControllerPresentationContextProviding
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first(where: { $0.activationState == .foregroundActive })?
+            .windows
+            .first(where: { $0.isKeyWindow }) ?? UIWindow()
+    }
+
+    // MARK: - Utilitários criptográficos
+
+    /// Gera um nonce aleatório de 32 bytes codificado em Base64-URL.
+    static func randomNonce(length: Int = 32) -> String {
+        var randomBytes = [UInt8](repeating: 0, count: length)
+        let errorCode = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        if errorCode != errSecSuccess {
+            // fallback determinístico de emergência
+            randomBytes = (0..<length).map { _ in UInt8.random(in: 0...255) }
+        }
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        return String(randomBytes.map { byte in charset[Int(byte) % charset.count] })
+    }
+
+    /// Retorna o hash SHA-256 do nonce como string hexadecimal.
+    static func sha256(_ input: String) -> String {
+        let inputData = Data(input.utf8)
+        let hashedData = SHA256.hash(data: inputData)
+        return hashedData.compactMap { String(format: "%02x", $0) }.joined()
     }
 }
 

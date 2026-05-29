@@ -46,6 +46,10 @@ sealed class Screen(val route: String) {
     object ProfileEdit : Screen("profile_edit")
     /** Tela de configurações de conta — nova Sprint 1 */
     object Settings : Screen("settings")
+    /** Questionário de perfil de neurodiversidade */
+    object NeuroProfile : Screen("neuro_profile")
+    /** Hub de suporte para usuários neurodivergentes */
+    object NeuroSupport : Screen("neuro_support")
 }
 
 @Composable
@@ -298,6 +302,22 @@ fun FypMatchNavigation(
         composable(Screen.Affiliate.route) {
             AffiliateScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ─── Perfil de Neurodiversidade ───────────────────────────────────
+        composable(Screen.NeuroProfile.route) {
+            NeuroProfileScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() }
+            )
+        }
+
+        // ─── Hub de Suporte Neuro ─────────────────────────────────────────
+        composable(Screen.NeuroSupport.route) {
+            NeuroSupportScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToNeuroProfile = { navController.navigate(Screen.NeuroProfile.route) }
             )
         }
 

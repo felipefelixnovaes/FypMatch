@@ -145,7 +145,7 @@ enum PremiumPlan: String, CaseIterable, Identifiable {
     case premium, vip
     var id: String { rawValue }
     var displayName: String { self == .premium ? "Premium" : "VIP" }
-    var price: String { self == .premium ? "R$19,90" : "R$39,90" }
+    var price: String { self == .premium ? "R$ 19,90" : "R$ 39,90" }
     var period: String { "/mês" }
     var features: [PlanFeature] {
         switch self {

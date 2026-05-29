@@ -8,10 +8,21 @@ struct WelcomeView: View {
     @Bindable var store: StoreOf<AuthFeature>
 
     private let pages: [(icon: String, title: String, body: String)] = [
-        ("heart.fill",      "Bem-vindo ao FypMatch",       "O app de relacionamento criado para quem nunca se sentiu em casa nos outros."),
-        ("person.2.fill",   "Um espaço feito para você",   "LGBTQIA+, neurodiverso ou cansado da superficialidade? Aqui você é bem-vindo do jeito que é."),
-        ("brain.head.profile","Matches que fazem sentido", "Nosso score analisa personalidade, valores e intenções — não só fotos."),
-        ("bubble.left.and.bubble.right.fill", "Você não está sozinho", "Seu conselheiro IA sugere icebreakers e apoia quando a ansiedade aparecer."),
+        ("heart.fill",
+         "Bem-vindo ao FypMatch",
+         "O app de relacionamento criado para quem nunca se sentiu em casa nos outros."),
+        ("person.2.fill",
+         "Um espaço feito para você",
+         "LGBTQIA+, neurodiverso ou simplesmente cansado da superficialidade? Aqui você é bem-vindo do jeito que é."),
+        ("brain.head.profile",
+         "Matches que fazem sentido",
+         "Nosso score analisa personalidade, valores e intenções — não só fotos. Menos swipes, mais conexões reais."),
+        ("bubble.left.and.bubble.right.fill",
+         "Você não está sozinho",
+         "Seu conselheiro IA está sempre aqui. Para sugerir icebreakers, ajudar na conversa ou simplesmente apoiar quando a ansiedade aparecer."),
+        ("sparkles",
+         "Pronto para começar?",
+         "Junte-se a milhares de pessoas encontrando conexões reais todos os dias. Seu match está esperando."),
     ]
 
     @State private var currentPage = 0

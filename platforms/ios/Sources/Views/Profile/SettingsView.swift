@@ -33,7 +33,7 @@ struct SettingsView: View {
 
                 // Notifications
                 Section("Notificações") {
-                    Toggle("Push notifications", isOn: $pushEnabled)
+                    Toggle("Notificações push", isOn: $pushEnabled)
                         .tint(.fypPink)
                     Toggle("Notificar novos matches", isOn: .constant(true)).tint(.fypPink)
                     Toggle("Notificar mensagens", isOn: .constant(true)).tint(.fypPink)

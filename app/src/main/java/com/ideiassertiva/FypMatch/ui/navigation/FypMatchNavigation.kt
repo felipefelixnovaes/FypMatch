@@ -6,11 +6,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ideiassertiva.FypMatch.ui.screens.*
+import com.ideiassertiva.FypMatch.ui.screens.RegisterScreen
+import com.ideiassertiva.FypMatch.ui.screens.SettingsScreen
 
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
-    object Waitlist : Screen("waitlist") 
+    object Waitlist : Screen("waitlist")
     object Login : Screen("login")
+    /** Tela de cadastro com email/senha — nova Sprint 1 */
+    object Register : Screen("register")
     object Discovery : Screen("discovery")
     object Profile : Screen("profile")
     object Matches : Screen("matches")
@@ -34,6 +38,8 @@ sealed class Screen(val route: String) {
         fun createRoute(userId: String) = "user_details/$userId"
     }
     object ProfileEdit : Screen("profile_edit")
+    /** Tela de configurações de conta — nova Sprint 1 */
+    object Settings : Screen("settings")
 }
 
 @Composable
@@ -73,6 +79,20 @@ fun FypMatchNavigation(
                     navController.navigate(Screen.Discovery.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        // ─── Cadastro com email/senha ─────────────────────────────────────
+        composable(Screen.Register.route) {
+            RegisterScreen(
+                onNavigateToDiscovery = {
+                    navController.navigate(Screen.Discovery.route) {
+                        popUpTo(Screen.Register.route) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -251,6 +271,18 @@ fun FypMatchNavigation(
                 },
                 onSave = { user ->
                     // TODO: Implementar salvamento do perfil
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // ─── Configurações de conta ───────────────────────────────────────
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onNavigateToPremium = {
+                    navController.navigate(Screen.Premium.route)
+                },
+                onNavigateBack = {
                     navController.popBackStack()
                 }
             )

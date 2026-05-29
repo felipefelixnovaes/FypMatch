@@ -42,8 +42,9 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun FypMatchTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color desativado para preservar identidade visual do FypMatch (rosa/roxo)
+    // Android 12+ ignoraria as cores customizadas com dynamicColor = true
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

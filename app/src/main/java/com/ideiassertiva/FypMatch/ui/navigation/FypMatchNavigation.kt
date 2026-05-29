@@ -15,6 +15,12 @@ sealed class Screen(val route: String) {
     object Login : Screen("login")
     /** Tela de cadastro com email/senha — nova Sprint 1 */
     object Register : Screen("register")
+    /** Programa de afiliados — Sprint 3 */
+    object Affiliate : Screen("affiliate")
+    /** Ganhar créditos IA assistindo anúncios — Sprint 3 */
+    object Ads : Screen("ads/{userId}") {
+        fun createRoute(userId: String) = "ads/$userId"
+    }
     object Discovery : Screen("discovery")
     object Profile : Screen("profile")
     object Matches : Screen("matches")
@@ -285,6 +291,27 @@ fun FypMatchNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+
+        // ─── Programa de afiliados — Sprint 3 ────────────────────────────
+        composable(Screen.Affiliate.route) {
+            AffiliateScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // ─── Créditos IA via anúncios — Sprint 3 ─────────────────────────
+        composable(
+            route = Screen.Ads.route,
+            arguments = listOf(androidx.navigation.navArgument("userId") {
+                type = androidx.navigation.NavType.StringType
+            })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            AdsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                userId = userId
             )
         }
     }

@@ -80,6 +80,7 @@ struct UserDetailFeature {
     // MARK: - Dependencies
 
     @Dependency(\.firebaseService) var firebaseService
+    @Dependency(\.compatibilityEngine) var compatibilityEngine
 
     // MARK: - Body
 
@@ -119,12 +120,13 @@ struct UserDetailFeature {
                 let targetUser = state.user
                 let currentUser = state.currentUser
 
-                return .run { send in
-                    let score = Self.calculateCompatibility(
-                        currentUser: currentUser,
-                        targetUser: targetUser
-                    )
-                    await send(.compatibilityLoaded(score))
+                return .run { [engine = compatibilityEngine] send in
+                    if let current = currentUser {
+                        let result = engine.calculate(current: current, target: targetUser)
+                        await send(.compatibilityLoaded(Double(result.overall)))
+                    } else {
+                        await send(.compatibilityLoaded(targetUser.compatibilityScore))
+                    }
                 }
 
             case let .compatibilityLoaded(score):
@@ -293,45 +295,6 @@ struct UserDetailFeature {
         }
     }
 
-    // MARK: - Helpers
-
-    /// Calcula compatibilidade simples baseada em interesses em comum
-    private static func calculateCompatibility(currentUser: User?, targetUser: User) -> Double {
-        guard let currentUser = currentUser else {
-            return targetUser.compatibilityScore
-        }
-
-        let myInterests = Set(currentUser.interests + currentUser.hobbies)
-        let theirInterests = Set(targetUser.interests + targetUser.hobbies)
-        let total = myInterests.union(theirInterests)
-
-        guard !total.isEmpty else {
-            return targetUser.compatibilityScore
-        }
-
-        let common = myInterests.intersection(theirInterests)
-        let interestScore = Double(common.count) / Double(total.count) * 60.0
-
-        // Bônus por intenções compatíveis
-        var intentionBonus = 0.0
-        if currentUser.interestedInSeriousRelationship && targetUser.interestedInSeriousRelationship {
-            intentionBonus += 15.0
-        }
-        if currentUser.interestedInCasualDating && targetUser.interestedInCasualDating {
-            intentionBonus += 10.0
-        }
-        if currentUser.interestedInFriendship && targetUser.interestedInFriendship {
-            intentionBonus += 5.0
-        }
-
-        // Bônus por perfil completo e verificado
-        var profileBonus = 0.0
-        if targetUser.isVerified { profileBonus += 10.0 }
-        if targetUser.isPhotoVerified { profileBonus += 5.0 }
-        if targetUser.isOnline { profileBonus += 5.0 }
-
-        return min(interestScore + intentionBonus + profileBonus, 100.0)
-    }
 }
 
 // MARK: - FirebaseService Extension para Unmatch/Block

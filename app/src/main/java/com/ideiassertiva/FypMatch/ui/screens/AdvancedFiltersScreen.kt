@@ -181,7 +181,7 @@ fun AdvancedFiltersScreen(
                     // Smoking
                     MultiSelectFilter(
                         title = "Fumo",
-                        options = SmokingStatus.values().filter { it != SmokingStatus.NOT_SPECIFIED },
+                        options = SmokingStatus.values().filter { it != SmokingStatus.NOT_SPECIFIED }.toTypedArray(),
                         selectedOptions = filters.smokingStatus,
                         onSelectionChange = { viewModel.updateSmokingStatus(it) },
                         getDisplayName = { it.getDisplayName() },
@@ -193,7 +193,7 @@ fun AdvancedFiltersScreen(
                     // Drinking
                     MultiSelectFilter(
                         title = "Bebida",
-                        options = DrinkingStatus.values().filter { it != DrinkingStatus.NOT_SPECIFIED },
+                        options = DrinkingStatus.values().filter { it != DrinkingStatus.NOT_SPECIFIED }.toTypedArray(),
                         selectedOptions = filters.drinkingStatus,
                         onSelectionChange = { viewModel.updateDrinkingStatus(it) },
                         getDisplayName = { it.getDisplayName() },
@@ -206,14 +206,14 @@ fun AdvancedFiltersScreen(
             item {
                 FilterSection(
                     title = "Família e Valores",
-                    icon = Icons.Default.Family,
+                    icon = Icons.Filled.Person,
                     isPremium = true,
                     enabled = !isPremiumFeature
                 ) {
                     // Has Children
                     MultiSelectFilter(
                         title = "Tem filhos",
-                        options = ChildrenStatus.values().filter { it != ChildrenStatus.NOT_SPECIFIED },
+                        options = ChildrenStatus.values().filter { it != ChildrenStatus.NOT_SPECIFIED }.toTypedArray(),
                         selectedOptions = filters.hasChildren,
                         onSelectionChange = { viewModel.updateHasChildren(it) },
                         getDisplayName = { it.getDisplayName() },
@@ -225,7 +225,7 @@ fun AdvancedFiltersScreen(
                     // Wants Children
                     MultiSelectFilter(
                         title = "Quer filhos",
-                        options = ChildrenStatus.values().filter { it != ChildrenStatus.NOT_SPECIFIED },
+                        options = ChildrenStatus.values().filter { it != ChildrenStatus.NOT_SPECIFIED }.toTypedArray(),
                         selectedOptions = filters.wantsChildren,
                         onSelectionChange = { viewModel.updateWantsChildren(it) },
                         getDisplayName = { it.getDisplayName() },
@@ -237,7 +237,7 @@ fun AdvancedFiltersScreen(
                     // Religion
                     MultiSelectFilter(
                         title = "Religião",
-                        options = Religion.values().filter { it != Religion.NOT_SPECIFIED },
+                        options = Religion.values().filter { it != Religion.NOT_SPECIFIED }.toTypedArray(),
                         selectedOptions = filters.religions,
                         onSelectionChange = { viewModel.updateReligions(it) },
                         getDisplayName = { it.getDisplayName() },

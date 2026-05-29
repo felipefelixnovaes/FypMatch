@@ -499,11 +499,11 @@ class InterfaceAdaptation {
         currentScreen: String
     ): InterfaceConfiguration {
         
-        val adaptations = mutableListOf<InterfaceAdaptation>()
+        val adaptations = mutableListOf<InterfaceAdaptationItem>()
         
         // Simplify interface if needed
         if (profile.accommodations.any { it.type == AccommodationType.SIMPLIFIED_INTERFACE }) {
-            adaptations.add(InterfaceAdaptation(
+            adaptations.add(InterfaceAdaptationItem(
                 type = "simplified_layout",
                 description = "Layout simplificado com menos elementos",
                 isActive = true
@@ -512,7 +512,7 @@ class InterfaceAdaptation {
         
         // Reduce animations
         if (profile.accommodations.any { it.type == AccommodationType.REDUCED_STIMULATION }) {
-            adaptations.add(InterfaceAdaptation(
+            adaptations.add(InterfaceAdaptationItem(
                 type = "reduced_animations",
                 description = "Animações reduzidas ou desativadas",
                 isActive = true
@@ -521,7 +521,7 @@ class InterfaceAdaptation {
         
         // Add clear instructions
         if (profile.accommodations.any { it.type == AccommodationType.CLEAR_INSTRUCTIONS }) {
-            adaptations.add(InterfaceAdaptation(
+            adaptations.add(InterfaceAdaptationItem(
                 type = "enhanced_instructions",
                 description = "Instruções mais claras e detalhadas",
                 isActive = true
@@ -564,13 +564,13 @@ class InterfaceAdaptation {
 
 data class InterfaceConfiguration(
     val screenName: String,
-    val adaptations: List<InterfaceAdaptation>,
+    val adaptations: List<InterfaceAdaptationItem>,
     val colorScheme: ColorScheme,
     val fontSize: FontSize,
     val spacing: Spacing
 )
 
-data class InterfaceAdaptation(
+data class InterfaceAdaptationItem(
     val type: String,
     val description: String,
     val isActive: Boolean

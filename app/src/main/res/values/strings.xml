@@ -1,6 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FypMatch</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    
+    <!-- Welcome -->
+    <string name="welcome_title">💕 FypMatch</string>
+    <string name="welcome_subtitle">Relacionamentos reais com IA inclusiva</string>
+    <string name="welcome_waitlist">🎯 Lista de Espera</string>
+    <string name="welcome_login">🚀 Fazer Login</string>
+    <string name="welcome_access_code">🎟️ Tenho um código de acesso</string>
+    
+    <!-- Login -->
+    <string name="login_title">💕 FypMatch</string>
+    <string name="login_subtitle">✨ Por que escolher o FypMatch?</string>
+    <string name="login_google_button">Continuar com Google</string>
+    <string name="login_terms">Ao continuar, você concorda com nossos Termos de Uso e Política de Privacidade</string>
+    <string name="login_error">Erro no login: %s</string>
+    
+    <!-- Discovery -->
+    <string name="discovery_ia_button">IA</string>
+    <string name="discovery_chat_button">Chat</string>
+    <string name="discovery_details">Ver mais detalhes</string>
+    <string name="discovery_swipe_like">CURTIR</string>
+    <string name="discovery_swipe_pass">PASSAR</string>
+    <string name="discovery_swipe_super">SUPER CURTIR</string>
+    <string name="discovery_rewind">Desfazer</string>
+    <string name="discovery_boost">Boost</string>
+    <string name="discovery_no_more_cards">Sem mais perfis por enquanto</string>
+    <string name="discovery_no_more_subtitle">Volte mais tarde para novos perfis!</string>
+    <string name="discovery_match_celebration">🎉 Novo Match!</string>
+    <string name="discovery_match_message">Você e %s curtiram um ao outro</string>
+    <string name="discovery_limit_reached">Limite de curtidas atingido</string>
+    <string name="discovery_upgrade_prompt">Faça upgrade para Premium e tenha mais curtidas</string>
+    
+    <!-- Matches -->
+    <string name="matches_title">Matches</string>
+    <string name="matches_empty">Nenhum match ainda</string>
+    <string name="matches_empty_subtitle">Continue deslizando para encontrar conexões</string>
+    <string name="matches_new_message">Nova mensagem</string>
+    <string name="matches_time_ago_hours">%dh atrás</string>
+    <string name="matches_time_ago_days">%dd atrás</string>
+    <string name="matches_time_ago_minutes">%dm atrás</string>
+    
+    <!-- Premium -->
+    <string name="premium_title">Premium</string>
+    <string name="premium_free">Grátis</string>
+    <string name="premium_premium">Premium</string>
+    <string name="premium_vip">VIP</string>
+    <string name="premium_free_price">Grátis</string>
+    <string name="premium_premium_price">R$ 19,90/mês</string>
+    <string name="premium_vip_price">R$ 39,90/mês</string>
+    <string name="premium_upgrade_button">Fazer Upgrade</string>
+    <string name="premium_terms">Termos e condições se aplicam</string>
+    
+    <!-- Profile -->
+    <string name="profile_title">Perfil</string>
+    <string name="profile_edit">Editar Perfil</string>
+    <string name="profile_save">Salvar</string>
+    <string name="profile_cancel">Cancelar</string>
+    <string name="profile_photos">Fotos</string>
+    <string name="profile_add_photo">Adicionar Foto</string>
+    <string name="profile_bio">Sobre você</string>
+    <string name="profile_interests">Interesses</string>
+    <string name="profile_basic_info">Informações Básicas</string>
+    <string name="profile_personal_info">Informações Pessoais</string>
+    
+    <!-- Waitlist -->
+    <string name="waitlist_title">Lista de Espera</string>
+    <string name="waitlist_position">Sua posição: #%d</string>
+    <string name="waitlist_invites">Convites enviados: %d</string>
+    <string name="waitlist_share">Compartilhar código</string>
+    <string name="waitlist_code">Seu código: %s</string>
+    
+    <!-- Access Code -->
+    <string name="access_code_title">Código de Acesso</string>
+    <string name="access_code_input">Digite seu código</string>
+    <string name="access_code_submit">Entrar</string>
+    <string name="access_code_invalid">Código inválido</string>
+    <string name="access_code_success">Acesso liberado!</string>
+    
+    <!-- Chat -->
+    <string name="chat_title">Chat</string>
+    <string name="chat_input_hint">Digite sua mensagem...</string>
+    <string name="chat_send">Enviar</string>
+    <string name="chat_empty">Nenhuma conversa ainda</string>
+    <string name="chat_typing">digitando...</string>
+    <string name="chat_free_limit">Limite de 3 conversas no plano gratuito</string>
+    
+    <!-- AI Counselor -->
+    <string name="ai_title">Conselheiro IA</string>
+    <string name="ai_credits">Créditos: %d</string>
+    <string name="ai_no_credits">Sem créditos disponíveis</string>
+    <string name="ai_watch_ad">Assistir anúncio (+3 créditos)</string>
+    <string name="ai_send">Enviar mensagem</string>
+    <string name="ai_ethical_warning">⚠️ Se estiver passando por problemas sérios, busque ajuda profissional.</string>
+    
+    <!-- Report -->
+    <string name="report_title">Denunciar</string>
+    <string name="report_reason">Motivo da denúncia</string>
+    <string name="report_description">Descrição (opcional)</string>
+    <string name="report_submit">Enviar Denúncia</string>
+    <string name="report_success">Denúncia enviada com sucesso</string>
+    <string name="report_thank_you">Obrigado por ajudar a manter a comunidade segura</string>
+    
+    <!-- Block -->
+    <string name="block_title">Bloquear Usuário</string>
+    <string name="block_confirm">Tem certeza que deseja bloquear %s?</string>
+    <string name="block_explanation">Vocês não poderão mais se ver nem trocar mensagens</string>
+    <string name="block_confirm_button">Bloquear</string>
+    <string name="block_cancel_button">Cancelar</string>
+    
+    <!-- Policies -->
+    <string name="policy_terms">Termos de Uso</string>
+    <string name="policy_privacy">Política de Privacidade</string>
+    <string name="policy_title">Políticas</string>
+    
+    <!-- General -->
+    <string name="loading">Carregando...</string>
+    <string name="error_generic">Algo deu errado. Tente novamente.</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancelar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="close">Fechar</string>
+    <string name="back">Voltar</string>
+    <string name="settings">Configurações</string>
+    <string name="logout">Sair</string>
+    <string name="delete_account">Excluir Conta</string>
 </resources>

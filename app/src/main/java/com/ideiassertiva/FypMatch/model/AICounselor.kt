@@ -551,27 +551,22 @@ class SmartAICounselor {
         
         // Analyze compatibility factors
         compatibilityScore.factors.forEach { factor ->
-            when {
-                factor.score >= 0.8f -> {
-                    insights.add("✅ ${factor.name}: ${factor.description} (${(factor.score * 100).toInt()}%)")
-                }
-                factor.score >= 0.6f -> {
-                    insights.add("⚠️ ${factor.name}: ${factor.description} (${(factor.score * 100).toInt()}%)")
-                }
-                else -> {
-                    insights.add("❌ ${factor.name}: ${factor.description} (${(factor.score * 100).toInt()}%)")
-                }
+            val icon = when {
+                factor.score >= 0.8f -> "✅"
+                factor.score >= 0.6f -> "⚠️"
+                else -> "❌"
             }
+            insights.add("$icon ${factor.name}: ${(factor.score * 100).toInt()}% - ${factor.description}")
         }
         
         // Generate actionable advice based on compatibility
-        if (compatibilityScore.personalityMatch < 0.6f) {
+        if (compatibilityScore.personalityMatch < 0.5f) {
             actionItems.add(ActionItem(
                 "Foque em encontrar interesses em comum para compensar diferenças de personalidade"
             ))
         }
         
-        if (compatibilityScore.communicationMatch < 0.6f) {
+        if (compatibilityScore.communicationMatch < 0.5f) {
             actionItems.add(ActionItem(
                 "Adapte seu estilo de comunicação: seja mais direto ou mais emotivo conforme necessário"
             ))

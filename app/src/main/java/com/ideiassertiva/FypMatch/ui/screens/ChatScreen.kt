@@ -769,7 +769,7 @@ fun ChatInput(
 }
 
 @Composable
-fun AttachmentOption(
+private fun AttachmentOption(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
     onClick: () -> Unit

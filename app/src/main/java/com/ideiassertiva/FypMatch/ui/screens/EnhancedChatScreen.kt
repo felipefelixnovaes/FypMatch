@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,7 +72,7 @@ fun EnhancedChatScreen(
             title = {
                 Column {
                     Text(
-                        text = uiState.otherUser?.name ?: "Chat",
+                        text = uiState.otherUser?.profile?.fullName ?: "Chat",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -139,8 +140,8 @@ fun EnhancedChatScreen(
                     
                     uiState.otherUser?.let { user ->
                         AsyncImage(
-                            model = user.profileImageUrl,
-                            contentDescription = user.name,
+                            model = user.profile?.photos?.firstOrNull() ?: "",
+                            contentDescription = user.profile?.fullName ?: "Usuário",
                             modifier = Modifier
                                 .size(32.dp)
                                 .clip(CircleShape),
@@ -219,7 +220,7 @@ fun EnhancedChatScreen(
             if (uiState.isOtherUserTyping) {
                 item {
                     TypingIndicatorBubble(
-                        userName = uiState.otherUser?.name ?: "Usuário"
+                        userName = uiState.otherUser?.profile?.fullName ?: "Usuário"
                     )
                 }
             }
@@ -406,7 +407,7 @@ fun EnhancedMessageBubble(
                 modifier = Modifier.padding(top = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(message.reactions.groupBy { it.emoji }) { (emoji, reactions) ->
+                items(message.reactions.groupBy { it.emoji }.toList()) { (emoji, reactions) ->
                     Surface(
                         modifier = Modifier.clickable { onReactionClick(emoji) },
                         shape = RoundedCornerShape(12.dp),
@@ -416,7 +417,7 @@ fun EnhancedMessageBubble(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(emoji, fontSize = 14.sp)
+                            Text(emoji.toString(), fontSize = 14.sp)
                             if (reactions.size > 1) {
                                 Text(
                                     text = reactions.size.toString(),
@@ -497,22 +498,24 @@ fun EnhancedMessageInput(
                     else -> MaterialTheme.colorScheme.surfaceVariant
                 }
             ) {
-                Text(
-                    text = when (connectionState) {
-                        ConnectionState.CONNECTING -> "Conectando..."
-                        ConnectionState.ERROR -> "Erro de conexão"
-                        ConnectionState.DISCONNECTED -> "Desconectado"
-                        ConnectionState.CONNECTED -> ""
-                    },
-                    modifier = Modifier.padding(8.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                    color = when (connectionState) {
-                        ConnectionState.CONNECTING -> MaterialTheme.colorScheme.primary
-                        ConnectionState.ERROR -> Color(0xFFD32F2F)
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
+                    Text(
+                        text = (connectionState as ConnectionState).let {
+                            when (it) {
+                                ConnectionState.CONNECTING -> "Conectando..."
+                                ConnectionState.ERROR -> "Erro de conexão"
+                                ConnectionState.DISCONNECTED -> "Desconectado"
+                                ConnectionState.CONNECTED -> ""
+                            }
+                        },
+                        modifier = Modifier.padding(8.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center,
+                        color = when (connectionState) {
+                            ConnectionState.CONNECTING -> MaterialTheme.colorScheme.primary
+                            ConnectionState.ERROR -> Color(0xFFD32F2F)
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
             }
         }
         
@@ -608,7 +611,7 @@ fun EnhancedMessageInput(
 }
 
 @Composable
-fun AttachmentOption(
+private fun AttachmentOption(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
     onClick: () -> Unit

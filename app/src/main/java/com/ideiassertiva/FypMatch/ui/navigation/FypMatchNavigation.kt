@@ -56,6 +56,10 @@ sealed class Screen(val route: String) {
     object QuickMode : Screen("quick_mode/{userId}") {
         fun createRoute(userId: String) = "quick_mode/$userId"
     }
+    /** Questionário de compatibilidade — Modo Profundo (Sprint 6) */
+    object DeepMode : Screen("deep_mode/{userId}") {
+        fun createRoute(userId: String) = "deep_mode/$userId"
+    }
 }
 
 @Composable
@@ -79,11 +83,11 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.Waitlist.route) {
             WaitlistScreen()
         }
-        
+
         composable(Screen.Login.route) {
             LoginScreen(
                 onNavigateToProfile = {
@@ -112,7 +116,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.Discovery.route) {
             DiscoveryScreen(
                 onNavigateToMatches = {
@@ -141,7 +145,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.Profile.route) {
             ProfileScreen(
                 onNavigateToDiscovery = {
@@ -151,7 +155,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.Matches.route) {
             MatchesScreen(
                 onNavigateBack = {
@@ -162,7 +166,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.Conversations.route) {
             ConversationsScreen(
                 currentUserId = "current_user_123", // Em um app real, viria da autenticação
@@ -174,7 +178,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.Chat.route) { backStackEntry ->
             val conversationId = backStackEntry.arguments?.getString("conversationId") ?: ""
             ChatScreen(
@@ -185,7 +189,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.EnhancedChat.route) { backStackEntry ->
             val conversationId = backStackEntry.arguments?.getString("conversationId") ?: ""
             val useFirebase = backStackEntry.arguments?.getString("useFirebase")?.toBooleanStrictOrNull() ?: true
@@ -198,7 +202,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.Phase3Demo.route) {
             Phase3DemoScreen(
                 onNavigateToMockChat = { conversationId, userId ->
@@ -212,7 +216,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.Premium.route) {
             PremiumScreen(
                 onNavigateBack = {
@@ -224,7 +228,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.AICounselor.route) { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             AICounselorScreen(
@@ -234,7 +238,7 @@ fun FypMatchNavigation(
                 userId = userId
             )
         }
-        
+
         composable(Screen.Phase4AI.route) { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             Phase4AIScreen(
@@ -244,7 +248,7 @@ fun FypMatchNavigation(
                 userId = userId
             )
         }
-        
+
         composable(Screen.AccessCode.route) {
             AccessCodeScreen(
                 onNavigateBack = {
@@ -257,7 +261,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.UserDetails.route) { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             UserDetailsScreen(
@@ -279,7 +283,7 @@ fun FypMatchNavigation(
                 }
             )
         }
-        
+
         composable(Screen.ProfileEdit.route) {
             ProfileEditScreen(
                 onNavigateBack = {
@@ -353,5 +357,18 @@ fun FypMatchNavigation(
                 userId = userId
             )
         }
+
+        // ─── Questionário de compatibilidade — Modo Profundo (Sprint 6) ───
+        composable(
+            route = Screen.DeepMode.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            DeepModeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() },
+                userId = userId
+            )
+        }
     }
-} 
+}

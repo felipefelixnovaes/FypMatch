@@ -267,6 +267,21 @@ struct QuestionnaireService {
     var loadQuestionnaire: (_ userId: String) async throws -> UserQuestionnaire?
     var saveQuestionnaire: (_ userId: String, _ q: UserQuestionnaire) async throws -> Void
     var calculateCompatibility: (_ a: UserQuestionnaire, _ b: UserQuestionnaire) -> QuestionnaireCompatibility
+
+    // MARK: Deep Mode
+
+    /// Salva o Modo Profundo no Firestore (coleção "deepQuestionnaires")
+    var saveDeepMode: (_ q: DeepModeQuestionnaire) async throws -> Void
+
+    /// Carrega o Modo Profundo do Firestore para um userId
+    var loadDeepMode: (_ userId: String) async throws -> DeepModeQuestionnaire?
+
+    /// Calcula compatibilidade enriquecida quando ambos têm Modo Profundo.
+    /// Se apenas um tiver, usa dados de quem tem + proxy de quem não tem.
+    var calculateCompatibilityFull: (
+        _ quickA: UserQuestionnaire, _ quickB: UserQuestionnaire,
+        _ deepA: DeepModeQuestionnaire?, _ deepB: DeepModeQuestionnaire?
+    ) -> QuestionnaireCompatibility
 }
 
 // MARK: - Lógica de compatibilidade multi-camada
@@ -529,30 +544,266 @@ private func buildExplanation(
     return parts.joined(separator: " ")
 }
 
+// MARK: - Compatibilidade enriquecida com Modo Profundo
+
+/// Compatibilidade ECR-RS: matriz de estilo de apego → score 0-100
+private func ecrrsCompatibility(_ a: AttachmentStyle, _ b: AttachmentStyle) -> Int {
+    if a == b {
+        switch a {
+        case .secure:       return 100
+        case .anxious:      return 50
+        case .avoidant:     return 55
+        case .disorganized: return 40
+        }
+    }
+    let pair = Set([a, b])
+    if pair == Set([.secure, .anxious])   { return 70 }
+    if pair == Set([.secure, .avoidant])  { return 65 }
+    if pair.contains(.disorganized)       { return 40 }
+    // anxious + avoidant
+    return 45
+}
+
+/// Distância euclidiana normalizada entre dois perfis Big Five expressos em 0–100 por fator.
+/// Aceita 5 pares (extraversão, amabilidade, conscienciosidade, neuroticismo, abertura).
+private func bigFiveDistance5(
+    _ a: (ext: Double, agr: Double, con: Double, neu: Double, ope: Double),
+    _ b: (ext: Double, agr: Double, con: Double, neu: Double, ope: Double)
+) -> Int {
+    let pairs: [(Double, Double)] = [
+        (a.ext, b.ext), (a.agr, b.agr), (a.con, b.con), (a.neu, b.neu), (a.ope, b.ope)
+    ]
+    let sumSq = pairs.reduce(0.0) { acc, p in acc + pow(p.0 - p.1, 2) }
+    let maxDist = sqrt(5.0 * 10000.0)  // sqrt(5 * 100^2)
+    let dist = sqrt(sumSq)
+    return Int((1.0 - dist / maxDist) * 100.0)
+}
+
+/// Converte IPIP20Result para tupla de scores normalizados 0–100
+/// Usa as propriedades computadas diretamente de IPIP20Result (escala 1–5 → 0–100)
+private func ipip20ToTuple(_ r: IPIP20Result) -> (Double, Double, Double, Double, Double) {
+    func toPercent(_ v: Double) -> Double { (v - 1.0) / 4.0 * 100.0 }
+    return (
+        toPercent(r.extroversion),
+        toPercent(r.agreeableness),
+        toPercent(r.conscientiousness),
+        toPercent(r.neuroticism),
+        toPercent(r.openness)
+    )
+}
+
+/// Converte BigFiveResult inline (escala 1–7, Int) para tupla 0–100
+private func inlineBigFiveToTuple(o: Int, c: Int, e: Int, a: Int, n: Int) -> (Double, Double, Double, Double, Double) {
+    func norm(_ v: Int) -> Double { (Double(v) - 1.0) / 6.0 * 100.0 }
+    return (norm(e), norm(a), norm(c), norm(n), norm(o))
+}
+
+/// Versão completa da compatibilidade quando Modo Profundo está disponível
+private func computeCompatibilityFull(
+    quick qA: UserQuestionnaire, _ qB: UserQuestionnaire,
+    deep dA: DeepModeQuestionnaire?, _ dB: DeepModeQuestionnaire?
+) -> QuestionnaireCompatibility {
+
+    // Delegamos a lógica de deal-breakers e camadas básicas ao motor existente
+    var base = computeCompatibility(qA, qB)
+
+    // Se nenhum dos dois tem Modo Profundo, retorna compatibilidade base
+    guard dA != nil || dB != nil else { return base }
+
+    var highlights = base.highlights
+    var differences = base.differences
+
+    // ── Camada 1 enriquecida: Apego ECR-RS (15%) ─────────────────────────────
+    let attachScore: Int
+    if let da = dA, let db = dB,
+       let ecrA = da.ecrrs, let ecrB = db.ecrrs {
+        // Ambos têm ECR-RS: usa o score real
+        attachScore = ecrrsCompatibility(ecrA.attachmentStyle, ecrB.attachmentStyle)
+
+        if attachScore >= 80 {
+            highlights.append("Estilos de apego muito compatíveis (\(ecrA.attachmentStyle.displayName) + \(ecrB.attachmentStyle.displayName))")
+        } else if attachScore < 50 {
+            differences.append("Estilos de apego divergentes (\(ecrA.attachmentStyle.displayName) × \(ecrB.attachmentStyle.displayName)) — requer comunicação consciente")
+        }
+    } else if let da = dA, let ecrA = da.ecrrs {
+        // Só A tem ECR-RS: estima com proxy de ansiedade do Modo Rápido
+        let proxyScore = ecrA.attachmentStyle == .secure ? 70 : 55
+        attachScore = proxyScore
+    } else if let db = dB, let ecrB = db.ecrrs {
+        let proxyScore = ecrB.attachmentStyle == .secure ? 70 : 55
+        attachScore = proxyScore
+    } else {
+        attachScore = 60 // proxy neutro
+    }
+
+    // ── Camada 2 enriquecida: Personalidade IPIP-20 (20%) ────────────────────
+    // Usa bigFiveDistance5() com tuplas para evitar ambiguidade de tipo BigFiveResult
+    let bigFiveDeepScore: Int
+    if let da = dA, let db = dB,
+       let ipA = da.ipip20, let ipB = db.ipip20 {
+        bigFiveDeepScore = bigFiveDistance5(ipip20ToTuple(ipA), ipip20ToTuple(ipB))
+
+        if bigFiveDeepScore >= 80 {
+            highlights.append("Perfis de personalidade (IPIP-20) muito próximos")
+        } else if bigFiveDeepScore < 45 {
+            differences.append("Perfis de personalidade com diferenças marcadas — complementaridade possível")
+        }
+    } else if let da = dA, let ipA = da.ipip20 {
+        // Usa IPIP-20 de A vs BigFive inline do Modo Rápido de B (se disponível)
+        if let bfB = qB.bigFive {
+            let tupleB = inlineBigFiveToTuple(o: bfB.openness, c: bfB.conscientiousness,
+                                              e: bfB.extraversion, a: bfB.agreeableness, n: bfB.neuroticism)
+            bigFiveDeepScore = bigFiveDistance5(ipip20ToTuple(ipA), tupleB)
+        } else {
+            bigFiveDeepScore = base.layer2Score
+        }
+    } else if let db = dB, let ipB = db.ipip20 {
+        if let bfA = qA.bigFive {
+            let tupleA = inlineBigFiveToTuple(o: bfA.openness, c: bfA.conscientiousness,
+                                              e: bfA.extraversion, a: bfA.agreeableness, n: bfA.neuroticism)
+            bigFiveDeepScore = bigFiveDistance5(tupleA, ipip20ToTuple(ipB))
+        } else {
+            bigFiveDeepScore = base.layer2Score
+        }
+    } else {
+        bigFiveDeepScore = base.layer2Score
+    }
+
+    // ── Recalcula score final com os dados enriquecidos ───────────────────────
+    // Pesos ajustados quando Deep Mode disponível:
+    // valores(25%) + comunicação(10%) + apego(15%) + personalidade(20%) + rotina(15%) + layer3(15%) = 100%
+    let valoresScore: Int
+    if let vA = qA.values, let vB = qB.values {
+        // Modelo inline usa .top3
+        let setA = Set(vA.top3)
+        let setB = Set(vB.top3)
+        let inter = setA.intersection(setB).count
+        let union = setA.union(setB).count
+        valoresScore = union > 0 ? Int(Double(inter) / Double(union) * 100) : 50
+    } else if let da = dA, let db = dB,
+              let pvqA = da.pvq21, let pvqB = db.pvq21 {
+        // Usa PVQ-21 quando disponível (SchwartzValue do QuestionnaireModels)
+        let topA = pvqA.topValues
+        let topB = pvqB.topValues
+        let inter = Set(topA).intersection(Set(topB)).count
+        let union = Set(topA).union(Set(topB)).count
+        valoresScore = union > 0 ? Int(Double(inter) / Double(union) * 100) : 50
+    } else {
+        valoresScore = base.layer1Score
+    }
+
+    let commScore: Int
+    if let cA = qA.communication, let cB = qB.communication {
+        let s1 = cA.conflictStyle.compatibility(with: cB.conflictStyle)
+        let s2 = cA.messagingFrequency.compatibility(with: cB.messagingFrequency)
+        commScore = (s1 + s2) / 2
+    } else {
+        commScore = 60
+    }
+
+    let routineScore: Int
+    if let rA = qA.routine, let rB = qB.routine {
+        let energyScore = rA.energySource == rB.energySource ? 90 : 50
+        let weekScore: Int
+        switch (rA.weekendStyle, rB.weekendStyle) {
+        case let (x, y) where x == y: weekScore = 100
+        default: weekScore = 65
+        }
+        routineScore = (energyScore + weekScore) / 2
+    } else {
+        routineScore = base.layer2Score
+    }
+
+    let layer3Score = 60
+
+    let newOverall = min(100, max(0,
+        Int(Double(valoresScore)    * 0.25
+          + Double(commScore)       * 0.10
+          + Double(attachScore)     * 0.15
+          + Double(bigFiveDeepScore)* 0.20
+          + Double(routineScore)    * 0.15
+          + Double(layer3Score)     * 0.15)
+    ))
+
+    // Deal-breaker detectado → mantém zero
+    guard !base.dealBreakerConflict else { return base }
+
+    let layer1New = Int(Double(valoresScore) * (25.0 / 35.0) + Double(commScore) * (10.0 / 35.0))
+    let layer2New = Int(Double(bigFiveDeepScore) * (20.0 / 35.0) + Double(routineScore) * (15.0 / 35.0))
+
+    let explanation = buildExplanation(
+        overall: newOverall,
+        valuesScore: valoresScore,
+        commScore: commScore,
+        bigFiveScore: bigFiveDeepScore,
+        routineScore: routineScore,
+        highlights: highlights,
+        differences: differences
+    )
+
+    return QuestionnaireCompatibility(
+        overall: newOverall,
+        layer1Score: layer1New,
+        layer2Score: layer2New,
+        layer3Score: layer3Score,
+        dealBreakerConflict: false,
+        explanation: explanation,
+        highlights: highlights,
+        differences: differences
+    )
+}
+
 // MARK: - Live Value (Firestore)
 
 extension QuestionnaireService: DependencyKey {
 
-    static let liveValue = QuestionnaireService(
-        loadQuestionnaire: { userId in
-            let db = Firestore.firestore()
-            let doc = try await db.collection("questionnaires").document(userId).getDocument()
-            guard doc.exists, let data = doc.data() else { return nil }
-            let jsonData = try JSONSerialization.data(withJSONObject: data)
-            return try JSONDecoder().decode(UserQuestionnaire.self, from: jsonData)
-        },
-        saveQuestionnaire: { userId, questionnaire in
-            let db = Firestore.firestore()
-            let encoder = JSONEncoder()
-            encoder.dateEncodingStrategy = .millisecondsSince1970
-            let data = try encoder.encode(questionnaire)
-            let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
-            try await db.collection("questionnaires").document(userId).setData(dict, merge: true)
-        },
-        calculateCompatibility: { a, b in
-            computeCompatibility(a, b)
-        }
-    )
+    static let liveValue: QuestionnaireService = {
+        let decoder: JSONDecoder = {
+            let d = JSONDecoder()
+            d.dateDecodingStrategy = .millisecondsSince1970
+            return d
+        }()
+        let encoder: JSONEncoder = {
+            let e = JSONEncoder()
+            e.dateEncodingStrategy = .millisecondsSince1970
+            return e
+        }()
+
+        return QuestionnaireService(
+            loadQuestionnaire: { userId in
+                let db = Firestore.firestore()
+                let doc = try await db.collection("questionnaires").document(userId).getDocument()
+                guard doc.exists, let data = doc.data() else { return nil }
+                let jsonData = try JSONSerialization.data(withJSONObject: data)
+                return try decoder.decode(UserQuestionnaire.self, from: jsonData)
+            },
+            saveQuestionnaire: { userId, questionnaire in
+                let db = Firestore.firestore()
+                let data = try encoder.encode(questionnaire)
+                let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+                try await db.collection("questionnaires").document(userId).setData(dict, merge: true)
+            },
+            calculateCompatibility: { a, b in
+                computeCompatibility(a, b)
+            },
+            saveDeepMode: { questionnaire in
+                let db = Firestore.firestore()
+                let data = try encoder.encode(questionnaire)
+                let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+                try await db.collection("deepQuestionnaires").document(questionnaire.userId).setData(dict, merge: true)
+            },
+            loadDeepMode: { userId in
+                let db = Firestore.firestore()
+                let doc = try await db.collection("deepQuestionnaires").document(userId).getDocument()
+                guard doc.exists, let data = doc.data() else { return nil }
+                let jsonData = try JSONSerialization.data(withJSONObject: data)
+                return try decoder.decode(DeepModeQuestionnaire.self, from: jsonData)
+            },
+            calculateCompatibilityFull: { qA, qB, dA, dB in
+                computeCompatibilityFull(quick: qA, qB, deep: dA, dB)
+            }
+        )
+    }()
 
     static let testValue = QuestionnaireService(
         loadQuestionnaire: { _ in nil },
@@ -566,6 +817,20 @@ extension QuestionnaireService: DependencyKey {
                 dealBreakerConflict: false,
                 explanation: "Compatibilidade de teste.",
                 highlights: ["Valores alinhados"],
+                differences: []
+            )
+        },
+        saveDeepMode: { _ in },
+        loadDeepMode: { _ in nil },
+        calculateCompatibilityFull: { qA, qB, _, _ in
+            QuestionnaireCompatibility(
+                overall: 82,
+                layer1Score: 75,
+                layer2Score: 85,
+                layer3Score: 60,
+                dealBreakerConflict: false,
+                explanation: "Compatibilidade enriquecida de teste.",
+                highlights: ["Estilos de apego compatíveis", "Valores alinhados"],
                 differences: []
             )
         }

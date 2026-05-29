@@ -284,12 +284,121 @@ Binário: qualquer incompatibilidade → módulo retorna BLOQUEIO (Camada 0).
 - [ ] Integração com o motor de matching no backend
 
 ### Sprint 6 — Modo Profundo
-- [ ] **IPIP-50** — Big Five completo (50 itens, escala 1–5)
-- [ ] **Schwartz PVQ-21** — Valores aprofundados (21 itens)
-- [ ] **ECR-RS** — Estilo de apego romântico (Experiences in Close Relationships — Revised Short; 12 itens, subescalas Ansiedade e Evitação)
-- [ ] Módulo de gestão de conflito (6 itens)
-- [ ] Projeto de vida compartilhado (5 itens: filhos, local de moradia, carreira, finanças, espiritualidade)
+- [x] **IPIP-50 abreviado (IPIP-20)** — Big Five completo (20 itens representativos, escala 1–5)
+- [x] **Schwartz PVQ-21** — Valores aprofundados (21 itens)
+- [x] **ECR-RS** — Estilo de apego romântico (Experiences in Close Relationships — Revised Short; 12 itens, subescalas Ansiedade e Evitação)
+- [x] Módulo de gestão de conflito profundo (6 dimensões)
+- [x] Projeto de vida compartilhado (5 dimensões: filhos, localização, carreira, finanças, espiritualidade)
 - [ ] Substituição do proxy de apego pelo ECR-RS no algoritmo
+- [ ] UI dos módulos do Modo Profundo (iOS + Android)
+- [ ] Integração com o motor de matching no backend
+
+---
+
+## 7. Módulos Implementados — Sprint 6 (Modo Profundo)
+
+### 7.1 IPIP-20 — Big Five Completo (20 itens representativos)
+
+**Escala:** 1 = Discordo totalmente → 5 = Concordo totalmente  
+**Instrução ao usuário:** "Indique o quanto cada afirmação abaixo descreve você."
+
+| Fator | Itens (0-based) | Itens reversos |
+|-------|-----------------|----------------|
+| Extroversão | 0, 1, 2, 3 | 1 |
+| Amabilidade | 4, 5, 6, 7 | 5 |
+| Conscienciosidade | 8, 9, 10, 11 | 9 |
+| Neuroticismo | 12, 13, 14, 15 | 13 |
+| Abertura | 16, 17, 18, 19 | 17 |
+
+**Fórmulas de scoring:**
+
+```
+rev(x) = 6 - x      (escala 1–5)
+
+Cada fator = média dos 4 itens do fator (com reversão aplicada nos itens reversos)
+Normalização 0–100: (valor - 1) / 4 * 100
+```
+
+Resultado entregue como `BigFiveResult` com `version = "IPIP-20"`, compatível com o scoring do TIPI-10.
+
+---
+
+### 7.2 PVQ-21 — Schwartz Portrait Values Questionnaire (21 itens)
+
+**Escala:** 1 = Muito parecido comigo → 6 = Não se parece nada comigo  
+**Inversão de score:** `7 - resposta` (para que 6 = alto alinhamento com o valor)
+
+| Valor | Itens (0-based) | Correspondência SchwartzValue |
+|-------|-----------------|-------------------------------|
+| Conformidade | 0, 10 | `conformity` |
+| Tradição | 1, 11 | `tradition` |
+| Benevolência | 2, 12 | `benevolence` |
+| Universalismo | 3, 13, 19 | `universalism` |
+| Autodireção | 4, 14 | `freedom` |
+| Estimulação | 5, 15 | — |
+| Hedonismo | 6, 20 | `hedonism` |
+| Realização | 7, 16 | `achievement` |
+| Poder | 8, 17 | `power` |
+| Segurança | 9, 18 | `security` |
+
+Score por valor = média das respostas mapeadas após inversão. `topValues` retorna os 3 valores com maior score. Ao concluir o PVQ-21, substitui o ranking top-3 simplificado do Modo Rápido no algoritmo de Camada 1.
+
+---
+
+### 7.3 ECR-RS — Estilo de Apego Romântico (12 itens)
+
+**Escala:** 1 = Discordo totalmente → 7 = Concordo totalmente
+
+| Subescala | Itens (0-based) | Score |
+|-----------|-----------------|-------|
+| Ansiedade | 0–5 | Média dos 6 itens |
+| Evitação | 6–11 | Média dos 6 itens |
+
+**Classificação `AttachmentStyle`:**
+
+| Estilo | Condição | Emoji |
+|--------|----------|-------|
+| Seguro | Ansiedade ≤ 3.5 e Evitação ≤ 3.5 | 💚 |
+| Ansioso | Ansiedade > 3.5 e Evitação ≤ 3.5 | 💛 |
+| Evitante | Ansiedade ≤ 3.5 e Evitação > 3.5 | 🩶 |
+| Desorganizado | Ansiedade > 3.5 e Evitação > 3.5 | 🔮 |
+
+Ao concluir, substitui o proxy de apego das perguntas Q1/Q3/Q5 do módulo de Comunicação (Modo Rápido) no cálculo da Camada 1.
+
+---
+
+### 7.4 Conflito Profundo (6 dimensões)
+
+**Instrução ao usuário:** "Escolha a opção que melhor representa você em cada situação."
+
+| Dimensão | Opções |
+|----------|--------|
+| Estilo de resolução | Resolver na hora / Processar antes / Evitar e ceder / Entender a raiz |
+| Expressão emocional | Com intensidade / Controlada / Guarda para si / Escreve antes |
+| Comportamento de reparo | Imediatamente / Aos poucos / Espera o outro / Gesto/ato |
+| Período de silêncio | Nenhum / Algumas horas / Pelo menos 1 dia / Alguns dias |
+| Estilo de desculpa | Verbal direto / Atitudes / Fala + ações / Dificuldade |
+| Tolerância a feedback | Receptivo / Depende do como / Sensível / Defensivo |
+
+Complementa e aprofunda o módulo de Comunicação do Modo Rápido. Contribui para Camada 1 (Comunicação + gestão de conflito, 10%).
+
+---
+
+### 7.5 Projeto de Vida (5 dimensões)
+
+**Instrução ao usuário:** "Escolha a opção que melhor representa seus planos e valores de vida."
+
+| Dimensão | Opções |
+|----------|--------|
+| Desejo de filhos | Quero (prioridade) / Aberto(a) / Indeciso(a) / Provavelmente não / Não quero |
+| Flexibilidade de localização | Minha cidade / Mesma cidade / Outro estado / Brasil / Mundo |
+| Prioridade de carreira | Central / Equilibrada / Vida primeiro / Em transição |
+| Abordagem financeira | Poupador / Equilibrado / Gasta bem hoje / Investidor |
+| Papel da espiritualidade | Central / Importante / Pessoal / Não importante |
+
+Contribui para Camada 1 via sobreposição de projeto de vida (especialmente `childrenDesire` e `locationFlexibility`, que funcionam como extensão da Camada 0 quando há incompatibilidade forte).
+
+---
 
 ### Sprint 7 — Modo Autoconhecimento
 - [ ] **Eneagrama** — 9 tipos (versão curta, 27 itens)

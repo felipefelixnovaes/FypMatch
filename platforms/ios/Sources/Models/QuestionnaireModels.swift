@@ -813,3 +813,251 @@ struct DeepModeQuestionnaire: Equatable, Codable {
         return completed * 20
     }
 }
+
+// MARK: - Self-Knowledge Models (Sprint 7)
+
+// MARK: Eneagrama
+
+enum EnneagramType: Int, Equatable, Codable, CaseIterable {
+    case one = 1, two, three, four, five, six, seven, eight, nine
+
+    var displayName: String {
+        switch self {
+        case .one:   return "O Perfeccionista"
+        case .two:   return "O Prestativo"
+        case .three: return "O Realizador"
+        case .four:  return "O Individualista"
+        case .five:  return "O Investigador"
+        case .six:   return "O Leal"
+        case .seven: return "O Entusiasta"
+        case .eight: return "O Desafiador"
+        case .nine:  return "O Pacificador"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .one:   return "⚖️"
+        case .two:   return "🤗"
+        case .three: return "🏆"
+        case .four:  return "🎨"
+        case .five:  return "🔭"
+        case .six:   return "🛡️"
+        case .seven: return "🎉"
+        case .eight: return "🦁"
+        case .nine:  return "☮️"
+        }
+    }
+
+    var shortDescription: String {
+        switch self {
+        case .one:   return "Princípios e melhoria contínua"
+        case .two:   return "Cuidado e conexão com os outros"
+        case .three: return "Conquistas e reconhecimento"
+        case .four:  return "Autenticidade e profundidade emocional"
+        case .five:  return "Conhecimento e independência"
+        case .six:   return "Segurança e lealdade"
+        case .seven: return "Entusiasmo e novas experiências"
+        case .eight: return "Força e autonomia"
+        case .nine:  return "Harmonia e paz interior"
+        }
+    }
+
+    /// Compatibilidade natural entre tipos (simplificada)
+    var naturalPartners: [EnneagramType] {
+        switch self {
+        case .one:   return [.seven, .nine, .two]
+        case .two:   return [.eight, .four, .six]
+        case .three: return [.six, .nine, .one]
+        case .four:  return [.one, .five, .nine]
+        case .five:  return [.four, .eight, .two]
+        case .six:   return [.nine, .three, .two]
+        case .seven: return [.one, .five, .four]
+        case .eight: return [.two, .five, .nine]
+        case .nine:  return [.three, .six, .one]
+        }
+    }
+}
+
+struct EnneagramResult: Equatable, Codable {
+    /// 27 respostas: true = escolha A, false = escolha B
+    var responses: [Bool]
+
+    /// 27 pares (typeA, typeB). Cada tipo aparece em exatamente 6 pares.
+    /// Pares removidos de C(9,2): (1,2)(2,3)(3,4)(4,5)(5,6)(6,7)(7,8)(8,9)(1,9)
+    /// — formam um ciclo hamiltoniano, garantindo 8−2 = 6 aparições por tipo.
+    static let itemMap: [(EnneagramType, EnneagramType)] = [
+        (.one,   .three), // 0
+        (.one,   .four),  // 1
+        (.one,   .five),  // 2
+        (.one,   .six),   // 3
+        (.one,   .seven), // 4
+        (.one,   .eight), // 5
+        (.two,   .four),  // 6
+        (.two,   .five),  // 7
+        (.two,   .six),   // 8
+        (.two,   .seven), // 9
+        (.two,   .eight), // 10
+        (.two,   .nine),  // 11
+        (.three, .five),  // 12
+        (.three, .six),   // 13
+        (.three, .seven), // 14
+        (.three, .eight), // 15
+        (.three, .nine),  // 16
+        (.four,  .six),   // 17
+        (.four,  .seven), // 18
+        (.four,  .eight), // 19
+        (.four,  .nine),  // 20
+        (.five,  .seven), // 21
+        (.five,  .eight), // 22
+        (.five,  .nine),  // 23
+        (.six,   .eight), // 24
+        (.six,   .nine),  // 25
+        (.seven, .nine),  // 26
+    ]
+    // Distribuição verificada: cada tipo aparece em exatamente 6 pares.
+    // tipo 1: índices 0–5   | tipo 2: índices 6–11
+    // tipo 3: 0,12–16       | tipo 4: 1,6,17–20
+    // tipo 5: 2,7,12,21–23  | tipo 6: 3,8,13,17,24,25
+    // tipo 7: 4,9,14,18,21,26 | tipo 8: 5,10,15,19,22,24
+    // tipo 9: 11,16,20,23,25,26
+
+    var scores: [EnneagramType: Int] {
+        var counts: [EnneagramType: Int] = [:]
+        EnneagramType.allCases.forEach { counts[$0] = 0 }
+        for (index, response) in responses.enumerated() {
+            guard index < Self.itemMap.count else { break }
+            let (typeA, typeB) = Self.itemMap[index]
+            let chosen = response ? typeA : typeB
+            counts[chosen, default: 0] += 1
+        }
+        return counts
+    }
+
+    var dominantType: EnneagramType {
+        scores.max(by: { $0.value < $1.value })?.key ?? .nine
+    }
+
+    var topThree: [EnneagramType] {
+        scores.sorted { $0.value > $1.value }.prefix(3).map(\.key)
+    }
+}
+
+// MARK: Linguagens do Cuidado (Chapman)
+
+enum LoveLanguage: String, Equatable, Codable, CaseIterable {
+    case wordsOfAffirmation  // Palavras de afirmação
+    case actsOfService       // Atos de serviço
+    case receivingGifts      // Presentes
+    case qualityTime         // Tempo de qualidade
+    case physicalTouch       // Toque físico
+
+    var displayName: String {
+        switch self {
+        case .wordsOfAffirmation: return "Palavras de Afirmação"
+        case .actsOfService:      return "Atos de Serviço"
+        case .receivingGifts:     return "Presentes"
+        case .qualityTime:        return "Tempo de Qualidade"
+        case .physicalTouch:      return "Toque Físico"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .wordsOfAffirmation: return "💬"
+        case .actsOfService:      return "🛠️"
+        case .receivingGifts:     return "🎁"
+        case .qualityTime:        return "⏰"
+        case .physicalTouch:      return "🤝"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .wordsOfAffirmation: return "Se sente amado(a) com elogios, incentivos e 'eu te amo'"
+        case .actsOfService:      return "Se sente amado(a) quando o outro faz coisas por você"
+        case .receivingGifts:     return "Se sente amado(a) com presentes e gestos tangíveis"
+        case .qualityTime:        return "Se sente amado(a) com atenção plena e tempo juntos"
+        case .physicalTouch:      return "Se sente amado(a) com abraços, carinhos e proximidade física"
+        }
+    }
+}
+
+struct LoveLanguageResult: Equatable, Codable {
+    /// 30 respostas forçadas (A ou B), 5 linguagens × 6 aparições cada.
+    /// UI e itemMap implementados no Sprint 7b.
+    var responses: [Bool] = []
+    var primaryLanguage: LoveLanguage = .qualityTime
+    var secondaryLanguage: LoveLanguage = .wordsOfAffirmation
+}
+
+// MARK: Arquétipos FypMatch
+
+enum FypArchetype: String, Equatable, Codable, CaseIterable {
+    case explorer, creator, caregiver, ruler, sage, hero
+    case rebel, lover, jester, innocent, magician, everyman
+
+    var displayName: String {
+        switch self {
+        case .explorer:  return "O Explorador"
+        case .creator:   return "O Criador"
+        case .caregiver: return "O Cuidador"
+        case .ruler:     return "O Governante"
+        case .sage:      return "O Sábio"
+        case .hero:      return "O Herói"
+        case .rebel:     return "O Rebelde"
+        case .lover:     return "O Amante"
+        case .jester:    return "O Bobo da Corte"
+        case .innocent:  return "O Inocente"
+        case .magician:  return "O Mago"
+        case .everyman:  return "O Cidadão Comum"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .explorer:  return "🧭"
+        case .creator:   return "🎨"
+        case .caregiver: return "💛"
+        case .ruler:     return "👑"
+        case .sage:      return "📚"
+        case .hero:      return "⚔️"
+        case .rebel:     return "🔥"
+        case .lover:     return "❤️"
+        case .jester:    return "🎭"
+        case .innocent:  return "🌸"
+        case .magician:  return "✨"
+        case .everyman:  return "🤝"
+        }
+    }
+}
+
+struct ArchetypeResult: Equatable, Codable {
+    /// 24 respostas (A ou B), 12 arquétipos × 4 aparições / 2 = 24 pares.
+    /// UI e itemMap implementados no Sprint 7b.
+    var responses: [Bool] = []
+    var dominantArchetype: FypArchetype = .explorer
+}
+
+// MARK: Container do Modo Autoconhecimento
+
+struct SelfKnowledgeQuestionnaire: Equatable, Codable {
+    var userId: String
+    var completedAt: Date?
+    var enneagram: EnneagramResult?
+    var loveLanguage: LoveLanguageResult?
+    var archetype: ArchetypeResult?
+
+    var isEnneagramComplete: Bool { enneagram != nil }
+
+    /// Percentual de conclusão: cada módulo vale 33 pontos (3 módulos × 33 ≈ 99;
+    /// quando todos completos retorna 99 — use isFullyComplete para verificar 100%).
+    var completionPercentage: Int {
+        [enneagram != nil, loveLanguage != nil, archetype != nil]
+            .filter { $0 }.count * 33
+    }
+
+    var isFullyComplete: Bool {
+        enneagram != nil && loveLanguage != nil && archetype != nil
+    }
+}

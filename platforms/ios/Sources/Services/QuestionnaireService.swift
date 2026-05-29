@@ -282,6 +282,15 @@ struct QuestionnaireService {
         _ quickA: UserQuestionnaire, _ quickB: UserQuestionnaire,
         _ deepA: DeepModeQuestionnaire?, _ deepB: DeepModeQuestionnaire?
     ) -> QuestionnaireCompatibility
+
+    // MARK: Sprint 7a — Self-Knowledge (Eneagrama)
+
+    /// Salva o questionário de autoconhecimento no Firestore (coleção "selfKnowledge").
+    /// Usa merge: true para preservar outros campos do documento.
+    var saveSelfKnowledge: (_ q: SelfKnowledgeQuestionnaire) async throws -> Void
+
+    /// Carrega o questionário de autoconhecimento do Firestore para um userId.
+    var loadSelfKnowledge: (_ userId: String) async throws -> SelfKnowledgeQuestionnaire?
 }
 
 // MARK: - Lógica de compatibilidade multi-camada
@@ -801,6 +810,19 @@ extension QuestionnaireService: DependencyKey {
             },
             calculateCompatibilityFull: { qA, qB, dA, dB in
                 computeCompatibilityFull(quick: qA, qB, deep: dA, dB)
+            },
+            saveSelfKnowledge: { questionnaire in
+                let db = Firestore.firestore()
+                let data = try encoder.encode(questionnaire)
+                let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+                try await db.collection("selfKnowledge").document(questionnaire.userId).setData(dict, merge: true)
+            },
+            loadSelfKnowledge: { userId in
+                let db = Firestore.firestore()
+                let doc = try await db.collection("selfKnowledge").document(userId).getDocument()
+                guard doc.exists, let data = doc.data() else { return nil }
+                let jsonData = try JSONSerialization.data(withJSONObject: data)
+                return try decoder.decode(SelfKnowledgeQuestionnaire.self, from: jsonData)
             }
         )
     }()
@@ -833,7 +855,9 @@ extension QuestionnaireService: DependencyKey {
                 highlights: ["Estilos de apego compatíveis", "Valores alinhados"],
                 differences: []
             )
-        }
+        },
+        saveSelfKnowledge: { _ in },
+        loadSelfKnowledge: { _ in nil }
     )
 }
 

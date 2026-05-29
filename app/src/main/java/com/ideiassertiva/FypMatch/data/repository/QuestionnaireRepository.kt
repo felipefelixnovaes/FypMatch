@@ -1,6 +1,7 @@
 package com.ideiassertiva.FypMatch.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.ideiassertiva.FypMatch.model.AttachmentStyle
 import com.ideiassertiva.FypMatch.model.ApologyStyle
 import com.ideiassertiva.FypMatch.model.CareerPriority
@@ -10,6 +11,7 @@ import com.ideiassertiva.FypMatch.model.DeepConflictResult
 import com.ideiassertiva.FypMatch.model.DeepModeQuestionnaire
 import com.ideiassertiva.FypMatch.model.ECRRSResult
 import com.ideiassertiva.FypMatch.model.EmotionalExpression
+import com.ideiassertiva.FypMatch.model.EnneagramResult
 import com.ideiassertiva.FypMatch.model.FeedbackTolerance
 import com.ideiassertiva.FypMatch.model.FinancialApproach
 import com.ideiassertiva.FypMatch.model.IPIP20Result
@@ -17,9 +19,12 @@ import com.ideiassertiva.FypMatch.model.LifeProjectResult
 import com.ideiassertiva.FypMatch.model.LocationFlexibility
 import com.ideiassertiva.FypMatch.model.PVQ21Result
 import com.ideiassertiva.FypMatch.model.RepairBehavior
+import com.ideiassertiva.FypMatch.model.SelfKnowledgeQuestionnaire
 import com.ideiassertiva.FypMatch.model.SilencePeriod
 import com.ideiassertiva.FypMatch.model.SpiritualityRole
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.util.Date
 import javax.inject.Inject
 
@@ -658,5 +663,55 @@ class QuestionnaireRepository @Inject constructor() {
             " Em especial: ${highlights.take(2).joinToString(" e ")}."
         else ""
         return "$intro$deepNote$destaqueTexto"
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // MODO AUTOCONHECIMENTO — Eneagrama (Sprint 7a)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private val selfKnowledgeCollection = "selfKnowledge"
+
+    /**
+     * Salva SelfKnowledgeQuestionnaire no Firestore.
+     * Usa merge = true para preservar campos existentes (loveLanguage, archetype, etc.).
+     */
+    suspend fun saveSelfKnowledge(q: SelfKnowledgeQuestionnaire) {
+        withContext(Dispatchers.IO) {
+            val data = hashMapOf<String, Any>(
+                "userId" to q.userId,
+                "completedAt" to (q.completedAt ?: System.currentTimeMillis())
+            )
+            q.enneagram?.let { enn ->
+                data["enneagram_responses"] = enn.responses
+                data["enneagram_dominant"] = enn.dominantType().name
+                data["enneagram_top3"] = enn.topThree().map { it.name }
+            }
+            db.collection(selfKnowledgeCollection)
+                .document(q.userId)
+                .set(data, SetOptions.merge())
+                .await()
+        }
+    }
+
+    /**
+     * Carrega SelfKnowledgeQuestionnaire do Firestore.
+     * Retorna null se o documento não existir.
+     */
+    @Suppress("UNCHECKED_CAST")
+    suspend fun loadSelfKnowledge(userId: String): SelfKnowledgeQuestionnaire? {
+        return withContext(Dispatchers.IO) {
+            val doc = db.collection(selfKnowledgeCollection).document(userId).get().await()
+            if (!doc.exists()) return@withContext null
+
+            val responses = (doc.get("enneagram_responses") as? List<*>)
+                ?.map { it as? Boolean ?: false }
+            val enneagram = if (responses?.size == 27) EnneagramResult(responses) else null
+
+            SelfKnowledgeQuestionnaire(
+                userId = userId,
+                completedAt = doc.getLong("completedAt"),
+                enneagram = enneagram
+            )
+        }
     }
 }

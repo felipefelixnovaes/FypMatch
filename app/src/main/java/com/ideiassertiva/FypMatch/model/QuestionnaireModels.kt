@@ -617,3 +617,229 @@ data class DeepModeQuestionnaire(
             return completed * 20
         }
 }
+
+// ─────────────────────────────────────────────
+// Self-Knowledge Models (Sprint 7)
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// Eneagrama
+// ─────────────────────────────────────────────
+
+enum class EnneagramType(
+    val value: Int,
+    val displayName: String,
+    val emoji: String,
+    val shortDescription: String
+) {
+    ONE(1, "O Perfeccionista", "⚖️", "Princípios e melhoria contínua"),
+    TWO(2, "O Prestativo", "🤗", "Cuidado e conexão com os outros"),
+    THREE(3, "O Realizador", "🏆", "Conquistas e reconhecimento"),
+    FOUR(4, "O Individualista", "🎨", "Autenticidade e profundidade emocional"),
+    FIVE(5, "O Investigador", "🔭", "Conhecimento e independência"),
+    SIX(6, "O Leal", "🛡️", "Segurança e lealdade"),
+    SEVEN(7, "O Entusiasta", "🎉", "Entusiasmo e novas experiências"),
+    EIGHT(8, "O Desafiador", "🦁", "Força e autonomia"),
+    NINE(9, "O Pacificador", "☮️", "Harmonia e paz interior");
+
+    /** Compatibilidade natural entre tipos (simplificada) */
+    val naturalPartners: List<EnneagramType>
+        get() = when (this) {
+            ONE   -> listOf(SEVEN, NINE, TWO)
+            TWO   -> listOf(EIGHT, FOUR, SIX)
+            THREE -> listOf(SIX, NINE, ONE)
+            FOUR  -> listOf(ONE, FIVE, NINE)
+            FIVE  -> listOf(FOUR, EIGHT, TWO)
+            SIX   -> listOf(NINE, THREE, TWO)
+            SEVEN -> listOf(ONE, FIVE, FOUR)
+            EIGHT -> listOf(TWO, FIVE, NINE)
+            NINE  -> listOf(THREE, SIX, ONE)
+        }
+}
+
+/**
+ * Resultado do questionário de Eneagrama.
+ *
+ * [responses] contém 27 booleanos: true = escolha A, false = escolha B.
+ * [itemMap] define os 27 pares (typeA, typeB) onde cada tipo aparece exatamente 6 vezes.
+ *
+ * Pares omitidos de C(9,2): (1,2)(2,3)(3,4)(4,5)(5,6)(6,7)(7,8)(8,9)(1,9)
+ * — formam um ciclo hamiltoniano, garantindo 8−2 = 6 aparições por tipo.
+ */
+data class EnneagramResult(val responses: List<Boolean>) {
+
+    companion object {
+        /** 27 pares (typeA, typeB). Cada tipo aparece em exatamente 6 pares. */
+        val itemMap: List<Pair<EnneagramType, EnneagramType>> = listOf(
+            EnneagramType.ONE   to EnneagramType.THREE, // 0
+            EnneagramType.ONE   to EnneagramType.FOUR,  // 1
+            EnneagramType.ONE   to EnneagramType.FIVE,  // 2
+            EnneagramType.ONE   to EnneagramType.SIX,   // 3
+            EnneagramType.ONE   to EnneagramType.SEVEN, // 4
+            EnneagramType.ONE   to EnneagramType.EIGHT, // 5
+            EnneagramType.TWO   to EnneagramType.FOUR,  // 6
+            EnneagramType.TWO   to EnneagramType.FIVE,  // 7
+            EnneagramType.TWO   to EnneagramType.SIX,   // 8
+            EnneagramType.TWO   to EnneagramType.SEVEN, // 9
+            EnneagramType.TWO   to EnneagramType.EIGHT, // 10
+            EnneagramType.TWO   to EnneagramType.NINE,  // 11
+            EnneagramType.THREE to EnneagramType.FIVE,  // 12
+            EnneagramType.THREE to EnneagramType.SIX,   // 13
+            EnneagramType.THREE to EnneagramType.SEVEN, // 14
+            EnneagramType.THREE to EnneagramType.EIGHT, // 15
+            EnneagramType.THREE to EnneagramType.NINE,  // 16
+            EnneagramType.FOUR  to EnneagramType.SIX,   // 17
+            EnneagramType.FOUR  to EnneagramType.SEVEN, // 18
+            EnneagramType.FOUR  to EnneagramType.EIGHT, // 19
+            EnneagramType.FOUR  to EnneagramType.NINE,  // 20
+            EnneagramType.FIVE  to EnneagramType.SEVEN, // 21
+            EnneagramType.FIVE  to EnneagramType.EIGHT, // 22
+            EnneagramType.FIVE  to EnneagramType.NINE,  // 23
+            EnneagramType.SIX   to EnneagramType.EIGHT, // 24
+            EnneagramType.SIX   to EnneagramType.NINE,  // 25
+            EnneagramType.SEVEN to EnneagramType.NINE,  // 26
+        )
+        // Distribuição verificada: cada tipo aparece em exatamente 6 pares.
+        // tipo 1: índices 0–5    | tipo 2: índices 6–11
+        // tipo 3: 0,12–16        | tipo 4: 1,6,17–20
+        // tipo 5: 2,7,12,21–23   | tipo 6: 3,8,13,17,24,25
+        // tipo 7: 4,9,14,18,21,26 | tipo 8: 5,10,15,19,22,24
+        // tipo 9: 11,16,20,23,25,26
+    }
+
+    /** Contagem de votos por tipo com base nas respostas */
+    fun scores(): Map<EnneagramType, Int> {
+        val counts = EnneagramType.values().associateWith { 0 }.toMutableMap()
+        responses.forEachIndexed { index, response ->
+            if (index < itemMap.size) {
+                val (typeA, typeB) = itemMap[index]
+                val chosen = if (response) typeA else typeB
+                counts[chosen] = (counts[chosen] ?: 0) + 1
+            }
+        }
+        return counts
+    }
+
+    /** Tipo com maior pontuação */
+    fun dominantType(): EnneagramType =
+        scores().maxByOrNull { it.value }?.key ?: EnneagramType.NINE
+
+    /** Top 3 tipos com maiores pontuações */
+    fun topThree(): List<EnneagramType> =
+        scores().entries.sortedByDescending { it.value }.take(3).map { it.key }
+}
+
+// ─────────────────────────────────────────────
+// Linguagens do Cuidado (Chapman)
+// ─────────────────────────────────────────────
+
+enum class LoveLanguage(
+    val displayName: String,
+    val emoji: String,
+    val description: String
+) {
+    WORDS_OF_AFFIRMATION(
+        displayName = "Palavras de Afirmação",
+        emoji = "💬",
+        description = "Se sente amado(a) com elogios, incentivos e 'eu te amo'"
+    ),
+    ACTS_OF_SERVICE(
+        displayName = "Atos de Serviço",
+        emoji = "🛠️",
+        description = "Se sente amado(a) quando o outro faz coisas por você"
+    ),
+    RECEIVING_GIFTS(
+        displayName = "Presentes",
+        emoji = "🎁",
+        description = "Se sente amado(a) com presentes e gestos tangíveis"
+    ),
+    QUALITY_TIME(
+        displayName = "Tempo de Qualidade",
+        emoji = "⏰",
+        description = "Se sente amado(a) com atenção plena e tempo juntos"
+    ),
+    PHYSICAL_TOUCH(
+        displayName = "Toque Físico",
+        emoji = "🤝",
+        description = "Se sente amado(a) com abraços, carinhos e proximidade física"
+    )
+}
+
+/**
+ * Resultado do questionário de Linguagens do Cuidado.
+ *
+ * [responses] — 30 respostas forçadas (A ou B), 5 linguagens × 6 aparições cada.
+ * UI e itemMap implementados no Sprint 7b.
+ */
+data class LoveLanguageResult(
+    val responses: List<Boolean> = emptyList(),
+    val primaryLanguage: LoveLanguage = LoveLanguage.QUALITY_TIME,
+    val secondaryLanguage: LoveLanguage = LoveLanguage.WORDS_OF_AFFIRMATION
+)
+
+// ─────────────────────────────────────────────
+// Arquétipos FypMatch
+// ─────────────────────────────────────────────
+
+enum class FypArchetype(
+    val displayName: String,
+    val emoji: String
+) {
+    EXPLORER("O Explorador", "🧭"),
+    CREATOR("O Criador", "🎨"),
+    CAREGIVER("O Cuidador", "💛"),
+    RULER("O Governante", "👑"),
+    SAGE("O Sábio", "📚"),
+    HERO("O Herói", "⚔️"),
+    REBEL("O Rebelde", "🔥"),
+    LOVER("O Amante", "❤️"),
+    JESTER("O Bobo da Corte", "🎭"),
+    INNOCENT("O Inocente", "🌸"),
+    MAGICIAN("O Mago", "✨"),
+    EVERYMAN("O Cidadão Comum", "🤝")
+}
+
+/**
+ * Resultado do questionário de Arquétipos.
+ *
+ * [responses] — 24 respostas (A ou B), 12 arquétipos × 4 aparições / 2 = 24 pares.
+ * UI e itemMap implementados no Sprint 7b.
+ */
+data class ArchetypeResult(
+    val responses: List<Boolean> = emptyList(),
+    val dominantArchetype: FypArchetype = FypArchetype.EXPLORER
+)
+
+// ─────────────────────────────────────────────
+// Container do Modo Autoconhecimento
+// ─────────────────────────────────────────────
+
+/**
+ * Agrega todos os módulos do Modo Autoconhecimento (Sprint 7).
+ * Complementa UserQuestionnaire e DeepModeQuestionnaire sem substituí-los.
+ *
+ * [completedAt] é um timestamp Unix em milissegundos (Long).
+ */
+data class SelfKnowledgeQuestionnaire(
+    val userId: String,
+    val completedAt: Long? = null,
+    val enneagram: EnneagramResult? = null,
+    val loveLanguage: LoveLanguageResult? = null,
+    val archetype: ArchetypeResult? = null
+) {
+    /** Retorna true se o módulo de Eneagrama foi respondido */
+    val isEnneagramComplete: Boolean
+        get() = enneagram != null
+
+    /**
+     * Percentual de conclusão: cada módulo vale 33 pontos (3 módulos × 33 ≈ 99).
+     * Quando todos completos retorna 99 — use [isFullyComplete] para verificar 100%.
+     */
+    val completionPercentage: Int
+        get() = listOf(enneagram != null, loveLanguage != null, archetype != null)
+            .count { it } * 33
+
+    /** Retorna true se todos os 3 módulos foram respondidos */
+    val isFullyComplete: Boolean
+        get() = enneagram != null && loveLanguage != null && archetype != null
+}

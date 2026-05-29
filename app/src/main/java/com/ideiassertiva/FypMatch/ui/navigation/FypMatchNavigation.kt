@@ -60,6 +60,10 @@ sealed class Screen(val route: String) {
     object DeepMode : Screen("deep_mode/{userId}") {
         fun createRoute(userId: String) = "deep_mode/$userId"
     }
+    /** Questionário de Eneagrama — Modo Autoconhecimento (Sprint 7a) */
+    object Enneagram : Screen("enneagram/{userId}") {
+        fun createRoute(userId: String) = "enneagram/$userId"
+    }
 }
 
 @Composable
@@ -365,6 +369,19 @@ fun FypMatchNavigation(
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             DeepModeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() },
+                userId = userId
+            )
+        }
+
+        // ─── Eneagrama — Modo Autoconhecimento (Sprint 7a) ────────────────
+        composable(
+            route = Screen.Enneagram.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            EnneagramScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onComplete = { navController.popBackStack() },
                 userId = userId

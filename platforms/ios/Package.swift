@@ -25,7 +25,10 @@ let package = Package(
         .package(url: "https://github.com/onevcat/Kingfisher", from: "7.10.0"),
         
         // Network Layer
-        .package(url: "https://github.com/Alamofire/Alamofire", from: "5.8.0")
+        .package(url: "https://github.com/Alamofire/Alamofire", from: "5.8.0"),
+
+        // Google Sign-In
+        .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0")
     ],
     targets: [
         .target(
@@ -37,7 +40,9 @@ let package = Package(
                 .product(name: "FirebaseMessaging", package: "firebase-ios-sdk"),
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "Kingfisher", package: "Kingfisher"),
-                .product(name: "Alamofire", package: "Alamofire")
+                .product(name: "Alamofire", package: "Alamofire"),
+                .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS"),
+                .product(name: "GoogleSignInSwift", package: "GoogleSignIn-iOS")
             ]
         ),
         .testTarget(

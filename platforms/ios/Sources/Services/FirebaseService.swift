@@ -7,10 +7,13 @@
 //
 
 import Foundation
+import UIKit
 import FirebaseAuth
+import FirebaseCore
 import FirebaseFirestore
 import FirebaseStorage
 import FirebaseMessaging
+import GoogleSignIn
 import Combine
 
 /// Serviço principal para todas as operações Firebase no FypMatch
@@ -92,80 +95,57 @@ class FirebaseService: ObservableObject {
         }
     }
     
-    /// Login com Google
-    ///
-    /// Requer o pacote GoogleSignIn-iOS no Package.swift:
-    ///   .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0")
-    /// e o target dependency:
-    ///   .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS")
-    ///
-    /// Se o SDK não estiver disponível, este método lança um erro descritivo.
+    /// Login com Google usando GIDSignIn + Firebase Auth credential
     func signInWithGoogle() async throws {
-        // Verificar se o ClientID do Firebase está configurado
         guard let clientID = FirebaseApp.app()?.options.clientID else {
             throw NSError(
                 domain: "FypMatch",
                 code: -1,
                 userInfo: [NSLocalizedDescriptionKey:
-                    "Google Sign-In: GoogleService-Info.plist não encontrado ou CLIENT_ID ausente."]
+                    "Google Sign-In: CLIENT_ID ausente no GoogleService-Info.plist."]
             )
         }
 
-        // Obter rootViewController via cenas ativas (compatível com iOS 15+)
-        guard let rootVC = await MainActor.run(body: {
-            UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
+        let rootVC: UIViewController = try await MainActor.run {
+            guard let vc = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
                 .first(where: { $0.activationState == .foregroundActive })?
                 .windows
                 .first(where: { $0.isKeyWindow })?
                 .rootViewController
-        }) else {
-            throw NSError(
-                domain: "FypMatch",
-                code: -2,
-                userInfo: [NSLocalizedDescriptionKey: "Google Sign-In: não foi possível obter rootViewController."]
-            )
+            else {
+                throw NSError(
+                    domain: "FypMatch",
+                    code: -2,
+                    userInfo: [NSLocalizedDescriptionKey: "Google Sign-In: rootViewController indisponível."]
+                )
+            }
+            return vc
         }
-
-        // Para compilar sem o SDK GoogleSignIn adicionado ao Package.swift,
-        // esta implementação usa uma chamada dinâmica via NSClassFromString.
-        // Quando o SDK estiver presente, substitua o bloco abaixo pelo código comentado.
-
-        /* — Código com SDK GoogleSignIn importado —
-        import GoogleSignIn
 
         let config = GIDConfiguration(clientID: clientID)
         GIDSignIn.sharedInstance.configuration = config
+
         let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootVC)
+
         guard let idToken = result.user.idToken?.tokenString else {
-            throw NSError(domain: "FypMatch", code: -3,
-                          userInfo: [NSLocalizedDescriptionKey: "Google Sign-In: ID token ausente."])
+            throw NSError(
+                domain: "FypMatch",
+                code: -3,
+                userInfo: [NSLocalizedDescriptionKey: "Google Sign-In: ID token ausente na resposta."]
+            )
         }
+
         let credential = GoogleAuthProvider.credential(
             withIDToken: idToken,
             accessToken: result.user.accessToken.tokenString
         )
+
         try await auth.signIn(with: credential)
+
         if let firebaseUser = auth.currentUser {
             await loadCurrentUser(firebaseUser: firebaseUser)
         }
-        */
-
-        // Fallback: SDK ausente — informar como adicioná-lo
-        _ = clientID  // suprimir aviso de variável não usada
-        _ = rootVC
-        throw NSError(
-            domain: "FypMatch",
-            code: -10,
-            userInfo: [NSLocalizedDescriptionKey:
-                """
-                Google Sign-In: adicione o SDK ao Package.swift:
-                  .package(url: "https://github.com/google/GoogleSignIn-iOS", from: "7.0.0")
-                e o produto ao target:
-                  .product(name: "GoogleSignIn", package: "GoogleSignIn-iOS")
-                Em seguida, descomente o bloco de implementação em signInWithGoogle().
-                """]
-        )
     }
 
     /// Login com Apple usando ASAuthorizationController + nonce SHA-256

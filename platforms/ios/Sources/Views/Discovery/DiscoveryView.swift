@@ -36,6 +36,23 @@ struct DiscoveryView: View {
         .onAppear { store.send(.loadDiscoveryUsers) }
         .sheet(isPresented: $store.isShowingFilters) { FiltersSheet(store: store) }
         .sheet(isPresented: $store.showingPremiumUpsell) { PremiumUpsellSheet(reason: store.upsellReason) }
+        .sheet(isPresented: $store.isShowingUserDetail) {
+            if let user = store.selectedUserForDetail {
+                UserDetailView(
+                    store: Store(
+                        initialState: UserDetailFeature.State(
+                            user: user,
+                            currentUser: store.currentUser
+                        )
+                    ) {
+                        UserDetailFeature()
+                    }
+                )
+                .onDisappear {
+                    store.send(.dismissUserDetail)
+                }
+            }
+        }
     }
 
     // MARK: - Card Stack
@@ -44,8 +61,24 @@ struct DiscoveryView: View {
         VStack(spacing: 0) {
             ZStack {
                 ForEach(Array(store.discoveryUsers.prefix(3).enumerated().reversed()), id: \.element.id) { index, user in
-                    SwipeCardView(user: user) { direction in
-                        store.send(direction == .right ? .swipeRight(user) : .swipeLeft(user))
+                    ZStack(alignment: .topTrailing) {
+                        SwipeCardView(user: user) { direction in
+                            store.send(direction == .right ? .swipeRight(user) : .swipeLeft(user))
+                        }
+
+                        // Botão de info — abre UserDetailView apenas no card do topo
+                        if index == 0 {
+                            Button {
+                                store.send(.showUserProfile(user))
+                            } label: {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.system(size: 26))
+                                    .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
+                                    .padding(14)
+                            }
+                            .accessibilityLabel("Ver perfil completo de \(user.displayName)")
+                        }
                     }
                     .scaleEffect(index == 0 ? 1.0 : 1.0 - CGFloat(index) * 0.04)
                     .offset(y: CGFloat(index) * -8)

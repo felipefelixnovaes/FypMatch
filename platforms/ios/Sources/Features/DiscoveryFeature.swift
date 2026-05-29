@@ -61,6 +61,10 @@ struct DiscoveryFeature {
         var isRefreshing = false
         var showingSettings = false
         var alertMessage: String?
+
+        // MARK: - User Detail
+        var selectedUserForDetail: User? = nil
+        var isShowingUserDetail: Bool = false
         
         // MARK: - Computed Properties
         var currentDisplayUser: User? {
@@ -110,6 +114,8 @@ struct DiscoveryFeature {
         
         // MARK: - Navigation
         case showUserProfile(User)
+        case selectUserForDetail(User)
+        case dismissUserDetail
         case showFilters(Bool)
         case showPremiumUpsell(PremiumUpsellReason)
         case showSettings(Bool)
@@ -509,11 +515,21 @@ struct DiscoveryFeature {
                 return .none
                 
             // MARK: - Navigation
-                
-            case .showUserProfile:
-                // TODO: Implementar visualização de perfil
+
+            case let .showUserProfile(user):
+                // Navegação tratada pela View via sheet/navigationDestination
+                return .send(.selectUserForDetail(user))
+
+            case let .selectUserForDetail(user):
+                state.selectedUserForDetail = user
+                state.isShowingUserDetail = true
                 return .none
-                
+
+            case .dismissUserDetail:
+                state.isShowingUserDetail = false
+                state.selectedUserForDetail = nil
+                return .none
+
             case .showSettings:
                 // TODO: Implementar tela de configurações
                 return .none

@@ -51,6 +51,28 @@
     <string name="premium_vip_price">R$ 39,90/mês</string>
     <string name="premium_upgrade_button">Fazer Upgrade</string>
     <string name="premium_terms">Termos e condições se aplicam</string>
+    <string name="premium_popular_badge">POPULAR</string>
+    <string name="premium_cancel_anytime">Cancele quando quiser. Sem fidelidade.</string>
+    <string name="premium_restore_purchases">Restaurar compras</string>
+    <string name="premium_auto_renewal">Renovação automática</string>
+    <string name="premium_subscribe_button">Assinar %s</string>
+    <!-- Benefícios Premium -->
+    <string name="benefit_premium_likes">100 curtidas/dia</string>
+    <string name="benefit_premium_super_likes">5 super curtidas/dia</string>
+    <string name="benefit_premium_see_who_liked">Ver quem te curtiu</string>
+    <string name="benefit_premium_boost">1 boost/mês (30 min)</string>
+    <string name="benefit_premium_ai_credits">10 créditos IA/dia</string>
+    <string name="benefit_premium_no_ads">Sem anúncios</string>
+    <string name="benefit_premium_advanced_filters">Filtros avançados</string>
+    <!-- Benefícios VIP -->
+    <string name="benefit_vip_unlimited_likes">Curtidas ilimitadas</string>
+    <string name="benefit_vip_unlimited_super_likes">Super curtidas ilimitadas</string>
+    <string name="benefit_vip_boosts">5 boosts/mês + Super Boost 2h</string>
+    <string name="benefit_vip_ai_credits">25 créditos IA/dia</string>
+    <string name="benefit_vip_algorithm_priority">Prioridade no algoritmo</string>
+    <string name="benefit_vip_seal">Selo VIP exclusivo</string>
+    <string name="benefit_vip_analytics">Analytics avançado</string>
+    <string name="benefit_vip_priority_support">Suporte prioritário</string>
     
     <!-- Profile -->
     <string name="profile_title">Perfil</string>

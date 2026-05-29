@@ -45,8 +45,8 @@ fun PremiumScreen(
                 item { Phase5FeaturesSection(onNavigateToPhotoManager, onNavigateToFilters, onNavigateToAnalytics, currentSubscription) }
             }
             item { Text("Escolha seu plano", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 8.dp)) }
-            item { PlanCard("Premium", "R$ 19,90", "/mês", listOf("100 curtidas/dia", "5 super curtidas/dia", "Ver quem te curtiu", "Boost mensal", "Sem anúncios"), selectedPlan == SubscriptionStatus.PREMIUM, true) { selectedPlan = SubscriptionStatus.PREMIUM } }
-            item { PlanCard("VIP", "R$ 39,90", "/mês", listOf("Curtidas ilimitadas", "Super curtidas ilimitadas", "5 boosts/mês", "Prioridade", "Selo VIP"), selectedPlan == SubscriptionStatus.VIP, false) { selectedPlan = SubscriptionStatus.VIP } }
+            item { PlanCard("Premium", "R$ 19,90", "/mês", listOf("100 curtidas/dia", "5 super curtidas/dia", "Ver quem te curtiu", "1 boost/mês (30 min)", "10 créditos IA/dia", "Sem anúncios", "Filtros avançados"), selectedPlan == SubscriptionStatus.PREMIUM, false) { selectedPlan = SubscriptionStatus.PREMIUM } }
+            item { PlanCard("VIP", "R$ 39,90", "/mês", listOf("Curtidas ilimitadas", "Super curtidas ilimitadas", "5 boosts/mês + Super Boost 2h", "25 créditos IA/dia", "Prioridade no algoritmo", "Selo VIP exclusivo", "Analytics avançado", "Suporte prioritário"), selectedPlan == SubscriptionStatus.VIP, true) { selectedPlan = SubscriptionStatus.VIP } }
             item { Button(onClick = { onPurchase(selectedPlan) }, modifier = Modifier.fillMaxWidth().height(56.dp)) { Text("Assinar ${if (selectedPlan == SubscriptionStatus.PREMIUM) "Premium" else "VIP"}") } }
             item { Text("• Renovação automática\n• Cancele a qualquer momento", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
         }

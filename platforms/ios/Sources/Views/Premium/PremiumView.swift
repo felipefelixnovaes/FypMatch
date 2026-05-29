@@ -152,8 +152,9 @@ enum PremiumPlan: String, CaseIterable, Identifiable {
         case .premium:
             return [
                 PlanFeature(icon: "heart.fill", title: "100 curtidas por dia", description: "10x mais que o plano gratuito"),
+                PlanFeature(icon: "star.circle.fill", title: "5 super curtidas por dia", description: "Destaque-se nos perfis"),
                 PlanFeature(icon: "eye.fill", title: "Ver quem curtiu você", description: "Responda antes que passe o momento"),
-                PlanFeature(icon: "bolt.fill", title: "Boost diário", description: "Apareça para mais pessoas por 30 min"),
+                PlanFeature(icon: "bolt.fill", title: "1 boost por mês (30 min)", description: "Apareça para mais pessoas"),
                 PlanFeature(icon: "brain.head.profile", title: "10 créditos IA por dia", description: "Sem precisar de anúncios"),
                 PlanFeature(icon: "nosign", title: "Sem anúncios", description: "Experiência limpa e fluida"),
                 PlanFeature(icon: "slider.horizontal.3", title: "Filtros avançados", description: "Refine seus matches com precisão"),
@@ -161,11 +162,13 @@ enum PremiumPlan: String, CaseIterable, Identifiable {
         case .vip:
             return [
                 PlanFeature(icon: "infinity", title: "Curtidas ilimitadas", description: "Sem limite diário"),
-                PlanFeature(icon: "star.fill", title: "Prioridade no algoritmo", description: "Apareça primeiro nas descobertas"),
+                PlanFeature(icon: "star.fill", title: "Super curtidas ilimitadas", description: "Destaque-se em todos os perfis"),
+                PlanFeature(icon: "bolt.circle.fill", title: "5 boosts/mês + Super Boost 2h", description: "Apareça em destaque por mais tempo"),
                 PlanFeature(icon: "brain.head.profile", title: "25 créditos IA por dia", description: "2,5x mais que o Premium"),
+                PlanFeature(icon: "arrow.up.circle.fill", title: "Prioridade no algoritmo", description: "Apareça primeiro nas descobertas"),
                 PlanFeature(icon: "crown.fill", title: "Selo VIP exclusivo", description: "Destaque-se nos matches"),
-                PlanFeature(icon: "person.badge.shield.checkmark", title: "Suporte prioritário", description: "Resposta em até 2 horas"),
                 PlanFeature(icon: "chart.bar.fill", title: "Analytics avançado", description: "Insights detalhados do seu perfil"),
+                PlanFeature(icon: "person.badge.shield.checkmark", title: "Suporte prioritário", description: "Resposta em até 2 horas"),
             ]
         }
     }

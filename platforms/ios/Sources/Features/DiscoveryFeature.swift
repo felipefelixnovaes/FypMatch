@@ -141,9 +141,10 @@ struct DiscoveryFeature {
     // MARK: - Dependencies
     
     @Dependency(\.firebaseService) var firebaseService
-    @Dependency(\.locationService) var locationService
     @Dependency(\.matchingService) var matchingService
     @Dependency(\.mainQueue) var mainQueue
+    
+    private let locationService = LocationService.shared
     
     // MARK: - Body
     
@@ -403,8 +404,9 @@ struct DiscoveryFeature {
             // MARK: - Location
                 
             case .requestLocationPermission:
-                return .run { send in
-                    let status = await locationService.requestPermission()
+                return .run { [locationService] send in
+                    await locationService.requestLocationPermission()
+                    let status = await locationService.authorizationStatus
                     await send(.locationPermissionChanged(status))
                 }
                 
@@ -412,8 +414,9 @@ struct DiscoveryFeature {
                 state.locationPermissionStatus = status
                 
                 if status == .authorizedWhenInUse || status == .authorizedAlways {
-                    return .run { send in
-                        if let location = await locationService.getCurrentLocation() {
+                    return .run { [locationService] send in
+                        await locationService.startUpdatingLocation()
+                        if let location = await locationService.currentLocation {
                             await send(.locationUpdated(location))
                         }
                     }
@@ -583,57 +586,71 @@ enum PremiumUpsellReason: Equatable {
 
 // MARK: - Dependencies
 
-private enum LocationServiceKey: DependencyKey {
-    static let liveValue = LocationService()
-}
-
 private enum MatchingServiceKey: DependencyKey {
     static let liveValue = MatchingService()
 }
 
 extension DependencyValues {
-    var locationService: LocationService {
-        get { self[LocationServiceKey.self] }
-        set { self[LocationServiceKey.self] = newValue }
-    }
-    
     var matchingService: MatchingService {
         get { self[MatchingServiceKey.self] }
         set { self[MatchingServiceKey.self] = newValue }
     }
 }
 
-// MARK: - Placeholder Services
+// MARK: - Matching Service
 
-/// Serviço de localização (implementação simplificada)
-class LocationService {
-    func requestPermission() async -> CLAuthorizationStatus {
-        // TODO: Implementar solicitação de permissão real
-        return .authorizedWhenInUse
-    }
-    
-    func getCurrentLocation() async -> CLLocation? {
-        // TODO: Implementar obtenção de localização real
-        return CLLocation(latitude: -23.5505, longitude: -46.6333) // São Paulo
-    }
-}
-
-/// Serviço de matching (implementação simplificada)
+/// Serviço de matching e processamento de swipes
 class MatchingService {
+    private let firebaseService = FirebaseService.shared
+    
     func processSwipe(userId: String, targetUserId: String, action: SwipeAction) async throws -> Match? {
-        // TODO: Implementar lógica de matching real
+        // Registrar swipe
+        let swipeRecord = SwipeRecord(
+            userId: userId,
+            targetUserId: targetUserId,
+            action: action
+        )
         
-        // Simular chance de match (apenas para likes)
-        if action == .like && Bool.random() {
-            return Match(
+        try await recordSwipe(swipeRecord)
+        
+        // Verificar match apenas para likes
+        guard action == .like else { return nil }
+        
+        // Verificar se o outro usuário também deu like
+        let hasReciprocal = try await checkReciprocalLike(userId: userId, targetUserId: targetUserId)
+        
+        if hasReciprocal {
+            // Criar match
+            let match = Match(
                 user1Id: userId,
                 user2Id: targetUserId,
                 user1SwipedAt: Date(),
                 user2SwipedAt: Date(),
-                compatibilityScore: Double.random(in: 70...95)
+                compatibilityScore: await calculateCompatibility(userId: userId, targetUserId: targetUserId)
             )
+            
+            try await createMatch(match)
+            return match
         }
         
         return nil
+    }
+    
+    private func recordSwipe(_ swipe: SwipeRecord) async throws {
+        try await firebaseService.recordSwipe(swipe)
+    }
+    
+    private func checkReciprocalLike(userId: String, targetUserId: String) async throws -> Bool {
+        return try await firebaseService.checkReciprocalLike(userId: userId, targetUserId: targetUserId)
+    }
+    
+    private func createMatch(_ match: Match) async throws {
+        try await firebaseService.createMatch(match)
+    }
+    
+    private func calculateCompatibility(userId: String, targetUserId: String) async -> Double {
+        // TODO: Implementar algoritmo de compatibilidade real
+        // Por enquanto, retorna um valor aleatório
+        return Double.random(in: 70...95)
     }
 }

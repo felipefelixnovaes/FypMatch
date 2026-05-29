@@ -278,9 +278,11 @@ struct QuestionnaireService {
 
     /// Calcula compatibilidade enriquecida quando ambos têm Modo Profundo.
     /// Se apenas um tiver, usa dados de quem tem + proxy de quem não tem.
+    /// Quando skA/skB forem fornecidos, inclui Camada 3 de Self-Knowledge (15%).
     var calculateCompatibilityFull: (
         _ quickA: UserQuestionnaire, _ quickB: UserQuestionnaire,
-        _ deepA: DeepModeQuestionnaire?, _ deepB: DeepModeQuestionnaire?
+        _ deepA: DeepModeQuestionnaire?, _ deepB: DeepModeQuestionnaire?,
+        _ skA: SelfKnowledgeQuestionnaire?, _ skB: SelfKnowledgeQuestionnaire?
     ) -> QuestionnaireCompatibility
 
     // MARK: Sprint 7a — Self-Knowledge (Eneagrama)
@@ -291,6 +293,16 @@ struct QuestionnaireService {
 
     /// Carrega o questionário de autoconhecimento do Firestore para um userId.
     var loadSelfKnowledge: (_ userId: String) async throws -> SelfKnowledgeQuestionnaire?
+
+    // MARK: Sprint 7b — Self-Knowledge compatibility (Camada 3 — 0-100)
+
+    /// Calcula a compatibilidade de autoconhecimento entre dois usuários.
+    /// Eneagrama: 20% | Linguagem do Cuidado: 40% | Arquétipo: 40%
+    /// Retorna 60 (neutro) quando qualquer módulo estiver ausente em ambos.
+    var calculateSelfKnowledgeCompatibility: (
+        _ qA: SelfKnowledgeQuestionnaire?,
+        _ qB: SelfKnowledgeQuestionnaire?
+    ) -> Int
 }
 
 // MARK: - Lógica de compatibilidade multi-camada
@@ -607,10 +619,13 @@ private func inlineBigFiveToTuple(o: Int, c: Int, e: Int, a: Int, n: Int) -> (Do
     return (norm(e), norm(a), norm(c), norm(n), norm(o))
 }
 
-/// Versão completa da compatibilidade quando Modo Profundo está disponível
+/// Versão completa da compatibilidade quando Modo Profundo e/ou Self-Knowledge estão disponíveis.
+/// Quando skA/skB forem fornecidos, inclui Camada 3 de Self-Knowledge com peso de 15%,
+/// reduzindo os demais pesos proporcionalmente (× 0.85).
 private func computeCompatibilityFull(
     quick qA: UserQuestionnaire, _ qB: UserQuestionnaire,
-    deep dA: DeepModeQuestionnaire?, _ dB: DeepModeQuestionnaire?
+    deep dA: DeepModeQuestionnaire?, _ dB: DeepModeQuestionnaire?,
+    sk skA: SelfKnowledgeQuestionnaire? = nil, _ skB: SelfKnowledgeQuestionnaire? = nil
 ) -> QuestionnaireCompatibility {
 
     // Delegamos a lógica de deal-breakers e camadas básicas ao motor existente
@@ -725,14 +740,33 @@ private func computeCompatibilityFull(
 
     let layer3Score = 60
 
-    let newOverall = min(100, max(0,
-        Int(Double(valoresScore)    * 0.25
-          + Double(commScore)       * 0.10
-          + Double(attachScore)     * 0.15
-          + Double(bigFiveDeepScore)* 0.20
-          + Double(routineScore)    * 0.15
-          + Double(layer3Score)     * 0.15)
-    ))
+    // Camada 3 — Self-Knowledge (15% quando disponível, reduzindo outras camadas 15% proporcionalmente)
+    // Pesos base sem SK: valores(25) comm(10) attach(15) bf(20) rotina(15) layer3(15) = 100%
+    // Com SK: cada peso base × 0.85, SK = 15%
+    let hasSelfKnowledge = skA != nil || skB != nil
+    let skScore = hasSelfKnowledge ? computeSelfKnowledgeCompatibility(skA, skB) : layer3Score
+
+    let newOverall: Int
+    if hasSelfKnowledge {
+        newOverall = min(100, max(0,
+            Int(Double(valoresScore)    * 0.2125
+              + Double(commScore)       * 0.085
+              + Double(attachScore)     * 0.1275
+              + Double(bigFiveDeepScore)* 0.17
+              + Double(routineScore)    * 0.1275
+              + Double(layer3Score)     * 0.1275
+              + Double(skScore)         * 0.15)
+        ))
+    } else {
+        newOverall = min(100, max(0,
+            Int(Double(valoresScore)    * 0.25
+              + Double(commScore)       * 0.10
+              + Double(attachScore)     * 0.15
+              + Double(bigFiveDeepScore)* 0.20
+              + Double(routineScore)    * 0.15
+              + Double(layer3Score)     * 0.15)
+        ))
+    }
 
     // Deal-breaker detectado → mantém zero
     guard !base.dealBreakerConflict else { return base }
@@ -760,6 +794,48 @@ private func computeCompatibilityFull(
         highlights: highlights,
         differences: differences
     )
+}
+
+// MARK: - Compatibilidade de Autoconhecimento (Sprint 7b)
+
+/// Calcula o score de compatibilidade de autoconhecimento (0-100).
+/// Pesos: Eneagrama 20% | Linguagem do Cuidado 40% | Arquétipo 40%
+private func computeSelfKnowledgeCompatibility(
+    _ qA: SelfKnowledgeQuestionnaire?,
+    _ qB: SelfKnowledgeQuestionnaire?
+) -> Int {
+    guard let qA, let qB else { return 60 }
+
+    // Eneagrama (20%)
+    let ennScore: Int
+    if let eA = qA.enneagram, let eB = qB.enneagram {
+        let tA = eA.dominantType
+        let tB = eB.dominantType
+        ennScore = (tA.naturalPartners.contains(tB) || tB.naturalPartners.contains(tA)) ? 100
+                 : tA == tB ? 70 : 50
+    } else {
+        ennScore = 60
+    }
+
+    // Linguagem do Cuidado (40%)
+    let langScore: Int
+    if let lA = qA.loveLanguage, let lB = qB.loveLanguage {
+        langScore = lA.compatibility(with: lB)
+    } else {
+        langScore = 60
+    }
+
+    // Arquétipo (40%)
+    let archetypeScore: Int
+    if let aA = qA.archetype, let aB = qB.archetype {
+        archetypeScore = aA.dominantArchetype == aB.dominantArchetype ? 100 : 60
+    } else {
+        archetypeScore = 60
+    }
+
+    return Int(Double(ennScore) * 0.20
+             + Double(langScore) * 0.40
+             + Double(archetypeScore) * 0.40)
 }
 
 // MARK: - Live Value (Firestore)
@@ -808,8 +884,8 @@ extension QuestionnaireService: DependencyKey {
                 let jsonData = try JSONSerialization.data(withJSONObject: data)
                 return try decoder.decode(DeepModeQuestionnaire.self, from: jsonData)
             },
-            calculateCompatibilityFull: { qA, qB, dA, dB in
-                computeCompatibilityFull(quick: qA, qB, deep: dA, dB)
+            calculateCompatibilityFull: { qA, qB, dA, dB, skA, skB in
+                computeCompatibilityFull(quick: qA, qB, deep: dA, dB, sk: skA, skB)
             },
             saveSelfKnowledge: { questionnaire in
                 let db = Firestore.firestore()
@@ -823,6 +899,9 @@ extension QuestionnaireService: DependencyKey {
                 guard doc.exists, let data = doc.data() else { return nil }
                 let jsonData = try JSONSerialization.data(withJSONObject: data)
                 return try decoder.decode(SelfKnowledgeQuestionnaire.self, from: jsonData)
+            },
+            calculateSelfKnowledgeCompatibility: { qA, qB in
+                computeSelfKnowledgeCompatibility(qA, qB)
             }
         )
     }()
@@ -844,7 +923,7 @@ extension QuestionnaireService: DependencyKey {
         },
         saveDeepMode: { _ in },
         loadDeepMode: { _ in nil },
-        calculateCompatibilityFull: { qA, qB, _, _ in
+        calculateCompatibilityFull: { _, _, _, _, _, _ in
             QuestionnaireCompatibility(
                 overall: 82,
                 layer1Score: 75,
@@ -857,7 +936,8 @@ extension QuestionnaireService: DependencyKey {
             )
         },
         saveSelfKnowledge: { _ in },
-        loadSelfKnowledge: { _ in nil }
+        loadSelfKnowledge: { _ in nil },
+        calculateSelfKnowledgeCompatibility: { _, _ in 75 }
     )
 }
 

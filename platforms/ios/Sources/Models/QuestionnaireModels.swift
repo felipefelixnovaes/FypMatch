@@ -984,11 +984,60 @@ enum LoveLanguage: String, Equatable, Codable, CaseIterable {
 }
 
 struct LoveLanguageResult: Equatable, Codable {
-    /// 30 respostas forçadas (A ou B), 5 linguagens × 6 aparições cada.
-    /// UI e itemMap implementados no Sprint 7b.
-    var responses: [Bool] = []
-    var primaryLanguage: LoveLanguage = .qualityTime
-    var secondaryLanguage: LoveLanguage = .wordsOfAffirmation
+    var responses: [Bool]   // count = 30, true=A, false=B
+
+    static let allLanguages: [LoveLanguage] = LoveLanguage.allCases
+
+    // 30 pares forçados (Chapman): C(5,2)=10 combinações × 3 repetições = 30 pares.
+    // Cada linguagem aparece em exatamente 12 pares.
+    static let itemMap: [(Int, Int)] = [
+        (0,1),(0,2),(0,3),(0,4),
+        (1,2),(1,3),(1,4),
+        (2,3),(2,4),
+        (3,4),
+        (0,1),(0,2),(0,3),(0,4),
+        (1,2),(1,3),(1,4),
+        (2,3),(2,4),
+        (3,4),
+        (0,1),(0,2),(0,3),(0,4),
+        (1,2),(1,3),(1,4),
+        (2,3),(2,4),
+        (3,4)
+    ]
+
+    var scores: [LoveLanguage: Int] {
+        var counts: [LoveLanguage: Int] = [:]
+        LoveLanguage.allCases.forEach { counts[$0] = 0 }
+        for (index, response) in responses.enumerated() {
+            guard index < Self.itemMap.count else { break }
+            let (iA, iB) = Self.itemMap[index]
+            let chosen = response ? Self.allLanguages[iA] : Self.allLanguages[iB]
+            counts[chosen, default: 0] += 1
+        }
+        return counts
+    }
+
+    var primaryLanguage: LoveLanguage {
+        scores.max(by: { $0.value < $1.value })?.key ?? .qualityTime
+    }
+
+    var secondaryLanguage: LoveLanguage {
+        let sorted = scores.sorted { $0.value > $1.value }
+        return sorted.count > 1 ? sorted[1].key : .wordsOfAffirmation
+    }
+
+    // Compatibilidade com outro resultado (0-100)
+    func compatibility(with other: LoveLanguageResult) -> Int {
+        let myPrimary = primaryLanguage
+        let mySecondary = secondaryLanguage
+        let theirPrimary = other.primaryLanguage
+        let theirSecondary = other.secondaryLanguage
+
+        if myPrimary == theirPrimary { return 100 }
+        if myPrimary == theirSecondary || mySecondary == theirPrimary { return 70 }
+        if mySecondary == theirSecondary { return 55 }
+        return 35
+    }
 }
 
 // MARK: Arquétipos FypMatch
@@ -1033,10 +1082,67 @@ enum FypArchetype: String, Equatable, Codable, CaseIterable {
 }
 
 struct ArchetypeResult: Equatable, Codable {
-    /// 24 respostas (A ou B), 12 arquétipos × 4 aparições / 2 = 24 pares.
-    /// UI e itemMap implementados no Sprint 7b.
-    var responses: [Bool] = []
-    var dominantArchetype: FypArchetype = .explorer
+    var responses: [Bool]   // count = 24, true=A, false=B
+
+    static let allArchetypes: [FypArchetype] = FypArchetype.allCases
+
+    // 24 pares forçados: 12 arquétipos × 4 aparições cada.
+    // Distribuição verificada: cada arquétipo aparece exatamente 4 vezes.
+    // 0=explorer,1=creator,2=caregiver,3=ruler,4=sage,5=hero
+    // 6=rebel,7=lover,8=jester,9=innocent,10=magician,11=everyman
+    static let itemMap: [(Int, Int)] = [
+        (0,1),  // 0  explorer vs creator
+        (0,2),  // 1  explorer vs caregiver
+        (0,6),  // 2  explorer vs rebel
+        (0,9),  // 3  explorer vs innocent
+        (1,3),  // 4  creator vs ruler
+        (1,7),  // 5  creator vs lover
+        (1,10), // 6  creator vs magician
+        (2,4),  // 7  caregiver vs sage
+        (2,8),  // 8  caregiver vs jester
+        (2,11), // 9  caregiver vs everyman
+        (3,5),  // 10 ruler vs hero
+        (3,8),  // 11 ruler vs jester
+        (3,11), // 12 ruler vs everyman
+        (4,6),  // 13 sage vs rebel
+        (4,9),  // 14 sage vs innocent
+        (4,11), // 15 sage vs everyman
+        (5,7),  // 16 hero vs lover
+        (5,10), // 17 hero vs magician
+        (5,9),  // 18 hero vs innocent
+        (6,7),  // 19 rebel vs lover
+        (6,8),  // 20 rebel vs jester
+        (7,11), // 21 lover vs everyman
+        (8,10), // 22 jester vs magician
+        (9,10)  // 23 innocent vs magician
+    ]
+    // Aparições por arquétipo (4 cada):
+    // explorer(0):  0,1,2,3       | creator(1):   0,4,5,6
+    // caregiver(2): 1,7,8,9       | ruler(3):     4,10,11,12
+    // sage(4):      7,13,14,15    | hero(5):      10,16,17,18
+    // rebel(6):     2,13,19,20    | lover(7):     5,16,19,21
+    // jester(8):    8,11,20,22    | innocent(9):  3,14,18,23
+    // magician(10): 6,17,22,23    | everyman(11): 9,12,15,21
+
+    var scores: [FypArchetype: Int] {
+        var counts: [FypArchetype: Int] = [:]
+        FypArchetype.allCases.forEach { counts[$0] = 0 }
+        for (index, response) in responses.enumerated() {
+            guard index < Self.itemMap.count else { break }
+            let (iA, iB) = Self.itemMap[index]
+            let chosen = response ? Self.allArchetypes[iA] : Self.allArchetypes[iB]
+            counts[chosen, default: 0] += 1
+        }
+        return counts
+    }
+
+    var dominantArchetype: FypArchetype {
+        scores.max(by: { $0.value < $1.value })?.key ?? .explorer
+    }
+
+    var topThree: [FypArchetype] {
+        scores.sorted { $0.value > $1.value }.prefix(3).map(\.key)
+    }
 }
 
 // MARK: Container do Modo Autoconhecimento

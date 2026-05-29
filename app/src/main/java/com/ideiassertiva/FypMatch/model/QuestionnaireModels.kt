@@ -766,16 +766,65 @@ enum class LoveLanguage(
 }
 
 /**
- * Resultado do questionário de Linguagens do Cuidado.
+ * Resultado do questionário de Linguagens do Cuidado (Chapman).
  *
- * [responses] — 30 respostas forçadas (A ou B), 5 linguagens × 6 aparições cada.
- * UI e itemMap implementados no Sprint 7b.
+ * [responses] — 30 respostas forçadas (A ou B), true=A, false=B.
+ * 30 pares: C(5,2)=10 combinações × 3 repetições. Cada linguagem aparece em 12 pares.
  */
-data class LoveLanguageResult(
-    val responses: List<Boolean> = emptyList(),
-    val primaryLanguage: LoveLanguage = LoveLanguage.QUALITY_TIME,
-    val secondaryLanguage: LoveLanguage = LoveLanguage.WORDS_OF_AFFIRMATION
-)
+data class LoveLanguageResult(val responses: List<Boolean> = emptyList()) {
+    companion object {
+        val allLanguages: List<LoveLanguage> = LoveLanguage.values().toList()
+        // 30 pares forçados — índices 0-based para LoveLanguage.values()
+        // 0=WORDS_OF_AFFIRMATION, 1=ACTS_OF_SERVICE, 2=RECEIVING_GIFTS,
+        // 3=QUALITY_TIME, 4=PHYSICAL_TOUCH
+        val itemMap: List<Pair<Int, Int>> = listOf(
+            0 to 1, 0 to 2, 0 to 3, 0 to 4,
+            1 to 2, 1 to 3, 1 to 4,
+            2 to 3, 2 to 4,
+            3 to 4,
+            0 to 1, 0 to 2, 0 to 3, 0 to 4,
+            1 to 2, 1 to 3, 1 to 4,
+            2 to 3, 2 to 4,
+            3 to 4,
+            0 to 1, 0 to 2, 0 to 3, 0 to 4,
+            1 to 2, 1 to 3, 1 to 4,
+            2 to 3, 2 to 4,
+            3 to 4
+        )
+    }
+
+    fun scores(): Map<LoveLanguage, Int> {
+        val counts = LoveLanguage.values().associateWith { 0 }.toMutableMap()
+        responses.forEachIndexed { i, response ->
+            if (i < itemMap.size) {
+                val (iA, iB) = itemMap[i]
+                val chosen = if (response) allLanguages[iA] else allLanguages[iB]
+                counts[chosen] = (counts[chosen] ?: 0) + 1
+            }
+        }
+        return counts
+    }
+
+    fun primaryLanguage(): LoveLanguage =
+        scores().maxByOrNull { it.value }?.key ?: LoveLanguage.QUALITY_TIME
+
+    fun secondaryLanguage(): LoveLanguage =
+        scores().entries.sortedByDescending { it.value }.getOrNull(1)?.key
+            ?: LoveLanguage.WORDS_OF_AFFIRMATION
+
+    fun compatibility(other: LoveLanguageResult): Int {
+        val myP = primaryLanguage()
+        val myS = secondaryLanguage()
+        val theirP = other.primaryLanguage()
+        val theirS = other.secondaryLanguage()
+        return when {
+            myP == theirP                        -> 100
+            myP == theirS || myS == theirP       -> 70
+            myS == theirS                        -> 55
+            else                                 -> 35
+        }
+    }
+}
 
 // ─────────────────────────────────────────────
 // Arquétipos FypMatch
@@ -800,15 +849,70 @@ enum class FypArchetype(
 }
 
 /**
- * Resultado do questionário de Arquétipos.
+ * Resultado do questionário de Arquétipos FypMatch.
  *
- * [responses] — 24 respostas (A ou B), 12 arquétipos × 4 aparições / 2 = 24 pares.
- * UI e itemMap implementados no Sprint 7b.
+ * [responses] — 24 respostas forçadas (A ou B), true=A, false=B.
+ * 24 pares: 12 arquétipos × 4 aparições cada.
  */
-data class ArchetypeResult(
-    val responses: List<Boolean> = emptyList(),
-    val dominantArchetype: FypArchetype = FypArchetype.EXPLORER
-)
+data class ArchetypeResult(val responses: List<Boolean> = emptyList()) {
+    companion object {
+        val allArchetypes: List<FypArchetype> = FypArchetype.values().toList()
+        // 24 pares forçados — índices 0-based para FypArchetype.values()
+        // 0=EXPLORER,1=CREATOR,2=CAREGIVER,3=RULER,4=SAGE,5=HERO
+        // 6=REBEL,7=LOVER,8=JESTER,9=INNOCENT,10=MAGICIAN,11=EVERYMAN
+        // Aparições por arquétipo (4 cada):
+        // EXPLORER(0):  0,1,2,3       | CREATOR(1):   0,4,5,6
+        // CAREGIVER(2): 1,7,8,9       | RULER(3):     4,10,11,12
+        // SAGE(4):      7,13,14,15    | HERO(5):      10,16,17,18
+        // REBEL(6):     2,13,19,20    | LOVER(7):     5,16,19,21
+        // JESTER(8):    8,11,20,22    | INNOCENT(9):  3,14,18,23
+        // MAGICIAN(10): 6,17,22,23    | EVERYMAN(11): 9,12,15,21
+        val itemMap: List<Pair<Int, Int>> = listOf(
+            0 to 1,   //  0  EXPLORER vs CREATOR
+            0 to 2,   //  1  EXPLORER vs CAREGIVER
+            0 to 6,   //  2  EXPLORER vs REBEL
+            0 to 9,   //  3  EXPLORER vs INNOCENT
+            1 to 3,   //  4  CREATOR vs RULER
+            1 to 7,   //  5  CREATOR vs LOVER
+            1 to 10,  //  6  CREATOR vs MAGICIAN
+            2 to 4,   //  7  CAREGIVER vs SAGE
+            2 to 8,   //  8  CAREGIVER vs JESTER
+            2 to 11,  //  9  CAREGIVER vs EVERYMAN
+            3 to 5,   // 10  RULER vs HERO
+            3 to 8,   // 11  RULER vs JESTER
+            3 to 11,  // 12  RULER vs EVERYMAN
+            4 to 6,   // 13  SAGE vs REBEL
+            4 to 9,   // 14  SAGE vs INNOCENT
+            4 to 11,  // 15  SAGE vs EVERYMAN
+            5 to 7,   // 16  HERO vs LOVER
+            5 to 10,  // 17  HERO vs MAGICIAN
+            5 to 9,   // 18  HERO vs INNOCENT
+            6 to 7,   // 19  REBEL vs LOVER
+            6 to 8,   // 20  REBEL vs JESTER
+            7 to 11,  // 21  LOVER vs EVERYMAN
+            8 to 10,  // 22  JESTER vs MAGICIAN
+            9 to 10   // 23  INNOCENT vs MAGICIAN
+        )
+    }
+
+    fun scores(): Map<FypArchetype, Int> {
+        val counts = FypArchetype.values().associateWith { 0 }.toMutableMap()
+        responses.forEachIndexed { i, response ->
+            if (i < itemMap.size) {
+                val (iA, iB) = itemMap[i]
+                val chosen = if (response) allArchetypes[iA] else allArchetypes[iB]
+                counts[chosen] = (counts[chosen] ?: 0) + 1
+            }
+        }
+        return counts
+    }
+
+    fun dominantArchetype(): FypArchetype =
+        scores().maxByOrNull { it.value }?.key ?: FypArchetype.EXPLORER
+
+    fun topThree(): List<FypArchetype> =
+        scores().entries.sortedByDescending { it.value }.take(3).map { it.key }
+}
 
 // ─────────────────────────────────────────────
 // Container do Modo Autoconhecimento

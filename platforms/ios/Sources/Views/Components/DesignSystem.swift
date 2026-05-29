@@ -47,7 +47,10 @@ struct GradientButton: View {
     var icon: String? = nil
     var isFullWidth: Bool = true
     var isLoading: Bool = false
+    var isDisabled: Bool = false
     let action: () -> Void
+
+    private var isInactive: Bool { isLoading || isDisabled }
 
     var body: some View {
         Button(action: action) {
@@ -63,11 +66,11 @@ struct GradientButton: View {
             .frame(maxWidth: isFullWidth ? .infinity : nil)
             .padding(.horizontal, 24)
             .padding(.vertical, 15)
-            .background(isLoading ? AnyShapeStyle(Color.fypPink.opacity(0.7)) : AnyShapeStyle(LinearGradient.fypGradient))
+            .background(isInactive ? AnyShapeStyle(Color.fypPink.opacity(0.5)) : AnyShapeStyle(LinearGradient.fypGradient))
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .shadow(color: .fypPink.opacity(0.35), radius: 8, y: 4)
+            .shadow(color: .fypPink.opacity(isInactive ? 0.15 : 0.35), radius: 8, y: 4)
         }
-        .disabled(isLoading)
+        .disabled(isInactive)
         .accessibilityLabel(title)
     }
 }

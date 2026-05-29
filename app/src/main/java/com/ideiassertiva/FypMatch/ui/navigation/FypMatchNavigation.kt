@@ -64,6 +64,18 @@ sealed class Screen(val route: String) {
     object Enneagram : Screen("enneagram/{userId}") {
         fun createRoute(userId: String) = "enneagram/$userId"
     }
+    /** Questionário de Linguagem do Cuidado — Modo Autoconhecimento (Sprint 7b) */
+    object LoveLanguage : Screen("love_language/{userId}") {
+        fun createRoute(u: String) = "love_language/$u"
+    }
+    /** Questionário de Arquétipo — Modo Autoconhecimento (Sprint 7b) */
+    object Archetype : Screen("archetype/{userId}") {
+        fun createRoute(u: String) = "archetype/$u"
+    }
+    /** Hub de Autoconhecimento — Modo Autoconhecimento (Sprint 7b) */
+    object SelfKnowledge : Screen("self_knowledge/{userId}") {
+        fun createRoute(u: String) = "self_knowledge/$u"
+    }
 }
 
 @Composable
@@ -384,6 +396,47 @@ fun FypMatchNavigation(
             EnneagramScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onComplete = { navController.popBackStack() },
+                userId = userId
+            )
+        }
+
+        // ─── Linguagem do Cuidado — Modo Autoconhecimento (Sprint 7b) ─────
+        composable(
+            route = Screen.LoveLanguage.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            LoveLanguageScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() },
+                userId = userId
+            )
+        }
+
+        // ─── Arquétipo — Modo Autoconhecimento (Sprint 7b) ────────────────
+        composable(
+            route = Screen.Archetype.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            ArchetypeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() },
+                userId = userId
+            )
+        }
+
+        // ─── Hub de Autoconhecimento — Modo Autoconhecimento (Sprint 7b) ──
+        composable(
+            route = Screen.SelfKnowledge.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            SelfKnowledgeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onStartEnneagram = { navController.navigate(Screen.Enneagram.createRoute(userId)) },
+                onStartLoveLanguage = { navController.navigate(Screen.LoveLanguage.createRoute(userId)) },
+                onStartArchetype = { navController.navigate(Screen.Archetype.createRoute(userId)) },
                 userId = userId
             )
         }

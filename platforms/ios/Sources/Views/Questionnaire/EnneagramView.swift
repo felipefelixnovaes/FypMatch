@@ -394,7 +394,7 @@ private struct EnneagramHeaderView: View {
 
 // MARK: - InstructionCard
 
-private struct InstructionCard: View {
+struct InstructionCard: View {
     let text: String
     let icon: String
 

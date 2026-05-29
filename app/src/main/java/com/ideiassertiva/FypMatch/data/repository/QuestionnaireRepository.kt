@@ -4,6 +4,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.ideiassertiva.FypMatch.model.AttachmentStyle
 import com.ideiassertiva.FypMatch.model.ApologyStyle
+import com.ideiassertiva.FypMatch.model.ArchetypeResult
 import com.ideiassertiva.FypMatch.model.CareerPriority
 import com.ideiassertiva.FypMatch.model.ChildrenDesire
 import com.ideiassertiva.FypMatch.model.ConflictResolutionStyle
@@ -17,6 +18,7 @@ import com.ideiassertiva.FypMatch.model.FinancialApproach
 import com.ideiassertiva.FypMatch.model.IPIP20Result
 import com.ideiassertiva.FypMatch.model.LifeProjectResult
 import com.ideiassertiva.FypMatch.model.LocationFlexibility
+import com.ideiassertiva.FypMatch.model.LoveLanguageResult
 import com.ideiassertiva.FypMatch.model.PVQ21Result
 import com.ideiassertiva.FypMatch.model.RepairBehavior
 import com.ideiassertiva.FypMatch.model.SelfKnowledgeQuestionnaire
@@ -686,6 +688,16 @@ class QuestionnaireRepository @Inject constructor() {
                 data["enneagram_dominant"] = enn.dominantType().name
                 data["enneagram_top3"] = enn.topThree().map { it.name }
             }
+            q.loveLanguage?.let { ll ->
+                data["loveLanguage_responses"] = ll.responses
+                data["loveLanguage_primary"] = ll.primaryLanguage().name
+                data["loveLanguage_secondary"] = ll.secondaryLanguage().name
+            }
+            q.archetype?.let { arc ->
+                data["archetype_responses"] = arc.responses
+                data["archetype_dominant"] = arc.dominantArchetype().name
+                data["archetype_top3"] = arc.topThree().map { it.name }
+            }
             db.collection(selfKnowledgeCollection)
                 .document(q.userId)
                 .set(data, SetOptions.merge())
@@ -703,15 +715,65 @@ class QuestionnaireRepository @Inject constructor() {
             val doc = db.collection(selfKnowledgeCollection).document(userId).get().await()
             if (!doc.exists()) return@withContext null
 
-            val responses = (doc.get("enneagram_responses") as? List<*>)
+            val ennResponses = (doc.get("enneagram_responses") as? List<*>)
                 ?.map { it as? Boolean ?: false }
-            val enneagram = if (responses?.size == 27) EnneagramResult(responses) else null
+            val enneagram = if (ennResponses?.size == 27) EnneagramResult(ennResponses) else null
+
+            val llResponses = (doc.get("loveLanguage_responses") as? List<*>)
+                ?.map { it as? Boolean ?: false }
+            val loveLanguage = if (llResponses?.size == 30) LoveLanguageResult(llResponses) else null
+
+            val arcResponses = (doc.get("archetype_responses") as? List<*>)
+                ?.map { it as? Boolean ?: false }
+            val archetype = if (arcResponses?.size == 24) ArchetypeResult(arcResponses) else null
 
             SelfKnowledgeQuestionnaire(
                 userId = userId,
                 completedAt = doc.getLong("completedAt"),
-                enneagram = enneagram
+                enneagram = enneagram,
+                loveLanguage = loveLanguage,
+                archetype = archetype
             )
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CAMADA 3 — COMPATIBILIDADE DO MODO AUTOCONHECIMENTO (Sprint 7b)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Calcula a compatibilidade com base nos dados do Modo Autoconhecimento.
+     *
+     * Pesos:
+     *   Eneagrama:           20% (naturalPartners=100, mesmo=70, outros=50)
+     *   Linguagem do Cuidado: 40% (LoveLanguageResult.compatibility())
+     *   Arquétipo:            40% (mesmo dominante=100, diferentes=60)
+     *
+     * Se algum dos lados não tiver o dado, usa 60 como base neutra.
+     */
+    fun calculateSelfKnowledgeCompatibility(
+        qA: SelfKnowledgeQuestionnaire?,
+        qB: SelfKnowledgeQuestionnaire?
+    ): Int {
+        if (qA == null || qB == null) return 60
+
+        val ennScore = if (qA.enneagram != null && qB.enneagram != null) {
+            val tA = qA.enneagram.dominantType()
+            val tB = qB.enneagram.dominantType()
+            when {
+                tA.naturalPartners.contains(tB) || tB.naturalPartners.contains(tA) -> 100
+                tA == tB -> 70
+                else -> 50
+            }
+        } else 60
+
+        val langScore = if (qA.loveLanguage != null && qB.loveLanguage != null)
+            qA.loveLanguage.compatibility(qB.loveLanguage) else 60
+
+        val archetypeScore = if (qA.archetype != null && qB.archetype != null)
+            if (qA.archetype.dominantArchetype() == qB.archetype.dominantArchetype()) 100 else 60
+        else 60
+
+        return (ennScore * 0.20 + langScore * 0.40 + archetypeScore * 0.40).toInt()
     }
 }

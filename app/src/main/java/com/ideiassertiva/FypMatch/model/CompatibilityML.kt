@@ -1,5 +1,8 @@
 package com.ideiassertiva.FypMatch.model
 
+import com.ideiassertiva.FypMatch.data.repository.QuestionnaireRepository
+import com.ideiassertiva.FypMatch.data.repository.UserQuestionnaire
+
 // FIXME: BehaviorAnalyzer rewritten as stubs — SwipeRecord/SwipeAction models missing
 
 data class CompatibilityScore(
@@ -221,6 +224,31 @@ class CompatibilityMLEngine {
         val combined = ((langScore * 0.6f + relScore * 0.4f) * 100f)
         val desc = if (combined >= 70) "Valores e origem cultural próximos" else "Backgrounds culturais diferentes"
         return CompatibilityFactor("Valores", combined, desc)
+    }
+
+    // ── Método integrado: perfil de usuário + questionário ────────────────────
+    /**
+     * Combina a pontuação de perfil (40%) com a compatibilidade de questionário (60%).
+     * Se qualquer deal-breaker for detectado, retorna score zero.
+     */
+    fun calculateFull(
+        currentUser: User?,
+        targetUser: User?,
+        currentQ: UserQuestionnaire?,
+        targetQ: UserQuestionnaire?
+    ): CompatibilityScore {
+        val baseScore = analyzeCompatibility(currentUser, targetUser)
+
+        if (currentQ == null || targetQ == null) return baseScore
+
+        val qCompat = QuestionnaireRepository().calculateCompatibility(currentQ, targetQ)
+        if (qCompat.dealBreakerConflict) {
+            return CompatibilityScore(overall = 0f, factors = emptyList())
+        }
+
+        // Blend: 40% perfil + 60% questionário
+        val blended = baseScore.overall * 0.4f + (qCompat.overall / 100f) * 0.6f
+        return baseScore.copy(overall = blended.coerceIn(0f, 1f))
     }
 
     // --- Dimensão 6: Bônus de atividade (5%) ---

@@ -5,6 +5,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.ideiassertiva.FypMatch.ui.screens.*
 import com.ideiassertiva.FypMatch.ui.screens.RegisterScreen
 import com.ideiassertiva.FypMatch.ui.screens.SettingsScreen
@@ -50,6 +52,10 @@ sealed class Screen(val route: String) {
     object NeuroProfile : Screen("neuro_profile")
     /** Hub de suporte para usuários neurodivergentes */
     object NeuroSupport : Screen("neuro_support")
+    /** Questionário de compatibilidade — Modo Rápido */
+    object QuickMode : Screen("quick_mode/{userId}") {
+        fun createRoute(userId: String) = "quick_mode/$userId"
+    }
 }
 
 @Composable
@@ -331,6 +337,19 @@ fun FypMatchNavigation(
             val userId = backStackEntry.arguments?.getString("userId") ?: ""
             AdsScreen(
                 onNavigateBack = { navController.popBackStack() },
+                userId = userId
+            )
+        }
+
+        // ─── Questionário de compatibilidade — Modo Rápido ────────────────
+        composable(
+            route = Screen.QuickMode.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            QuickModeScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() },
                 userId = userId
             )
         }

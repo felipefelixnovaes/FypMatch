@@ -9,6 +9,7 @@ import ComposableArchitecture
 struct CompatibilityResult: Equatable {
     let overall: Int                   // 0-100
     let factors: [CompatibilityFactor]
+    var dealBreakerConflict: Bool = false
 
     var colorName: String {
         overall >= 80 ? "green" : overall >= 60 ? "yellow" : "gray"
@@ -204,6 +205,73 @@ struct CompatibilityEngine {
         return CompatibilityFactor(
             dimension: "Atividade", score: score, weight: 0.05, description: desc
         )
+    }
+}
+
+// MARK: - Integração com UserQuestionnaire
+
+extension CompatibilityEngine {
+
+    /// Calcula compatibilidade completa combinando dados do User + UserQuestionnaire.
+    /// Blend: 40% score base (campos do User) + 60% questionário (quando disponível).
+    func calculateFull(
+        current: User, currentQ: UserQuestionnaire?,
+        target: User, targetQ: UserQuestionnaire?
+    ) -> CompatibilityResult {
+        // Score base a partir dos campos do User
+        let baseResult = calculate(current: current, target: target)
+
+        // Se qualquer dos dois não preencheu o questionário, retorna score base
+        guard let qA = currentQ, let qB = targetQ else {
+            return baseResult
+        }
+
+        // Deal-breaker check via QuestionnaireService
+        let qService = QuestionnaireService.liveValue
+        let qCompat = qService.calculateCompatibility(qA, qB)
+
+        if qCompat.dealBreakerConflict {
+            return CompatibilityResult(
+                overall: 0,
+                factors: [],
+                dealBreakerConflict: true
+            )
+        }
+
+        // Blend: 40% base + 60% questionário
+        let blended = min(100, max(0,
+            Int(Double(baseResult.overall) * 0.4 + Double(qCompat.overall) * 0.6)
+        ))
+
+        // Converte highlights/differences do questionário em CompatibilityFactor
+        let qFactorsResult = buildQFactors(from: qCompat)
+
+        return CompatibilityResult(
+            overall: blended,
+            factors: baseResult.factors + qFactorsResult,
+            dealBreakerConflict: false
+        )
+    }
+
+    /// Converte QuestionnaireCompatibility em CompatibilityFactor adicionais
+    private func buildQFactors(from qCompat: QuestionnaireCompatibility) -> [CompatibilityFactor] {
+        var factors: [CompatibilityFactor] = []
+
+        factors.append(CompatibilityFactor(
+            dimension: "Valores & Comunicação",
+            score: qCompat.layer1Score,
+            weight: 0.25,
+            description: qCompat.highlights.first ?? "Compatibilidade de valores e comunicação"
+        ))
+
+        factors.append(CompatibilityFactor(
+            dimension: "Personalidade & Rotina",
+            score: qCompat.layer2Score,
+            weight: 0.20,
+            description: qCompat.differences.first ?? "Personalidade e ritmo de vida"
+        ))
+
+        return factors
     }
 }
 

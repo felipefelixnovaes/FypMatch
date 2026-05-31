@@ -2,6 +2,7 @@ package com.ideiassertiva.FypMatch.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.data.repository.DiscoveryRepository
 import com.ideiassertiva.FypMatch.data.repository.ChatRepository
 import com.ideiassertiva.FypMatch.model.*
@@ -15,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DiscoveryViewModel @Inject constructor(
     private val discoveryRepository: DiscoveryRepository,
-    private val chatRepository: ChatRepository
+    private val chatRepository: ChatRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(DiscoveryUiState())
@@ -24,11 +26,11 @@ class DiscoveryViewModel @Inject constructor(
     private val _currentCard = MutableStateFlow<DiscoveryCard?>(null)
     val currentCard: StateFlow<DiscoveryCard?> = _currentCard.asStateFlow()
     
-    // Simular usuário atual (no app real, viria da autenticação)
-    private val currentUserId = "current_user_123"
+    private var currentUserId = ""
     private val currentUserSubscription = SubscriptionStatus.FREE
-    
+
     init {
+        currentUserId = authRepository.getCurrentFirebaseUser()?.uid ?: ""
         loadNextCard()
     }
     

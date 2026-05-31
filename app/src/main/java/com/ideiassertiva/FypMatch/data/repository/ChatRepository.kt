@@ -1,14 +1,10 @@
 package com.ideiassertiva.FypMatch.data.repository
 
 import com.ideiassertiva.FypMatch.model.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -22,22 +18,6 @@ class ChatRepository @Inject constructor() {
     
     private val _messages = MutableStateFlow<Map<String, List<Message>>>(emptyMap())
     val messages: Flow<Map<String, List<Message>>> = _messages.asStateFlow()
-    
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    
-    // Respostas automáticas inteligentes
-    private val smartReplies = listOf(
-        "Oi! Que bom que deu match! 😊",
-        "Olá! Vi que temos muito em comum! 🤗",
-        "E aí, como foi seu dia?",
-        "Qual seu lugar favorito da cidade?",
-        "Que legal! Eu também gosto disso! 😄",
-        "Nossa, que interessante! Conta mais!",
-        "Que tal tomarmos um café qualquer dia?",
-        "Você tem um sorriso lindo! 😍",
-        "Estou gostando muito de conversar com você",
-        "❤️", "😘", "🥰", "😊"
-    )
     
     fun createConversationFromMatch(match: Match, currentUserId: String): String {
         val conversationId = UUID.randomUUID().toString()
@@ -78,12 +58,7 @@ class ChatRepository @Inject constructor() {
         val currentMessages = _messages.value.toMutableMap()
         currentMessages[conversationId] = listOf(systemMessage)
         _messages.value = currentMessages
-        
-        coroutineScope.launch {
-            delay(kotlin.random.Random.nextLong(3000, 8000))
-            sendAutomaticReply(conversationId, otherUserId, currentUserId)
-        }
-        
+
         return conversationId
     }
     
@@ -95,7 +70,7 @@ class ChatRepository @Inject constructor() {
     ): Message {
         val messageId = UUID.randomUUID().toString()
         val receiverId = getOtherParticipantId(conversationId, senderId) ?: ""
-        
+
         val message = Message(
             id = messageId,
             conversationId = conversationId,
@@ -103,84 +78,20 @@ class ChatRepository @Inject constructor() {
             receiverId = receiverId,
             content = content,
             type = type,
-            status = MessageStatus.SENDING
+            status = MessageStatus.SENT
         )
-        
+
         val currentMessages = _messages.value.toMutableMap()
         val conversationMessages = currentMessages[conversationId]?.toMutableList() ?: mutableListOf()
         conversationMessages.add(message)
         currentMessages[conversationId] = conversationMessages
         _messages.value = currentMessages
-        
-        delay(500)
-        updateMessageStatus(conversationId, messageId, MessageStatus.SENT)
-        
-        delay(1000)
-        updateMessageStatus(conversationId, messageId, MessageStatus.DELIVERED)
-        
+
         updateConversationLastMessage(conversationId, message)
-        
-        if (senderId != "system") {
-            coroutineScope.launch {
-                delay(kotlin.random.Random.nextLong(2000, 10000))
-                setTypingIndicator(conversationId, receiverId, true)
-                delay(kotlin.random.Random.nextLong(1000, 3000))
-                setTypingIndicator(conversationId, receiverId, false)
-                sendAutomaticReply(conversationId, receiverId, senderId, content)
-            }
-        }
-        
+
         return message
     }
-    
-    private suspend fun sendAutomaticReply(
-        conversationId: String, 
-        senderId: String, 
-        receiverId: String,
-        originalMessage: String = ""
-    ) {
-        val reply = generateSmartReply(originalMessage)
-        
-        val message = Message(
-            id = UUID.randomUUID().toString(),
-            conversationId = conversationId,
-            senderId = senderId,
-            receiverId = receiverId,
-            content = reply,
-            type = MessageType.TEXT,
-            status = MessageStatus.DELIVERED
-        )
-        
-        val currentMessages = _messages.value.toMutableMap()
-        val conversationMessages = currentMessages[conversationId]?.toMutableList() ?: mutableListOf()
-        conversationMessages.add(message)
-        currentMessages[conversationId] = conversationMessages
-        _messages.value = currentMessages
-        
-        updateConversationLastMessage(conversationId, message)
-        
-        coroutineScope.launch {
-            delay(kotlin.random.Random.nextLong(1000, 5000))
-            updateMessageStatus(conversationId, message.id, MessageStatus.READ)
-        }
-    }
-    
-    private fun generateSmartReply(originalMessage: String): String {
-        val lowerMessage = originalMessage.lowercase()
-        
-        return when {
-            lowerMessage.contains("oi") || lowerMessage.contains("olá") -> 
-                listOf("Oi! Como você está?", "Olá! Tudo bem?", "Oi! Que bom falar com você! 😊").random()
-            lowerMessage.contains("como") && lowerMessage.contains("você") -> 
-                listOf("Estou bem! E você?", "Tudo tranquilo! 😊", "Indo bem, obrigado(a)!").random()
-            lowerMessage.contains("música") -> 
-                listOf("Gosto de vários estilos! E você?", "Amo música! 🎵", "Qual seu gênero favorito?").random()
-            lowerMessage.contains("café") -> 
-                listOf("Que tal mesmo! Conheço uns lugares legais", "Adoraria! 😄", "Ótima ideia!").random()
-            else -> smartReplies.random()
-        }
-    }
-    
+
     private suspend fun updateMessageStatus(conversationId: String, messageId: String, status: MessageStatus) {
         val currentMessages = _messages.value.toMutableMap()
         val conversationMessages = currentMessages[conversationId]?.toMutableList() ?: return

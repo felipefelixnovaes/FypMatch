@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import com.ideiassertiva.FypMatch.model.Conversation
 import com.ideiassertiva.FypMatch.model.Message
 import com.ideiassertiva.FypMatch.model.User
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
 data class EnhancedChatUiState(
     val messages: List<Message> = emptyList(),
@@ -23,7 +25,8 @@ data class EnhancedChatUiState(
 
 enum class ConnectionState { CONNECTED, CONNECTING, DISCONNECTED, ERROR }
 
-class EnhancedChatViewModel : ViewModel() {
+@HiltViewModel
+class EnhancedChatViewModel @Inject constructor() : ViewModel() {
     private val _uiState = MutableStateFlow(EnhancedChatUiState())
     val uiState: StateFlow<EnhancedChatUiState> = _uiState.asStateFlow()
     

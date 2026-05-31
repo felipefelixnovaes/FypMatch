@@ -9,7 +9,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.ideiassertiva.FypMatch.model.*
 
-class PhotoManagerViewModel : ViewModel() {
+@HiltViewModel
+class PhotoManagerViewModel @Inject constructor() : ViewModel() {
     private val _photos = MutableStateFlow<List<ProfilePhoto>>(emptyList())
     val photos: StateFlow<List<ProfilePhoto>> = _photos.asStateFlow()
     

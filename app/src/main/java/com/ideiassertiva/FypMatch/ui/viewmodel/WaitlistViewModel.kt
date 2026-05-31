@@ -8,9 +8,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class WaitlistViewModel(
-    private val waitlistRepository: WaitlistRepository = WaitlistRepository()
+@HiltViewModel
+class WaitlistViewModel @Inject constructor(
+    private val waitlistRepository: WaitlistRepository
 ) : ViewModel() {
     
     // Estado da UI

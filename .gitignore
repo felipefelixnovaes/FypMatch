@@ -13,3 +13,25 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase
+app/google-services.json
+google-services.json
+
+# Keystore & Signing
+*.keystore
+*.jks
+*.p12
+*.pem
+signing.properties
+
+# Android
+app/release/
+*.apk
+*.aab
+*.hprof
+
+# Secrets
+.env
+*.env
+secrets/

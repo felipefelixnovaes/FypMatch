@@ -29,6 +29,7 @@ import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
 import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
 import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -156,7 +157,7 @@ fun AdsScreen(
                                 isWatching = true
                                 errorMessage = null
                                 // Simula anúncio (5 segundos)
-                                val job = kotlinx.coroutines.MainScope().launch {
+                                scope.launch {
                                     delay(5000L)
                                     val key = adsWatchedKey(userId)
                                     val newCount = adsWatched + 1

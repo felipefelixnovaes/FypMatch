@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ideiassertiva.FypMatch.model.isProfileComplete
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.LoginViewModel
@@ -33,10 +33,7 @@ fun LoginScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToDiscovery: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = run {
-        val context = LocalContext.current
-        viewModel { LoginViewModel(context) }
-    }
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()

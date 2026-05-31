@@ -1,176 +1,70 @@
 package com.ideiassertiva.FypMatch.data.repository
 
-import com.ideiassertiva.FypMatch.model.*
-import com.ideiassertiva.FypMatch.data.TestUsers
-import kotlinx.coroutines.flow.Flow
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.ideiassertiva.FypMatch.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.Date
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class UserRepository {
-    
-    // Estado do usuário atual
+@Singleton
+class UserRepository @Inject constructor(
+    private val firestore: FirebaseFirestore,
+    private val auth: FirebaseAuth
+) {
+
     private val _currentUser = MutableStateFlow<User?>(null)
-    val currentUser: Flow<User?> = _currentUser.asStateFlow()
-    
-    // Usuários simulados para teste
-    private val testUsers = mutableMapOf<String, User>()
-    
-    init {
-        // Carregar todos os usuários de teste
-        TestUsers.allUsers.forEach { user ->
-            // Configurar créditos de IA baseado na assinatura
-            val creditsLimit = when (user.subscription) {
-                SubscriptionStatus.FREE -> AiCreditLimits.FREE_DAILY
-                SubscriptionStatus.PREMIUM -> AiCreditLimits.PREMIUM_DAILY
-                SubscriptionStatus.VIP -> AiCreditLimits.VIP_DAILY
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
+
+    private val usersCollection = firestore.collection("users")
+
+    suspend fun loadCurrentUser() {
+        val firebaseUser = auth.currentUser ?: return
+        try {
+            val doc = usersCollection.document(firebaseUser.uid).get().await()
+            if (doc.exists()) {
+                val user = doc.toObject(User::class.java)
+                _currentUser.value = user?.copy(id = doc.id)
             }
-            
-            val userWithCredits = user.copy(
-                aiCredits = AiCredits(
-                    current = creditsLimit,
-                    dailyLimit = creditsLimit,
-                    usedToday = 0,
-                    lastResetDate = Date()
-                )
-            )
-            testUsers[userWithCredits.email] = userWithCredits
+        } catch (e: Exception) {
+            // Silently fail — user not loaded, UI handles null state
         }
-        
-        // Criar usuário Felix especial
-        val felixUser = User(
-            id = "felix_test_id",
-            email = "felix3designer@gmail.com",
-            displayName = "Felix",
-            subscription = SubscriptionStatus.VIP,
-            accessLevel = AccessLevel.FULL_ACCESS,
-            profile = UserProfile(
-                fullName = "Felix Designer",
-                age = 28,
-                bio = "Designer e desenvolvedor que criou o FypMatch! 💻🚀❤️",
-                location = Location(city = "São Paulo", state = "SP"),
-                gender = Gender.MALE,
-                orientation = Orientation.STRAIGHT,
-                intention = Intention.DATING,
-                interests = listOf("Design", "Programação", "Tecnologia", "Inovação", "Apps", "UX"),
-                education = "Superior Completo - Design",
-                profession = "Designer & Developer",
-                height = 180,
-                isProfileComplete = true
-            ),
-            aiCredits = AiCredits(
-                current = 25,
-                dailyLimit = AiCreditLimits.VIP_DAILY,
-                usedToday = 0,
-                lastResetDate = Date()
-            )
-        )
-        
-        testUsers[felixUser.email] = felixUser
-        _currentUser.value = felixUser // Auto-login para teste
     }
-    
-    suspend fun getCurrentUser(): Flow<User?> {
-        return currentUser
-    }
-    
-    suspend fun getUserByEmail(email: String): User? {
-        return testUsers[email]
-    }
-    
-    suspend fun updateUser(user: User) {
-        testUsers[user.email] = user
-        if (_currentUser.value?.email == user.email) {
+
+    suspend fun saveUserProfile(user: User): Result<Unit> {
+        return try {
+            usersCollection.document(user.id).set(user).await()
             _currentUser.value = user
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
-    
-    suspend fun loginUser(email: String): User? {
-        val user = testUsers[email]
-        if (user != null) {
-            _currentUser.value = user
+
+    suspend fun getUserById(userId: String): User? {
+        return try {
+            val doc = usersCollection.document(userId).get().await()
+            if (doc.exists()) doc.toObject(User::class.java)?.copy(id = doc.id) else null
+        } catch (e: Exception) {
+            null
         }
-        return user
     }
-    
-    suspend fun createUser(user: User): User {
-        testUsers[user.email] = user
-        _currentUser.value = user
-        return user
+
+    suspend fun updateUser(userId: String, fields: Map<String, Any>): Result<Unit> {
+        return try {
+            usersCollection.document(userId).update(fields).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
-    
-    suspend fun logoutUser() {
+
+    fun getCurrentUserId(): String? = auth.currentUser?.uid
+
+    fun clearCurrentUser() {
         _currentUser.value = null
     }
-    
-    // Métodos específicos para créditos de IA
-    suspend fun updateAiCredits(userId: String, credits: AiCredits) {
-        val user = testUsers.values.find { it.id == userId }
-        if (user != null) {
-            val updatedUser = user.copy(aiCredits = credits)
-            updateUser(updatedUser)
-        }
-    }
-    
-    suspend fun consumeAiCredit(userId: String): Boolean {
-        val user = testUsers.values.find { it.id == userId }
-        if (user != null && user.aiCredits.current > 0) {
-            val updatedCredits = user.aiCredits.copy(
-                current = user.aiCredits.current - 1,
-                usedToday = user.aiCredits.usedToday + 1,
-                totalSpent = user.aiCredits.totalSpent + 1
-            )
-            updateAiCredits(userId, updatedCredits)
-            return true
-        }
-        return false
-    }
-    
-    suspend fun addAiCredits(userId: String, amount: Int) {
-        val user = testUsers.values.find { it.id == userId }
-        if (user != null) {
-            val updatedCredits = user.aiCredits.copy(
-                current = user.aiCredits.current + amount,
-                totalEarned = user.aiCredits.totalEarned + amount
-            )
-            updateAiCredits(userId, updatedCredits)
-        }
-    }
-    
-    // Resetar créditos diários
-    suspend fun resetDailyCredits(userId: String) {
-        val user = testUsers.values.find { it.id == userId }
-        if (user != null) {
-            val dailyLimit = when (user.subscription) {
-                SubscriptionStatus.FREE -> AiCreditLimits.FREE_DAILY
-                SubscriptionStatus.PREMIUM -> AiCreditLimits.PREMIUM_DAILY
-                SubscriptionStatus.VIP -> AiCreditLimits.VIP_DAILY
-            }
-            
-            val updatedCredits = user.aiCredits.copy(
-                current = dailyLimit,
-                dailyLimit = dailyLimit,
-                usedToday = 0,
-                lastResetDate = Date()
-            )
-            updateAiCredits(userId, updatedCredits)
-        }
-    }
-    
-    // Métodos para Discovery e Match
-    suspend fun getAllUsers(): List<User> {
-        return testUsers.values.toList()
-    }
-    
-    suspend fun getUsersForDiscovery(currentUserId: String): List<User> {
-        return testUsers.values.filter { it.id != currentUserId }.shuffled()
-    }
-    
-    suspend fun getUserById(userId: String): User? {
-        return testUsers.values.find { it.id == userId }
-    }
-    
-    fun getTotalUsersCount(): Int {
-        return testUsers.size
-    }
-} 
+}

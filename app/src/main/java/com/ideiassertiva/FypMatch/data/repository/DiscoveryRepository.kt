@@ -1,68 +1,77 @@
-package com.ideiassertiva.FypMatch.data.repository
+﻿package com.ideiassertiva.FypMatch.data.repository
 
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.tasks.await
 import java.util.Date
 import java.util.UUID
-import kotlin.random.Random
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class DiscoveryRepository {
-    
-    // Dados simulados para desenvolvimento
+@Singleton
+class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFirestore) {
+
     private val _discoveryCards = MutableStateFlow<List<DiscoveryCard>>(emptyList())
     val discoveryCards: Flow<List<DiscoveryCard>> = _discoveryCards.asStateFlow()
-    
+
     private val _swipeActions = MutableStateFlow<List<SwipeRecord>>(emptyList())
     val swipeActions: Flow<List<SwipeRecord>> = _swipeActions.asStateFlow()
-    
+
     private val _matches = MutableStateFlow<List<Match>>(emptyList())
     val matches: Flow<List<Match>> = _matches.asStateFlow()
-    
-    init {
-        generateMockUsers()
+
+    // Carrega usuários reais do Firestore (excluindo o próprio usuário corrente)
+    private suspend fun loadUsersFromFirestore(currentUserId: String): List<User> {
+        return try {
+            firestore.collection("users")
+                .limit(20)
+                .get()
+                .await()
+                .documents
+                .mapNotNull { doc ->
+                    if (doc.id == currentUserId) null
+                    else doc.toObject(User::class.java)?.copy(id = doc.id)
+                }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
-    
-    // Gerar usuários fictícios para demonstração
-    private fun generateMockUsers() {
-        val mockCards = listOf(
-            createMockCard("Ana Silva", 25, "São Paulo", "Amo viajar e conhecer pessoas novas! 🌎", 85.5f),
-            createMockCard("Maria Santos", 28, "Rio de Janeiro", "Adoro música e arte. Procuro alguém especial 🎵", 78.2f),
-            createMockCard("Julia Costa", 24, "Belo Horizonte", "Formada em psicologia, apaixonada por livros 📚", 92.1f),
-            createMockCard("Carla Lima", 30, "Porto Alegre", "Empresária, busco relacionamento sério 💼", 88.7f),
-            createMockCard("Sofia Oliveira", 26, "Salvador", "Professora, amo crianças e natureza 🌱", 81.3f),
-            createMockCard("Bruno Ferreira", 29, "São Paulo", "Desenvolvedor, gamer e cinéfilo 🎮", 76.9f),
-            createMockCard("Pedro Santos", 27, "Curitiba", "Médico, adoro esportes e música 🏃‍♂️", 89.4f),
-            createMockCard("Lucas Almeida", 31, "Brasília", "Advogado, procuro algo sério e duradouro ⚖️", 83.6f)
-        )
-        _discoveryCards.value = mockCards
-    }
-    
-    private fun createMockCard(name: String, age: Int, city: String, bio: String, score: Float): DiscoveryCard {
-        val user = User(
-            id = UUID.randomUUID().toString(),
-            displayName = name,
-            profile = UserProfile(
-                fullName = name,
-                age = age,
-                bio = bio,
-                location = Location(city = city),
-                gender = if (Random.nextBoolean()) Gender.FEMALE else Gender.MALE,
-                orientation = Orientation.STRAIGHT,
-                intention = Intention.DATING,
-                photos = listOf("https://picsum.photos/400/600?random=${Random.nextInt(100)}")
+
+    // Carrega os cards de discovery para um usuário específico
+    suspend fun loadDiscoveryCards(currentUserId: String) {
+        val users = loadUsersFromFirestore(currentUserId)
+        val cards = users.map { user ->
+            DiscoveryCard(
+                user = user,
+                distance = 0,
+                compatibilityScore = 0f,
+                commonInterests = emptyList(),
+                photos = user.profile.photos,
+                isVerified = false
             )
-        )
-        
-        return DiscoveryCard(
-            user = user,
-            distance = Random.nextInt(1, 50),
-            compatibilityScore = score / 100f,
-            commonInterests = listOf("Música", "Viagem", "Cinema").shuffled().take(Random.nextInt(1, 3)),
-            photos = user.profile.photos,
-            isVerified = Random.nextBoolean()
-        )
+        }
+        _discoveryCards.value = cards
+    }
+
+    // Registra like no Firestore e verifica match mútuo
+    private suspend fun registerLikeAndCheckMatch(currentUserId: String, likedUserId: String): Boolean {
+        return try {
+            // Registra que currentUser deu like em likedUser
+            firestore.collection("likes")
+                .document(currentUserId)
+                .update("liked", FieldValue.arrayUnion(likedUserId))
+                .await()
+            // Verifica se likedUser também deu like em currentUser
+            val doc = firestore.collection("likes").document(likedUserId).get().await()
+            val likedByUser = doc.get("liked") as? List<*> ?: emptyList<String>()
+            likedByUser.contains(currentUserId)
+        } catch (e: Exception) {
+            false
+        }
     }
     
     // Executar ação de swipe
@@ -85,9 +94,11 @@ class DiscoveryRepository {
                 it.fromUserId == toUserId && it.toUserId == fromUserId && it.action != SwipeType.PASS 
             }
             
-            // Para facilitar testes, simular que 70% dos likes resultam em match
-            val simulatedMatch = swipeType != SwipeType.PASS && Random.nextFloat() < 0.7f
-            val isMatch = existingSwipe != null || simulatedMatch
+            // Registra like no Firestore e verifica match mútuo
+            val mutualMatch = if (swipeType != SwipeType.PASS) {
+                registerLikeAndCheckMatch(fromUserId, toUserId)
+            } else false
+            val isMatch = existingSwipe != null || mutualMatch
             
             val updatedSwipe = swipeAction.copy(isMatch = isMatch)
             _swipeActions.value = _swipeActions.value + updatedSwipe

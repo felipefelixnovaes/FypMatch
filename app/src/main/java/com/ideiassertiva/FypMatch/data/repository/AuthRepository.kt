@@ -1,4 +1,4 @@
-package com.ideiassertiva.FypMatch.data.repository
+﻿package com.ideiassertiva.FypMatch.data.repository
 
 import android.content.Context
 import com.ideiassertiva.FypMatch.model.User
@@ -12,13 +12,17 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 
-class AuthRepository(private val context: Context) {
+@Singleton
+class AuthRepository @Inject constructor(@ApplicationContext private val context: Context) {
     
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
@@ -42,9 +46,13 @@ class AuthRepository(private val context: Context) {
         }
     }
     
+    // TODO: Configure o Web Client ID no Firebase Console e substitua abaixo
+    // Acesse: Firebase Console -> Authentication -> Sign-in method -> Google -> Web SDK configuration
+    private val GOOGLE_WEB_CLIENT_ID = "SEU_WEB_CLIENT_ID_AQUI"
+
     fun getGoogleSignInClient(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("123456789-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com") // Web client ID do Firebase
+            .requestIdToken(GOOGLE_WEB_CLIENT_ID)
             .requestEmail()
             .build()
         
@@ -138,7 +146,9 @@ class AuthRepository(private val context: Context) {
     fun getCurrentFirebaseUser(): FirebaseUser? {
         return auth.currentUser
     }
-    
+
+    fun getCurrentUserId(): String? = auth.currentUser?.uid
+
     fun isUserSignedIn(): Boolean {
         return auth.currentUser != null
     }

@@ -1,9 +1,8 @@
-package com.ideiassertiva.FypMatch.model
+﻿package com.ideiassertiva.FypMatch.model
 
 import com.ideiassertiva.FypMatch.data.repository.QuestionnaireRepository
 import com.ideiassertiva.FypMatch.data.repository.UserQuestionnaire
-
-// FIXME: BehaviorAnalyzer rewritten as stubs — SwipeRecord/SwipeAction models missing
+import java.util.Date
 
 data class CompatibilityScore(
     val overall: Float,
@@ -20,9 +19,9 @@ data class CompatibilityFactor(
 
 data class SwipeBehavior(
     val userId: String,
-    val swipeHistory: List<Any>,
+    val swipeHistory: List<SwipeRecord>,
     val patterns: SwipePatterns,
-    val preferences: Any?
+    val preferences: Map<String, Any>?
 )
 
 data class SwipePatterns(
@@ -78,7 +77,7 @@ data class CommunicationStyle(
 // Behavior analysis for learning
 class BehaviorAnalyzer {
     
-    fun analyzeSwipeBehavior(userId: String, swipeHistory: List<Any>): SwipeBehavior {
+    fun analyzeSwipeBehavior(userId: String, swipeHistory: List<SwipeRecord>): SwipeBehavior {
         return SwipeBehavior(
             userId = userId,
             swipeHistory = emptyList(),

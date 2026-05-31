@@ -2,6 +2,7 @@ package com.ideiassertiva.FypMatch.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,8 +10,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.ideiassertiva.FypMatch.model.*
 import java.util.Date
+import javax.inject.Inject
 
-class AnalyticsViewModel : ViewModel() {
+@HiltViewModel
+class AnalyticsViewModel @Inject constructor() : ViewModel() {
     private val _analytics = MutableStateFlow(ProfileAnalytics())
     val analytics: StateFlow<ProfileAnalytics> = _analytics.asStateFlow()
     

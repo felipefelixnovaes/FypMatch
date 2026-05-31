@@ -162,7 +162,7 @@ private fun MatchCard(
             // Foto do perfil
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data("https://picsum.photos/100/100?random=${match.id.hashCode()}")
+                    .data(match.photoUrl.ifBlank { "https://ui-avatars.com/api/?name=${match.matchedUserName.ifBlank { \"M\" }}&background=E91E63&color=fff&size=100" })
                     .crossfade(true)
                     .build(),
                 contentDescription = "Foto do match",
@@ -182,7 +182,7 @@ private fun MatchCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Match #${match.id.take(8)}",
+                        text = match.matchedUserName.ifBlank { "Usuario" },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
@@ -263,3 +263,4 @@ fun MatchesScreenPreview() {
         MatchesScreen()
     }
 } 
+

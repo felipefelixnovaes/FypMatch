@@ -9,7 +9,10 @@ data class Match(
     val createdAt: Date = Date(),
     val isActive: Boolean = true,
     val lastMessage: String = "",
-    val lastMessageAt: Date = Date()
+    val lastMessageAt: Date = Date(),
+    val compatibilityScore: Float = 0f,
+    val photoUrl: String = "",
+    val matchedUserName: String = ""
 )
 
 data class SwipeRecord(

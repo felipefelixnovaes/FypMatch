@@ -8,6 +8,7 @@ import com.ideiassertiva.FypMatch.ui.screens.DemoResult
 import com.ideiassertiva.FypMatch.ui.screens.Phase4Stats
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,6 +21,7 @@ data class Phase4UIState(
     val showNeuroSupportDialog: Boolean = false
 )
 
+@HiltViewModel
 class Phase4ViewModel @Inject constructor(
     private val phase4Repository: Phase4AIRepository
 ) : ViewModel() {

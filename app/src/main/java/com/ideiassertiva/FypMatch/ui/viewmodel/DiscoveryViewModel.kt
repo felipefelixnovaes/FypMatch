@@ -14,6 +14,30 @@ import kotlinx.coroutines.launch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
+sealed class DiscoveryUiState {
+    /** Carregando cards do servidor */
+    object Loading : DiscoveryUiState()
+
+    /** Conteúdo normal — cards disponíveis ou nenhum */
+    data class Content(
+        val cardsEmpty: Boolean = false
+    ) : DiscoveryUiState()
+
+    /** Match detectado — exibir modal de match */
+    data class MatchModal(
+        val match: Match,
+        val conversationId: String
+    ) : DiscoveryUiState()
+
+    /** Limite diário atingido — exibir modal de upgrade */
+    data class LimitModal(
+        val limitType: String
+    ) : DiscoveryUiState()
+
+    /** Erro — exibir snackbar/toast */
+    data class Error(val message: String) : DiscoveryUiState()
+}
+
 @HiltViewModel
 class DiscoveryViewModel @Inject constructor(
     private val discoveryRepository: DiscoveryRepository,
@@ -21,7 +45,7 @@ class DiscoveryViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(DiscoveryUiState())
+    private val _uiState = MutableStateFlow<DiscoveryUiState>(DiscoveryUiState.Loading)
     val uiState: StateFlow<DiscoveryUiState> = _uiState.asStateFlow()
 
     private val _currentCard = MutableStateFlow<DiscoveryCard?>(null)
@@ -49,36 +73,26 @@ class DiscoveryViewModel @Inject constructor(
     fun performSwipe(swipeType: SwipeType) {
         val card = _currentCard.value ?: return
 
-        // Verificar limites baseados na assinatura
         when (swipeType) {
             SwipeType.LIKE -> {
                 if (!discoveryRepository.checkLikeLimit(currentUserId, currentUserSubscription)) {
-                    _uiState.value = _uiState.value.copy(
-                        showLimitModal = true,
-                        limitType = "likes"
-                    )
+                    _uiState.value = DiscoveryUiState.LimitModal(limitType = "likes")
                     return
                 }
             }
             SwipeType.SUPER_LIKE -> {
                 if (!discoveryRepository.checkSuperLikeLimit(currentUserId, currentUserSubscription)) {
-                    _uiState.value = _uiState.value.copy(
-                        showLimitModal = true,
-                        limitType = "super_likes"
-                    )
+                    _uiState.value = DiscoveryUiState.LimitModal(limitType = "super_likes")
                     return
                 }
             }
-            SwipeType.PASS -> {
-                // Passar não tem limites
-            }
+            SwipeType.PASS -> { /* sem limites */ }
         }
 
-        // Salvar card na história antes de avançar
         swipeHistory.addFirst(card)
         if (swipeHistory.size > 10) swipeHistory.removeLast()
 
-        _uiState.value = _uiState.value.copy(isLoading = true)
+        _uiState.value = DiscoveryUiState.Loading
 
         viewModelScope.launch {
             try {
@@ -90,37 +104,30 @@ class DiscoveryViewModel @Inject constructor(
 
                 result.onSuccess { swipeResult ->
                     if (swipeResult.isMatch) {
-                        // Criar conversa automaticamente quando há match
                         val conversationId = chatRepository.createConversationFromMatch(
                             match = swipeResult.match!!,
                             currentUserId = currentUserId
                         )
-
-                        // Mostrar modal de match com opção de ir para chat
-                        _uiState.value = _uiState.value.copy(
-                            showMatchModal = true,
-                            lastMatch = swipeResult.match,
-                            conversationId = conversationId,
-                            isLoading = false
+                        _uiState.value = DiscoveryUiState.MatchModal(
+                            match = swipeResult.match,
+                            conversationId = conversationId
                         )
                     } else {
-                        _uiState.value = _uiState.value.copy(isLoading = false)
+                        loadNextCard()
+                        _uiState.value = DiscoveryUiState.Content(
+                            cardsEmpty = _currentCard.value == null
+                        )
                     }
-
-                    // Carregar próximo card
-                    loadNextCard()
                 }
 
                 result.onFailure { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = exception.message ?: "Erro desconhecido"
+                    _uiState.value = DiscoveryUiState.Error(
+                        message = exception.message ?: "Erro desconhecido"
                     )
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Erro desconhecido"
+                _uiState.value = DiscoveryUiState.Error(
+                    message = e.message ?: "Erro desconhecido"
                 )
             }
         }
@@ -130,7 +137,6 @@ class DiscoveryViewModel @Inject constructor(
     fun rewindLastSwipe() {
         val lastCard = swipeHistory.removeFirstOrNull() ?: return
         _currentCard.value = lastCard
-        _uiState.value = _uiState.value.copy(rewindUsed = true)
     }
 
     /** Ativa o boost por 30 minutos */
@@ -138,56 +144,40 @@ class DiscoveryViewModel @Inject constructor(
         if (_boostActive.value) return
         viewModelScope.launch {
             _boostActive.value = true
-            delay(30 * 60 * 1000L) // 30 minutos
+            delay(30 * 60 * 1000L)
             _boostActive.value = false
         }
     }
 
     fun dismissMatchModal() {
-        _uiState.value = _uiState.value.copy(
-            showMatchModal = false,
-            lastMatch = null,
-            conversationId = null
+        loadNextCard()
+        _uiState.value = DiscoveryUiState.Content(
+            cardsEmpty = _currentCard.value == null
         )
     }
 
     fun dismissLimitModal() {
-        _uiState.value = _uiState.value.copy(
-            showLimitModal = false,
-            limitType = ""
-        )
+        _uiState.value = DiscoveryUiState.Content()
     }
 
     fun refreshCards() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
-
+        _uiState.value = DiscoveryUiState.Loading
         viewModelScope.launch {
             try {
-                // Simular reload (no app real, faria nova busca no servidor)
                 delay(1000)
                 loadNextCard()
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = DiscoveryUiState.Content(
+                    cardsEmpty = _currentCard.value == null
+                )
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Erro ao atualizar"
+                _uiState.value = DiscoveryUiState.Error(
+                    message = e.message ?: "Erro ao atualizar"
                 )
             }
         }
     }
 
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.value = DiscoveryUiState.Content()
     }
 }
-
-data class DiscoveryUiState(
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val showMatchModal: Boolean = false,
-    val showLimitModal: Boolean = false,
-    val lastMatch: Match? = null,
-    val conversationId: String? = null,
-    val limitType: String = "",
-    val rewindUsed: Boolean = false
-)

@@ -35,8 +35,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryViewModel
+import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryUiState
 import com.ideiassertiva.FypMatch.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -60,36 +62,35 @@ fun DiscoveryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentCard by viewModel.currentCard.collectAsStateWithLifecycle()
-    
-    // Mostrar modal de match se houve match
-    if (uiState.showMatchModal && uiState.lastMatch != null) {
+
+    // Modal de match
+    val matchModal = uiState as? DiscoveryUiState.MatchModal
+    if (matchModal != null) {
         MatchModal(
-            match = uiState.lastMatch!!,
+            match = matchModal.match,
             onDismiss = { viewModel.dismissMatchModal() },
-            onSendMessage = { 
-                uiState.conversationId?.let { conversationId ->
-                    onNavigateToChat(conversationId)
-                }
+            onSendMessage = {
+                onNavigateToChat(matchModal.conversationId)
                 viewModel.dismissMatchModal()
             }
         )
     }
-    
-    // Mostrar modal de limite atingido
-    if (uiState.showLimitModal) {
+
+    // Modal de limite
+    val limitModal = uiState as? DiscoveryUiState.LimitModal
+    if (limitModal != null) {
         LimitReachedModal(
-            limitType = uiState.limitType,
+            limitType = limitModal.limitType,
             onDismiss = { viewModel.dismissLimitModal() },
             onUpgrade = onNavigateToPremium
         )
     }
-    
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header melhorado
         DiscoveryTopBar(
             onSettingsClick = onNavigateToSettings,
             onMatchesClick = onNavigateToMatches,
@@ -98,8 +99,7 @@ fun DiscoveryScreen(
             onProfileClick = onNavigateToProfile,
             onPhase3DemoClick = onNavigateToPhase3Demo
         )
-        
-        // Área dos cards
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -107,36 +107,50 @@ fun DiscoveryScreen(
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            when {
-                uiState.isLoading -> {
+            when (uiState) {
+                is DiscoveryUiState.Loading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.size(48.dp),
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                
-                currentCard != null -> {
-                    SwipeCard(
-                        card = currentCard!!,
-                        onSwipe = { swipeType -> viewModel.performSwipe(swipeType) },
-                        onCardClick = { onNavigateToUserDetails(currentCard!!.user.id) }
-                    )
+
+                is DiscoveryUiState.Content -> {
+                    if (currentCard != null) {
+                        SwipeCard(
+                            card = currentCard!!,
+                            onSwipe = { swipeType -> viewModel.performSwipe(swipeType) },
+                            onCardClick = { onNavigateToUserDetails(currentCard!!.user.id) }
+                        )
+                    } else {
+                        NoMoreCardsView(onRefresh = { viewModel.refreshCards() })
+                    }
                 }
-                
-                else -> {
-                    NoMoreCardsView(
-                        onRefresh = { viewModel.refreshCards() }
-                    )
+
+                is DiscoveryUiState.Error -> {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = (uiState as DiscoveryUiState.Error).message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { viewModel.clearError() }) {
+                            Text("Tentar novamente")
+                        }
+                    }
                 }
+
+                is DiscoveryUiState.MatchModal,
+                is DiscoveryUiState.LimitModal -> { /* modals são renderizados acima */ }
             }
         }
-        
-        // Botões de ação
+
         SwipeActionButtons(
             onPassClick = { viewModel.performSwipe(SwipeType.PASS) },
             onSuperLikeClick = { viewModel.performSwipe(SwipeType.SUPER_LIKE) },
             onLikeClick = { viewModel.performSwipe(SwipeType.LIKE) },
-            enabled = !uiState.isLoading && currentCard != null
+            enabled = uiState !is DiscoveryUiState.Loading && currentCard != null
         )
         
         // Spacer maior para não ficar embaixo da navegação do Android
@@ -243,22 +257,22 @@ private fun DiscoveryTopBar(
                     onClick = onPhase4AIClick,
                     modifier = Modifier.height(32.dp),
                     contentPadding = PaddingValues(horizontal = 6.dp),
-                    border = BorderStroke(1.dp, Color(0xFF9C27B0)), // Purple color for Phase 4
+                    border = BorderStroke(1.dp, FypColors.Secondary), // Purple color for Phase 4
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFF9C27B0)
+                        contentColor = FypColors.Secondary
                     )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Psychology,
                         contentDescription = null,
                         modifier = Modifier.size(12.dp),
-                        tint = Color(0xFF9C27B0)
+                        tint = FypColors.Secondary
                     )
                     Spacer(modifier = Modifier.width(2.dp))
                     Text(
                         text = "AI+",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF9C27B0),
+                        color = FypColors.Secondary,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -554,7 +568,7 @@ private fun SwipeCard(
                         Icon(
                             imageVector = Icons.Default.Star,
                             contentDescription = "Verificado",
-                            tint = Color(0xFF4FC3F7),
+                            tint = FypColors.SuperLike,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -594,7 +608,7 @@ private fun SwipeCard(
                         Icon(
                             imageVector = Icons.Default.Favorite,
                             contentDescription = null,
-                            tint = Color(0xFFE91E63),
+                            tint = FypColors.Primary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -602,7 +616,7 @@ private fun SwipeCard(
                             text = "${(card.compatibilityScore * 100).toInt()}% compatível",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFE91E63)
+                            color = FypColors.Primary
                         )
                     }
                 }
@@ -627,7 +641,7 @@ private fun SwipeIndicators(
                     .align(Alignment.Center)
                     .rotate(15f)
                     .graphicsLayer { this.alpha = alpha },
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50)),
+                colors = CardDefaults.cardColors(containerColor = FypColors.Like),
                 border = BorderStroke(4.dp, Color.White),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -649,7 +663,7 @@ private fun SwipeIndicators(
                     .align(Alignment.Center)
                     .rotate(-15f)
                     .graphicsLayer { this.alpha = alpha },
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF44336)),
+                colors = CardDefaults.cardColors(containerColor = FypColors.Pass),
                 border = BorderStroke(4.dp, Color.White),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -670,7 +684,7 @@ private fun SwipeIndicators(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .graphicsLayer { this.alpha = alpha },
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF2196F3)),
+                colors = CardDefaults.cardColors(containerColor = FypColors.SuperLike),
                 border = BorderStroke(4.dp, Color.White),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -716,14 +730,14 @@ private fun SwipeActionButtons(
         // Botão Rewind (ainda não implementado, mas deixando espaço para futuro)
         FloatingActionButton(
             onClick = { /* TODO: Implementar rewind */ },
-            containerColor = Color(0xFFFFC107).copy(alpha = 0.3f),
+            containerColor = FypColors.Gold.copy(alpha = 0.3f),
             modifier = Modifier.size(42.dp),
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Refresh,
                 contentDescription = "Voltar",
-                tint = Color(0xFFFFC107),
+                tint = FypColors.Gold,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -741,7 +755,7 @@ private fun SwipeActionButtons(
             Icon(
                 imageVector = Icons.Default.Close,
                 contentDescription = "Passar",
-                tint = Color(0xFFF44336),
+                tint = FypColors.Pass,
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -759,7 +773,7 @@ private fun SwipeActionButtons(
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = "Super Curtir",
-                tint = Color(0xFF2196F3),
+                tint = FypColors.SuperLike,
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -777,7 +791,7 @@ private fun SwipeActionButtons(
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = "Curtir",
-                tint = Color(0xFF4CAF50),
+                tint = FypColors.Like,
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -785,14 +799,14 @@ private fun SwipeActionButtons(
         // Botão Boost (ainda não implementado, mas deixando espaço para futuro)
         FloatingActionButton(
             onClick = { /* TODO: Implementar boost */ },
-            containerColor = Color(0xFF9C27B0).copy(alpha = 0.3f),
+            containerColor = FypColors.Secondary.copy(alpha = 0.3f),
             modifier = Modifier.size(42.dp),
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.LocationOn,
                 contentDescription = "Boost",
-                tint = Color(0xFF9C27B0),
+                tint = FypColors.Secondary,
                 modifier = Modifier.size(20.dp)
             )
         }

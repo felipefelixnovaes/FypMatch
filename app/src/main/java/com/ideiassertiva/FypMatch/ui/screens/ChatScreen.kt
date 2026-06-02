@@ -28,7 +28,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.EmptyState
+import com.ideiassertiva.FypMatch.ui.components.ErrorState
 import com.ideiassertiva.FypMatch.ui.viewmodel.ChatViewModel
+import com.ideiassertiva.FypMatch.ui.viewmodel.ChatUiState
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
@@ -45,68 +48,89 @@ fun ChatScreen(
     val coroutineScope = rememberCoroutineScope()
     var showAISuggestions by remember { mutableStateOf(false) }
     var selectedMessageForAnalysis by remember { mutableStateOf<String?>(null) }
-    
+
+    // Extrai dados da conversa com smart cast
+    val chatData = uiState as? ChatUiState.Success
+    val chatError = uiState as? ChatUiState.Error
+
     LaunchedEffect(conversationId) {
         viewModel.loadConversation(conversationId, currentUserId)
     }
-    
-    LaunchedEffect(uiState.messages.size) {
-        if (uiState.messages.isNotEmpty()) {
+
+    LaunchedEffect(chatData?.messages?.size) {
+        val msgs = chatData?.messages ?: return@LaunchedEffect
+        if (msgs.isNotEmpty()) {
             coroutineScope.launch {
-                listState.animateScrollToItem(uiState.messages.size - 1)
+                listState.animateScrollToItem(msgs.size - 1)
             }
         }
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header melhorado com foto e nome
         ChatHeader(
-            otherUser = uiState.otherUser,
-            isOnline = uiState.conversation?.isOtherUserOnline(currentUserId) ?: false,
+            otherUser = chatData?.otherUser,
+            isOnline = chatData?.conversation?.isOtherUserOnline(currentUserId) ?: false,
             lastSeen = viewModel.getLastSeenText(),
             onBackClick = onBackClick
         )
-        
-        // Mensagens
+
         Box(modifier = Modifier.weight(1f)) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(uiState.messages) { message ->
-                    MessageItem(
-                        message = message,
-                        isOwnMessage = message.senderId == currentUserId,
-                        otherUser = uiState.otherUser,
-                        onReactionClick = { messageId, emoji ->
-                            viewModel.addReaction(messageId, emoji)
-                        },
-                        onAIAnalysisClick = { messageId ->
-                            selectedMessageForAnalysis = messageId
-                        },
-                        getStatusIcon = viewModel::getMessageStatusIcon
+            when (uiState) {
+                is ChatUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                is ChatUiState.Error -> {
+                    ErrorState(
+                        icon = Icons.Default.Error,
+                        title = "Erro ao carregar",
+                        description = chatError?.message ?: "",
+                        onRetry = { viewModel.loadConversation(conversationId, currentUserId) }
                     )
                 }
-                
-                if (viewModel.isOtherUserTyping()) {
-                    item {
-                        TypingIndicator(otherUser = uiState.otherUser)
+
+                is ChatUiState.Success -> {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(chatData!!.messages) { message ->
+                            MessageItem(
+                                message = message,
+                                isOwnMessage = message.senderId == currentUserId,
+                                otherUser = chatData.otherUser,
+                                onReactionClick = { messageId, emoji ->
+                                    viewModel.addReaction(messageId, emoji)
+                                },
+                                onAIAnalysisClick = { messageId ->
+                                    selectedMessageForAnalysis = messageId
+                                },
+                                getStatusIcon = viewModel::getMessageStatusIcon
+                            )
+                        }
+
+                        if (viewModel.isOtherUserTyping()) {
+                            item {
+                                TypingIndicator(otherUser = chatData.otherUser)
+                            }
+                        }
                     }
                 }
             }
         }
-        
-        // Sugestões de IA
-        if (showAISuggestions) {
+
+        if (showAISuggestions && chatData != null) {
             AISuggestionsCard(
-                currentMessage = uiState.currentMessage,
-                conversationContext = uiState.messages.takeLast(5),
+                currentMessage = chatData.currentMessage,
+                conversationContext = chatData.messages.takeLast(5),
                 onSuggestionSelect = { suggestion ->
                     viewModel.updateMessageText(suggestion)
                     showAISuggestions = false
@@ -114,10 +138,9 @@ fun ChatScreen(
                 onDismiss = { showAISuggestions = false }
             )
         }
-        
-        // Input melhorado com botão de IA
+
         ChatInput(
-            currentMessage = uiState.currentMessage,
+            currentMessage = chatData?.currentMessage ?: "",
             onMessageChange = viewModel::updateMessageText,
             onSendMessage = viewModel::sendMessage,
             onSendLocation = { lat, lng, address ->
@@ -127,24 +150,22 @@ fun ChatScreen(
             onAISuggestionsClick = { showAISuggestions = !showAISuggestions }
         )
     }
-    
-    // Modal de análise de IA
+
     selectedMessageForAnalysis?.let { messageId ->
-        val message = uiState.messages.find { it.id == messageId }
+        val message = chatData?.messages?.find { it.id == messageId }
         if (message != null) {
             AIAnalysisModal(
                 message = message,
                 isOwnMessage = message.senderId == currentUserId,
-                conversationContext = uiState.messages,
+                conversationContext = chatData.messages,
                 onDismiss = { selectedMessageForAnalysis = null }
             )
         }
     }
-    
+
     // Snackbar para erros
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
-            // Em um app real, mostraria Snackbar
+    if (chatError != null) {
+        LaunchedEffect(chatError.message) {
             viewModel.clearError()
         }
     }
@@ -179,7 +200,7 @@ fun ChatHeader(
                             modifier = Modifier
                                 .size(12.dp)
                                 .clip(CircleShape)
-                                .background(Color.Green)
+                                .background(MaterialTheme.colorScheme.tertiary)
                                 .align(Alignment.BottomEnd)
                         )
                     }
@@ -190,13 +211,13 @@ fun ChatHeader(
                 Column {
                     Text(
                         text = otherUser?.profile?.fullName ?: "Usuário",
-                        fontSize = 16.sp,
+                        MaterialTheme.typography.bodyLarge.fontSize,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (isOnline) "Online" else lastSeen,
-                        fontSize = 12.sp,
+                        MaterialTheme.typography.bodySmall.fontSize,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
@@ -279,8 +300,8 @@ fun MessageItem(
                             MessageType.TEXT -> {
                                 Text(
                                     text = message.content,
-                                    color = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 14.sp
+                                    color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    MaterialTheme.typography.bodyMedium.fontSize
                                 )
                             }
                             MessageType.LOCATION -> {
@@ -288,12 +309,12 @@ fun MessageItem(
                                     Icon(
                                         Icons.Filled.LocationOn,
                                         contentDescription = "Localização",
-                                        tint = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                        tint = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
                                         text = message.content,
-                                        color = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 12.sp
+                                        color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        MaterialTheme.typography.bodySmall.fontSize
                                     )
                                 }
                             }
@@ -308,15 +329,15 @@ fun MessageItem(
                                     Text(
                                         text = "GIF",
                                         color = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 12.sp
+                                        MaterialTheme.typography.bodySmall.fontSize
                                     )
                                 }
                             }
                             else -> {
                                 Text(
                                     text = message.content,
-                                    color = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 14.sp
+                                    color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    MaterialTheme.typography.bodyMedium.fontSize
                                 )
                             }
                         }
@@ -329,16 +350,16 @@ fun MessageItem(
                         ) {
                             Text(
                                 text = message.timestamp.format(DateTimeFormatter.ofPattern("HH:mm")),
-                                fontSize = 10.sp,
-                                color = if (isOwnMessage) Color.White.copy(alpha = 0.7f) 
+                                MaterialTheme.typography.labelSmall.fontSize,
+                                color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) 
                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                             if (isOwnMessage) {
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = getStatusIcon(message.status),
-                                    fontSize = 10.sp,
-                                    color = Color.White.copy(alpha = 0.7f)
+                                    MaterialTheme.typography.labelSmall.fontSize,
+                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                                 )
                             }
                         }
@@ -360,7 +381,7 @@ fun MessageItem(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             "IA",
-                            fontSize = 12.sp,
+                            MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -402,7 +423,7 @@ fun MessageItem(
                                 shadowElevation = 2.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(text = emoji, fontSize = 16.sp)
+                                    Text(text = emoji, MaterialTheme.typography.bodyLarge.fontSize)
                                 }
                             }
                         }
@@ -487,13 +508,13 @@ fun AISuggestionsCard(
                     Column {
                         Text(
                             suggestion.text,
-                            fontSize = 14.sp,
+                            MaterialTheme.typography.bodyMedium.fontSize,
                             textAlign = TextAlign.Start,
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
                             suggestion.reason,
-                            fontSize = 12.sp,
+                            MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                             textAlign = TextAlign.Start,
                             modifier = Modifier.fillMaxWidth()
@@ -533,12 +554,12 @@ fun AIAnalysisModal(
                     Text(
                         "Mensagem:",
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        MaterialTheme.typography.bodyMedium.fontSize
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         message.content,
-                        fontSize = 14.sp,
+                        MaterialTheme.typography.bodyMedium.fontSize,
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
@@ -563,13 +584,13 @@ fun AIAnalysisModal(
                             Text(
                                 item.category,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
+                                MaterialTheme.typography.bodySmall.fontSize,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 item.analysis,
-                                fontSize = 14.sp
+                                MaterialTheme.typography.bodyMedium.fontSize
                             )
                         }
                     }
@@ -600,12 +621,12 @@ fun ReactionChip(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = emoji, fontSize = 12.sp)
+            Text(text = emoji, MaterialTheme.typography.bodySmall.fontSize)
             if (count > 1) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = count.toString(),
-                    fontSize = 10.sp,
+                    MaterialTheme.typography.labelSmall.fontSize,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -757,7 +778,7 @@ fun ChatInput(
                     Icon(
                         Icons.Filled.Send, 
                         contentDescription = "Enviar", 
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
@@ -799,7 +820,7 @@ private fun AttachmentOption(
         
         Text(
             text = text,
-            fontSize = 12.sp,
+            MaterialTheme.typography.bodySmall.fontSize,
             color = MaterialTheme.colorScheme.onSurface
         )
     }

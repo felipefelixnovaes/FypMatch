@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.viewmodel.ConversationsViewModel
+import com.ideiassertiva.FypMatch.ui.viewmodel.ConversationsUiState
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,14 +55,14 @@ fun ConversationsScreen(
                 title = {
                     Text(
                         text = "Conversas",
-                        fontSize = 22.sp,
+                        MaterialTheme.typography.headlineSmall.fontSize,
                         fontWeight = FontWeight.Bold
                     )
                 }
             )
             
-            when {
-                uiState.isLoading -> {
+            when (uiState) {
+                is ConversationsUiState.Loading -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -69,21 +70,41 @@ fun ConversationsScreen(
                         CircularProgressIndicator()
                     }
                 }
-                
-                uiState.conversations.isEmpty() -> {
+
+                is ConversationsUiState.Empty -> {
                     EmptyConversationsState()
                 }
-                
-                else -> {
+
+                is ConversationsUiState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = (uiState as ConversationsUiState.Error).message,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            TextButton(onClick = { viewModel.loadConversations(currentUserId) }) {
+                                Text("Tentar novamente")
+                            }
+                        }
+                    }
+                }
+
+                is ConversationsUiState.Success -> {
+                    val state = uiState as ConversationsUiState.Success
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(uiState.conversations) { conversation ->
+                        items(state.conversations) { conversation ->
                             ConversationItem(
                                 conversation = conversation,
-                                otherUser = uiState.users[conversation.getOtherParticipant(currentUserId)?.userId],
+                                otherUser = state.users[conversation.getOtherParticipant(currentUserId)?.userId],
                                 currentUserId = currentUserId,
                                 onClick = { onConversationClick(conversation.id) }
                             )
@@ -148,7 +169,7 @@ fun ConversationItem(
                         modifier = Modifier
                             .size(16.dp)
                             .clip(CircleShape)
-                            .background(Color.Green)
+                            .background(FypColors.Success)
                             .align(Alignment.BottomEnd)
                     )
                 }
@@ -164,7 +185,7 @@ fun ConversationItem(
                 ) {
                     Text(
                         text = otherUser?.profile?.fullName ?: "Usuário",
-                        fontSize = 16.sp,
+                        MaterialTheme.typography.bodyLarge.fontSize,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -172,7 +193,7 @@ fun ConversationItem(
                     conversation.lastMessageAt?.let { timestamp ->
                         Text(
                             text = formatTimestamp(timestamp),
-                            fontSize = 12.sp,
+                            MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
@@ -187,7 +208,7 @@ fun ConversationItem(
                 ) {
                     Text(
                         text = getLastMessagePreview(conversation.lastMessage, currentUserId),
-                        fontSize = 14.sp,
+                        MaterialTheme.typography.bodyMedium.fontSize,
                         color = MaterialTheme.colorScheme.onSurface.copy(
                             alpha = if (unreadCount > 0) 1f else 0.7f
                         ),
@@ -202,7 +223,7 @@ fun ConversationItem(
                             Text(
                                 text = if (unreadCount > 9) "9+" else unreadCount.toString(),
                                 color = Color.White,
-                                fontSize = 10.sp
+                                MaterialTheme.typography.labelSmall.fontSize
                             )
                         }
                     }
@@ -212,7 +233,7 @@ fun ConversationItem(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = lastSeen,
-                        fontSize = 12.sp,
+                        MaterialTheme.typography.bodySmall.fontSize,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
@@ -222,7 +243,7 @@ fun ConversationItem(
 }
 
 @Composable
-fun EmptyConversationsState() {
+fun EmptyConversationsState(onExploreProfiles: (() -> Unit)? = null) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -236,24 +257,31 @@ fun EmptyConversationsState() {
             modifier = Modifier.size(80.dp),
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text(
             text = "Nenhuma conversa ainda",
-            fontSize = 18.sp,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Text(
             text = "Quando você der match com alguém,\nsuas conversas aparecerão aqui",
-            fontSize = 14.sp,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
             textAlign = TextAlign.Center
         )
+
+        if (onExploreProfiles != null) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onExploreProfiles) {
+                Text("Explorar perfis")
+            }
+        }
     }
 }
 

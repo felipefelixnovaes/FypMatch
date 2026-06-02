@@ -15,12 +15,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.ideiassertiva.FypMatch.ui.components.PremiumBadge
 import com.ideiassertiva.FypMatch.ui.components.PremiumTier
 import com.ideiassertiva.FypMatch.ui.components.SectionHeader
 import com.ideiassertiva.FypMatch.ui.components.UserAvatar
 import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
+import com.ideiassertiva.FypMatch.ui.viewmodel.SettingsViewModel
 
 /**
  * Tela de configurações do FypMatch.
@@ -31,11 +33,14 @@ import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
 @Composable
 fun SettingsScreen(
     onNavigateToPremium: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToLogin: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
 
     // ─── Estado das preferências (SharedPreferences via remember + side-effect) ──
     val prefs = remember {
@@ -51,6 +56,7 @@ fun SettingsScreen(
     // ─── Diálogos de confirmação ─────────────────────────────────────────────
     var mostrarDialogLogout by remember { mutableStateOf(false) }
     var mostrarDialogExcluir by remember { mutableStateOf(false) }
+    var deleteError by remember { mutableStateOf<String?>(null) }
 
     // Helper para persistir preferências
     fun salvarPreferencia(chave: String, valor: Boolean) {
@@ -66,8 +72,9 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        FirebaseAuth.getInstance().signOut()
+                        viewModel.signOut()
                         mostrarDialogLogout = false
+                        onNavigateToLogin()
                     }
                 ) {
                     Text("Sair", color = Color(0xFFFF6600))
@@ -87,24 +94,44 @@ fun SettingsScreen(
             onDismissRequest = { mostrarDialogExcluir = false },
             title = { Text("Excluir conta") },
             text = {
-                Text(
-                    "Esta ação é irreversível. Todos os seus dados, matches e conversas " +
-                    "serão removidos permanentemente."
-                )
+                Column {
+                    Text(
+                        "Esta ação é irreversível. Todos os seus dados, matches e conversas " +
+                        "serão removidos permanentemente."
+                    )
+                    deleteError?.let { err ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(err, color = MaterialTheme.colorScheme.error)
+                    }
+                }
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        // TODO: Implementar exclusão completa (Firestore + Auth)
-                        currentUser?.delete()
-                        mostrarDialogExcluir = false
+                if (uiState.isDeletingAccount) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                } else {
+                    TextButton(
+                        onClick = {
+                            deleteError = null
+                            viewModel.deleteAccount(
+                                onComplete = {
+                                    mostrarDialogExcluir = false
+                                    onNavigateToLogin()
+                                },
+                                onError = { err ->
+                                    deleteError = err
+                                }
+                            )
+                        }
+                    ) {
+                        Text("Excluir", color = MaterialTheme.colorScheme.error)
                     }
-                ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDialogExcluir = false }) {
+                TextButton(onClick = {
+                    mostrarDialogExcluir = false
+                    deleteError = null
+                }) {
                     Text("Cancelar")
                 }
             }

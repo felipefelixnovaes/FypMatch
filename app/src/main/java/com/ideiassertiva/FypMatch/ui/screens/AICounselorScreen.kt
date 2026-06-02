@@ -44,17 +44,17 @@ fun AICounselorScreen(
     val uiState by viewModel.uiState.collectAsState()
     val currentSession by viewModel.currentSession.collectAsState(initial = null)
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
-    
+
     val listState = rememberLazyListState()
     val keyboardController = LocalSoftwareKeyboardController.current
-    
-    // Iniciar sessão quando a tela carrega
+
+    // Iniciar sessão quando a tela carrega — subscription obtida do UserRepository no ViewModel
     LaunchedEffect(userId) {
         if (userId.isNotBlank() && !uiState.hasActiveSession) {
-            viewModel.startSession(userId, userSubscription = SubscriptionStatus.FREE) // TODO: Pegar do usuário logado
+            viewModel.startSession(userId)
         }
     }
-    
+
     // Modal de anúncio recompensa
     if (uiState.showAdRewardModal) {
         AdRewardModal(
@@ -62,7 +62,7 @@ fun AICounselorScreen(
             onDismiss = { viewModel.dismissAdRewardModal() }
         )
     }
-    
+
     // Auto-scroll para a última mensagem
                 LaunchedEffect(currentSession?.messages?.size) {
                 currentSession?.let { session ->
@@ -72,7 +72,7 @@ fun AICounselorScreen(
                     }
                 }
             }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -89,7 +89,7 @@ fun AICounselorScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             CreditsDisplay(
                                 credits = viewModel.getUserCredits().current,
-                                onWatchAd = { 
+                                onWatchAd = {
                                     if (viewModel.canWatchAd()) {
                                         viewModel.watchAdForCredits()
                                     }
@@ -123,12 +123,12 @@ fun AICounselorScreen(
                         MessageBubble(message = message)
                     }
                 }
-                
+
                 if (isLoading) {
                     item { TypingIndicator() }
                 }
             }
-            
+
             MessageInput(
                 message = uiState.currentMessage,
                 onMessageChange = viewModel::updateCurrentMessage,
@@ -144,7 +144,7 @@ fun AICounselorScreen(
             )
         }
     }
-    
+
     // Exibir erro se houver
     uiState.error?.let { error ->
         LaunchedEffect(error) {
@@ -156,7 +156,7 @@ fun AICounselorScreen(
 @Composable
 private fun MessageBubble(message: CounselorMessage) {
     val isUser = message.sender == MessageSender.USER
-    
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
@@ -174,7 +174,7 @@ private fun MessageBubble(message: CounselorMessage) {
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
-        
+
         Card(
             modifier = Modifier.widthIn(max = 280.dp),
             colors = CardDefaults.cardColors(
@@ -195,7 +195,7 @@ private fun MessageBubble(message: CounselorMessage) {
                 }
             )
         }
-        
+
         if (isUser) {
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
@@ -246,7 +246,7 @@ private fun MessageInput(
             value = message,
             onValueChange = onMessageChange,
             modifier = Modifier.weight(1f),
-            placeholder = { 
+            placeholder = {
                 Text(if (hasCredits) "Digite sua mensagem..." else "Sem créditos - assista um anúncio")
             },
             enabled = enabled,
@@ -258,9 +258,9 @@ private fun MessageInput(
                 { Text("Assista um anúncio para ganhar 3 créditos", color = MaterialTheme.colorScheme.primary) }
             } else null
         )
-        
+
         Spacer(modifier = Modifier.width(8.dp))
-        
+
         if (hasCredits) {
             FloatingActionButton(
                 onClick = { if (message.isNotBlank()) onSend(message) },
@@ -310,7 +310,7 @@ private fun CreditsDisplay(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
-        
+
         if (credits == 0 && canWatchAd) {
             Spacer(modifier = Modifier.width(8.dp))
             TextButton(
@@ -386,4 +386,4 @@ private fun AICounselorScreenPreview() {
     FypMatchTheme {
         AICounselorScreen(userId = "preview")
     }
-} 
+}

@@ -1,15 +1,16 @@
 package com.ideiassertiva.FypMatch.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.ideiassertiva.FypMatch.model.SwipeType
 import com.ideiassertiva.FypMatch.ui.screens.*
-import com.ideiassertiva.FypMatch.ui.screens.RegisterScreen
-import com.ideiassertiva.FypMatch.ui.screens.SettingsScreen
+import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryViewModel
 
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
@@ -82,6 +83,9 @@ sealed class Screen(val route: String) {
 fun FypMatchNavigation(
     navController: NavHostController = rememberNavController()
 ) {
+    // DiscoveryViewModel compartilhado — conecta ações de swipe de UserDetails ao estado de Discovery
+    val discoveryViewModel: DiscoveryViewModel = hiltViewModel()
+
     NavHost(
         navController = navController,
         startDestination = Screen.Welcome.route
@@ -239,7 +243,7 @@ fun FypMatchNavigation(
                     navController.popBackStack()
                 },
                 onPurchase = { subscriptionStatus ->
-                    // TODO: Implementar compra
+                    // Após confirmação de compra, volta para a tela anterior
                     navController.popBackStack()
                 }
             )
@@ -286,15 +290,15 @@ fun FypMatchNavigation(
                     navController.popBackStack()
                 },
                 onLike = {
-                    // TODO: Implementar ação de curtir
+                    discoveryViewModel.performSwipe(SwipeType.LIKE)
                     navController.popBackStack()
                 },
                 onPass = {
-                    // TODO: Implementar ação de passar
+                    discoveryViewModel.performSwipe(SwipeType.PASS)
                     navController.popBackStack()
                 },
                 onSuperLike = {
-                    // TODO: Implementar ação de super curtir
+                    discoveryViewModel.performSwipe(SwipeType.SUPER_LIKE)
                     navController.popBackStack()
                 }
             )
@@ -306,7 +310,7 @@ fun FypMatchNavigation(
                     navController.popBackStack()
                 },
                 onSave = { user ->
-                    // TODO: Implementar salvamento do perfil
+                    // Salva e volta para a tela anterior
                     navController.popBackStack()
                 }
             )

@@ -1,5 +1,8 @@
 package com.ideiassertiva.FypMatch.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,33 +28,51 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
-import com.ideiassertiva.FypMatch.data.TestUsers
+import com.ideiassertiva.FypMatch.ui.viewmodel.ProfileEditViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileEditScreen(
     onNavigateBack: () -> Unit,
     onSave: (User) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ProfileEditViewModel = hiltViewModel()
 ) {
-    // TODO: Carregar dados do usuário atual - por enquanto usando dados mockados
-    var user by remember {
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Inicializa o estado local com o usuário do ViewModel quando carregado
+    var user by remember(uiState.user) {
         mutableStateOf(
-            TestUsers.allUsers.first().copy(
-                profile = TestUsers.allUsers.first().profile.copy(
-                    aboutMe = TestUsers.allUsers.first().profile.aboutMe.ifBlank { 
-                        "Conte um pouco sobre você..." 
-                    }
-                )
-            )
+            uiState.user ?: User()
         )
     }
-    
+
     var showDeletePhotoDialog by remember { mutableStateOf<Int?>(null) }
-    
+
+    // Photo picker launcher
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let { selectedUri ->
+            user = user.copy(
+                profile = user.profile.copy(
+                    photos = user.profile.photos + selectedUri.toString()
+                )
+            )
+        }
+    }
+
+    // Navegar de volta após salvar com sucesso
+    LaunchedEffect(uiState.savedSuccessfully) {
+        if (uiState.savedSuccessfully) {
+            onNavigateBack()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -65,86 +86,116 @@ fun ProfileEditScreen(
                     }
                 },
                 actions = {
-                    TextButton(
-                        onClick = { onSave(user) }
-                    ) {
-                        Text("Salvar")
+                    if (uiState.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp).padding(end = 16.dp)
+                        )
+                    } else {
+                        TextButton(
+                            onClick = {
+                                viewModel.saveUser(user)
+                                onSave(user)
+                            }
+                        ) {
+                            Text("Salvar")
+                        }
                     }
                 }
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Seção de fotos
-            PhotoSection(
-                photos = user.profile.photos,
-                onAddPhoto = { url ->
-                    user = user.copy(
-                        profile = user.profile.copy(
-                            photos = user.profile.photos + url
+        if (uiState.isLoading && uiState.user == null) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                uiState.error?.let { error ->
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
                         )
-                    )
-                },
-                onDeletePhoto = { index ->
-                    showDeletePhotoDialog = index
+                    ) {
+                        Text(
+                            text = error,
+                            modifier = Modifier.padding(12.dp),
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
                 }
-            )
-            
-            // Informações básicas
-            BasicInfoSection(
-                user = user,
-                onUserUpdate = { updatedUser -> user = updatedUser }
-            )
-            
-            // Sobre mim
-            AboutMeSection(
-                aboutMe = user.profile.aboutMe,
-                bio = user.profile.bio,
-                onAboutMeChange = { newAboutMe ->
-                    user = user.copy(
-                        profile = user.profile.copy(aboutMe = newAboutMe)
-                    )
-                },
-                onBioChange = { newBio ->
-                    user = user.copy(
-                        profile = user.profile.copy(bio = newBio)
-                    )
-                }
-            )
-            
-            // Interesses
-            InterestsSection(
-                interests = user.profile.interests,
-                onInterestsChange = { newInterests ->
-                    user = user.copy(
-                        profile = user.profile.copy(interests = newInterests)
-                    )
-                }
-            )
-            
-            // Informações pessoais
-            PersonalInfoEditSection(
-                user = user,
-                onUserUpdate = { updatedUser -> user = updatedUser }
-            )
-            
-            // Preferências culturais
-            CulturalPreferencesEditSection(
-                user = user,
-                onUserUpdate = { updatedUser -> user = updatedUser }
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
+
+                // Seção de fotos
+                PhotoSection(
+                    photos = user.profile.photos,
+                    onAddPhoto = {
+                        photoPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    onDeletePhoto = { index ->
+                        showDeletePhotoDialog = index
+                    }
+                )
+
+                // Informações básicas
+                BasicInfoSection(
+                    user = user,
+                    onUserUpdate = { updatedUser -> user = updatedUser }
+                )
+
+                // Sobre mim
+                AboutMeSection(
+                    aboutMe = user.profile.aboutMe,
+                    bio = user.profile.bio,
+                    onAboutMeChange = { newAboutMe ->
+                        user = user.copy(
+                            profile = user.profile.copy(aboutMe = newAboutMe)
+                        )
+                    },
+                    onBioChange = { newBio ->
+                        user = user.copy(
+                            profile = user.profile.copy(bio = newBio)
+                        )
+                    }
+                )
+
+                // Interesses
+                InterestsSection(
+                    interests = user.profile.interests,
+                    onInterestsChange = { newInterests ->
+                        user = user.copy(
+                            profile = user.profile.copy(interests = newInterests)
+                        )
+                    }
+                )
+
+                // Informações pessoais
+                PersonalInfoEditSection(
+                    user = user,
+                    onUserUpdate = { updatedUser -> user = updatedUser }
+                )
+
+                // Preferências culturais
+                CulturalPreferencesEditSection(
+                    user = user,
+                    onUserUpdate = { updatedUser -> user = updatedUser }
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+            }
         }
     }
-    
+
     // Dialog para confirmar exclusão de foto
     if (showDeletePhotoDialog != null) {
         AlertDialog(
@@ -180,7 +231,7 @@ fun ProfileEditScreen(
 @Composable
 private fun PhotoSection(
     photos: List<String>,
-    onAddPhoto: (String) -> Unit,
+    onAddPhoto: () -> Unit,
     onDeletePhoto: (Int) -> Unit
 ) {
     Card(
@@ -198,7 +249,7 @@ private fun PhotoSection(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -217,7 +268,7 @@ private fun PhotoSection(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
-                        
+
                         IconButton(
                             onClick = { onDeletePhoto(index) },
                             modifier = Modifier
@@ -237,7 +288,7 @@ private fun PhotoSection(
                         }
                     }
                 }
-                
+
                 if (photos.size < 6) {
                     item {
                         Box(
@@ -245,10 +296,7 @@ private fun PhotoSection(
                                 .size(100.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                                .clickable {
-                                    // TODO: Implementar seleção de foto
-                                    onAddPhoto("https://picsum.photos/400/600?random=${photos.size}")
-                                },
+                                .clickable { onAddPhoto() },
                             contentAlignment = Alignment.Center
                         ) {
                             Column(
@@ -270,7 +318,7 @@ private fun PhotoSection(
                     }
                 }
             }
-            
+
             Text(
                 text = "Adicione até 6 fotos para mostrar sua personalidade",
                 style = MaterialTheme.typography.bodySmall,
@@ -300,7 +348,7 @@ private fun BasicInfoSection(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
+
             OutlinedTextField(
                 value = user.profile.fullName,
                 onValueChange = { newName ->
@@ -313,7 +361,7 @@ private fun BasicInfoSection(
                 label = { Text("Nome completo") },
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             OutlinedTextField(
                 value = user.profile.age.toString(),
                 onValueChange = { newAge ->
@@ -328,7 +376,7 @@ private fun BasicInfoSection(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             OutlinedTextField(
                 value = user.profile.profession,
                 onValueChange = { newProfession ->
@@ -341,7 +389,7 @@ private fun BasicInfoSection(
                 label = { Text("Profissão") },
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             OutlinedTextField(
                 value = if (user.profile.height > 0) user.profile.height.toString() else "",
                 onValueChange = { newHeight ->
@@ -382,7 +430,7 @@ private fun AboutMeSection(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
+
             OutlinedTextField(
                 value = bio,
                 onValueChange = onBioChange,
@@ -390,7 +438,7 @@ private fun AboutMeSection(
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 2
             )
-            
+
             OutlinedTextField(
                 value = aboutMe,
                 onValueChange = onAboutMeChange,
@@ -409,7 +457,7 @@ private fun InterestsSection(
     onInterestsChange: (List<String>) -> Unit
 ) {
     var newInterest by remember { mutableStateOf("") }
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -425,7 +473,7 @@ private fun InterestsSection(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -436,7 +484,7 @@ private fun InterestsSection(
                     label = { Text("Adicionar interesse") },
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 Button(
                     onClick = {
                         if (newInterest.isNotBlank() && newInterest !in interests) {
@@ -451,7 +499,7 @@ private fun InterestsSection(
                     )
                 }
             }
-            
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -496,15 +544,15 @@ private fun PersonalInfoEditSection(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
+
             // Estado civil
             DropdownMenuField(
                 label = "Estado civil",
                 value = user.profile.relationshipStatus.getDisplayName(),
                 options = RelationshipStatus.values().map { it.getDisplayName() },
                 onSelectionChange = { selectedDisplayName ->
-                    val selected = RelationshipStatus.values().find { 
-                        it.getDisplayName() == selectedDisplayName 
+                    val selected = RelationshipStatus.values().find {
+                        it.getDisplayName() == selectedDisplayName
                     } ?: RelationshipStatus.NOT_SPECIFIED
                     onUserUpdate(
                         user.copy(
@@ -513,15 +561,15 @@ private fun PersonalInfoEditSection(
                     )
                 }
             )
-            
+
             // Tem filhos
             DropdownMenuField(
                 label = "Tem filhos",
                 value = user.profile.hasChildren.getDisplayName(),
                 options = ChildrenStatus.values().map { it.getDisplayName() },
                 onSelectionChange = { selectedDisplayName ->
-                    val selected = ChildrenStatus.values().find { 
-                        it.getDisplayName() == selectedDisplayName 
+                    val selected = ChildrenStatus.values().find {
+                        it.getDisplayName() == selectedDisplayName
                     } ?: ChildrenStatus.NOT_SPECIFIED
                     onUserUpdate(
                         user.copy(
@@ -530,15 +578,15 @@ private fun PersonalInfoEditSection(
                     )
                 }
             )
-            
+
             // Quer ter filhos
             DropdownMenuField(
                 label = "Quer ter filhos",
                 value = user.profile.wantsChildren.getDisplayName(),
                 options = ChildrenStatus.values().map { it.getDisplayName() },
                 onSelectionChange = { selectedDisplayName ->
-                    val selected = ChildrenStatus.values().find { 
-                        it.getDisplayName() == selectedDisplayName 
+                    val selected = ChildrenStatus.values().find {
+                        it.getDisplayName() == selectedDisplayName
                     } ?: ChildrenStatus.NOT_SPECIFIED
                     onUserUpdate(
                         user.copy(
@@ -547,15 +595,15 @@ private fun PersonalInfoEditSection(
                     )
                 }
             )
-            
+
             // Fuma
             DropdownMenuField(
                 label = "Fuma",
                 value = user.profile.smokingStatus.getDisplayName(),
                 options = SmokingStatus.values().map { it.getDisplayName() },
                 onSelectionChange = { selectedDisplayName ->
-                    val selected = SmokingStatus.values().find { 
-                        it.getDisplayName() == selectedDisplayName 
+                    val selected = SmokingStatus.values().find {
+                        it.getDisplayName() == selectedDisplayName
                     } ?: SmokingStatus.NOT_SPECIFIED
                     onUserUpdate(
                         user.copy(
@@ -564,15 +612,15 @@ private fun PersonalInfoEditSection(
                     )
                 }
             )
-            
+
             // Bebe
             DropdownMenuField(
                 label = "Bebe",
                 value = user.profile.drinkingStatus.getDisplayName(),
                 options = DrinkingStatus.values().map { it.getDisplayName() },
                 onSelectionChange = { selectedDisplayName ->
-                    val selected = DrinkingStatus.values().find { 
-                        it.getDisplayName() == selectedDisplayName 
+                    val selected = DrinkingStatus.values().find {
+                        it.getDisplayName() == selectedDisplayName
                     } ?: DrinkingStatus.NOT_SPECIFIED
                     onUserUpdate(
                         user.copy(
@@ -581,15 +629,15 @@ private fun PersonalInfoEditSection(
                     )
                 }
             )
-            
+
             // Signo
             DropdownMenuField(
                 label = "Signo",
                 value = user.profile.zodiacSign.getDisplayName(),
                 options = ZodiacSign.values().map { it.getDisplayName() },
                 onSelectionChange = { selectedDisplayName ->
-                    val selected = ZodiacSign.values().find { 
-                        it.getDisplayName() == selectedDisplayName 
+                    val selected = ZodiacSign.values().find {
+                        it.getDisplayName() == selectedDisplayName
                     } ?: ZodiacSign.NOT_SPECIFIED
                     onUserUpdate(
                         user.copy(
@@ -598,15 +646,15 @@ private fun PersonalInfoEditSection(
                     )
                 }
             )
-            
+
             // Religião
             DropdownMenuField(
                 label = "Religião",
                 value = user.profile.religion.getDisplayName(),
                 options = Religion.values().map { it.getDisplayName() },
                 onSelectionChange = { selectedDisplayName ->
-                    val selected = Religion.values().find { 
-                        it.getDisplayName() == selectedDisplayName 
+                    val selected = Religion.values().find {
+                        it.getDisplayName() == selectedDisplayName
                     } ?: Religion.NOT_SPECIFIED
                     onUserUpdate(
                         user.copy(
@@ -615,7 +663,7 @@ private fun PersonalInfoEditSection(
                     )
                 }
             )
-            
+
             OutlinedTextField(
                 value = user.profile.favoriteTeam,
                 onValueChange = { newTeam ->
@@ -652,7 +700,7 @@ private fun CulturalPreferencesEditSection(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
+
             OutlinedTextField(
                 value = user.profile.favoriteTeam,
                 onValueChange = { newTeam ->
@@ -665,7 +713,7 @@ private fun CulturalPreferencesEditSection(
                 label = { Text("Time do coração") },
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Text(
                 text = "Adicione mais informações sobre seus gostos nas próximas atualizações do app!",
                 style = MaterialTheme.typography.bodySmall,
@@ -684,7 +732,7 @@ private fun DropdownMenuField(
     onSelectionChange: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = !expanded }
@@ -701,7 +749,7 @@ private fun DropdownMenuField(
                 .fillMaxWidth()
                 .menuAnchor()
         )
-        
+
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
@@ -717,4 +765,4 @@ private fun DropdownMenuField(
             }
         }
     }
-} 
+}

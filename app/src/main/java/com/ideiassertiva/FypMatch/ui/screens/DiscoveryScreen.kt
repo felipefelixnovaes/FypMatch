@@ -55,6 +55,7 @@ fun DiscoveryScreen(
     onNavigateToUserDetails: (String) -> Unit = {},
     onNavigateToChat: (String) -> Unit = {},
     onNavigateToPhase3Demo: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     viewModel: DiscoveryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -90,7 +91,7 @@ fun DiscoveryScreen(
     ) {
         // Header melhorado
         DiscoveryTopBar(
-            onSettingsClick = { /* TODO: Implementar settings */ },
+            onSettingsClick = onNavigateToSettings,
             onMatchesClick = onNavigateToMatches,
             onAICounselorClick = { onNavigateToAICounselor("current_user_id") },
             onPhase4AIClick = { onNavigateToPhase4AI("current_user_id") },

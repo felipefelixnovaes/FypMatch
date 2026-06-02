@@ -1,30 +1,34 @@
 package com.ideiassertiva.FypMatch.data.repository
 
-import com.ideiassertiva.FypMatch.model.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import java.util.*
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.ideiassertivas.FypMatch.model.Affiliate
+import com.ideiassertivas.FypMatch.model.AffiliateStats
+import com.ideiassertivas.FypMatch.model.CommissionConfig
+import com.ideiassertivas.FypMatch.model.PayoutRequest
+import com.ideiassertivas.FypMatch.model.PayoutStatus
+import com.ideiassertivas.FypMatch.model.Referral
+import com.ideiassertivas.FypMatch.model.ReferralStatus
+import kotlinx.coroutines.tasks.await
+import java.util.Date
+import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.random.Random
 
 /**
  * Repository para o Sistema de Afiliados - Fase 6
- * Gerencia afiliados, referrals e comissões
+ * Gerencia afiliados, referrals e comissões com persistência real no Firestore
  */
-class AffiliateRepository {
-    
-    private val _affiliates = MutableStateFlow<List<Affiliate>>(emptyList())
-    val affiliates: Flow<List<Affiliate>> = _affiliates.asStateFlow()
-    
-    private val _currentAffiliate = MutableStateFlow<Affiliate?>(null)
-    val currentAffiliate: Flow<Affiliate?> = _currentAffiliate.asStateFlow()
-    
-    private val _referrals = MutableStateFlow<List<Referral>>(emptyList())
-    val referrals: Flow<List<Referral>> = _referrals.asStateFlow()
-    
-    private val _payoutRequests = MutableStateFlow<List<PayoutRequest>>(emptyList())
-    val payoutRequests: Flow<List<PayoutRequest>> = _payoutRequests.asStateFlow()
-    
+@Singleton
+class AffiliateRepository @Inject constructor(
+    private val firestore: FirebaseFirestore
+) {
+
+    private val affiliatesCollection = firestore.collection("affiliates")
+    private val referralsCollection = firestore.collection("referrals")
+    private val payoutsCollection = firestore.collection("payouts")
+
     /**
      * Registra um novo afiliado
      */
@@ -36,7 +40,7 @@ class AffiliateRepository {
     ): Result<Affiliate> {
         return try {
             val affiliateCode = generateAffiliateCode(name)
-            
+
             val newAffiliate = Affiliate(
                 id = UUID.randomUUID().toString(),
                 userId = userId,
@@ -47,18 +51,14 @@ class AffiliateRepository {
                 createdAt = Date(),
                 updatedAt = Date()
             )
-            
-            // Simular salvamento no Firebase
-            val currentList = _affiliates.value.toMutableList()
-            currentList.add(newAffiliate)
-            _affiliates.value = currentList
-            
+
+            affiliatesCollection.document(newAffiliate.id).set(newAffiliate).await()
             Result.success(newAffiliate)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
+
     /**
      * Gera código único do afiliado
      */
@@ -67,16 +67,52 @@ class AffiliateRepository {
         val randomSuffix = Random.nextInt(100, 999)
         return "FYP_${cleanName}_$randomSuffix"
     }
-    
+
+    /**
+     * Salva/atualiza um afiliado no Firestore
+     */
+    suspend fun saveAffiliate(affiliate: Affiliate): Result<Unit> {
+        return try {
+            affiliatesCollection.document(affiliate.id).set(affiliate).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Busca afiliado por ID
+     */
+    suspend fun getAffiliate(affiliateId: String): Affiliate? {
+        return try {
+            val doc = affiliatesCollection.document(affiliateId).get().await()
+            if (doc.exists()) doc.toObject(Affiliate::class.java)?.copy(id = doc.id) else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /**
      * Busca afiliado por código
      */
     suspend fun getAffiliateByCode(code: String): Affiliate? {
-        return _affiliates.value.find { it.code == code }
+        return try {
+            val snapshot = affiliatesCollection
+                .whereEqualTo("code", code)
+                .limit(1)
+                .get()
+                .await()
+            if (!snapshot.isEmpty) {
+                val doc = snapshot.documents[0]
+                doc.toObject(Affiliate::class.java)?.copy(id = doc.id)
+            } else null
+        } catch (e: Exception) {
+            null
+        }
     }
-    
+
     /**
-     * Registra um novo referral
+     * Registra um novo referral com persistência real
      */
     suspend fun registerReferral(
         affiliateCode: String,
@@ -88,9 +124,9 @@ class AffiliateRepository {
         return try {
             val affiliate = getAffiliateByCode(affiliateCode)
                 ?: return Result.failure(Exception("Código de afiliado não encontrado"))
-            
+
             val commission = calculateCommission(subscriptionType, subscriptionValue, affiliate.commission)
-            
+
             val referral = Referral(
                 id = UUID.randomUUID().toString(),
                 affiliateId = affiliate.id,
@@ -103,21 +139,26 @@ class AffiliateRepository {
                 status = ReferralStatus.PENDING,
                 createdAt = Date()
             )
-            
-            // Simular salvamento
-            val currentReferrals = _referrals.value.toMutableList()
-            currentReferrals.add(referral)
-            _referrals.value = currentReferrals
-            
-            // Atualizar stats do afiliado
-            updateAffiliateStats(affiliate.id, commission)
-            
+
+            referralsCollection.document(referral.id).set(referral).await()
+
+            // Atualizar stats do afiliado no Firestore
+            affiliatesCollection.document(affiliate.id).update(
+                mapOf(
+                    "stats.totalReferrals" to FieldValue.increment(1),
+                    "stats.pendingEarnings" to FieldValue.increment(commission),
+                    "stats.monthlyReferrals" to FieldValue.increment(1),
+                    "stats.monthlyEarnings" to FieldValue.increment(commission),
+                    "updatedAt" to Date()
+                )
+            ).await()
+
             Result.success(referral)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
+
     /**
      * Calcula comissão baseada no tipo de assinatura
      */
@@ -132,48 +173,23 @@ class AffiliateRepository {
             else -> 0.0
         }
     }
-    
-    /**
-     * Atualiza estatísticas do afiliado
-     */
-    private suspend fun updateAffiliateStats(affiliateId: String, newCommission: Double) {
-        val currentAffiliates = _affiliates.value.toMutableList()
-        val affiliateIndex = currentAffiliates.indexOfFirst { it.id == affiliateId }
-        
-        if (affiliateIndex != -1) {
-            val affiliate = currentAffiliates[affiliateIndex]
-            val updatedStats = affiliate.stats.copy(
-                totalReferrals = affiliate.stats.totalReferrals + 1,
-                pendingEarnings = affiliate.stats.pendingEarnings + newCommission,
-                monthlyReferrals = affiliate.stats.monthlyReferrals + 1,
-                monthlyEarnings = affiliate.stats.monthlyEarnings + newCommission
-            )
-            
-            currentAffiliates[affiliateIndex] = affiliate.copy(
-                stats = updatedStats,
-                updatedAt = Date()
-            )
-            
-            _affiliates.value = currentAffiliates
-        }
-    }
-    
+
     /**
      * Solicita saque de comissões
      */
     suspend fun requestPayout(affiliateId: String, amount: Double): Result<PayoutRequest> {
         return try {
-            val affiliate = _affiliates.value.find { it.id == affiliateId }
+            val affiliate = getAffiliate(affiliateId)
                 ?: return Result.failure(Exception("Afiliado não encontrado"))
-            
+
             if (amount < affiliate.commission.minimumPayout) {
                 return Result.failure(Exception("Valor mínimo para saque é R$ ${affiliate.commission.minimumPayout}"))
             }
-            
+
             if (amount > affiliate.stats.pendingEarnings) {
                 return Result.failure(Exception("Valor solicitado maior que o disponível"))
             }
-            
+
             val payoutRequest = PayoutRequest(
                 id = UUID.randomUUID().toString(),
                 affiliateId = affiliateId,
@@ -181,63 +197,48 @@ class AffiliateRepository {
                 status = PayoutStatus.PENDING,
                 requestedAt = Date()
             )
-            
-            val currentRequests = _payoutRequests.value.toMutableList()
-            currentRequests.add(payoutRequest)
-            _payoutRequests.value = currentRequests
-            
+
+            payoutsCollection.document(payoutRequest.id).set(payoutRequest).await()
             Result.success(payoutRequest)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
+
     /**
      * Obter estatísticas do dashboard
      */
     suspend fun getDashboardStats(affiliateId: String): AffiliateStats? {
-        return _affiliates.value.find { it.id == affiliateId }?.stats
+        return getAffiliate(affiliateId)?.stats
     }
-    
+
     /**
      * Confirma pagamento de um referral (para admin)
      */
     suspend fun confirmReferralPayment(referralId: String): Result<Boolean> {
         return try {
-            val currentReferrals = _referrals.value.toMutableList()
-            val referralIndex = currentReferrals.indexOfFirst { it.id == referralId }
-            
-            if (referralIndex != -1) {
-                val referral = currentReferrals[referralIndex]
-                currentReferrals[referralIndex] = referral.copy(
-                    status = ReferralStatus.CONFIRMED,
-                    paidAt = Date()
+            val doc = referralsCollection.document(referralId).get().await()
+            val referral = doc.toObject(Referral::class.java)
+                ?: return Result.failure(Exception("Referral não encontrado"))
+
+            referralsCollection.document(referralId).update(
+                mapOf(
+                    "status" to ReferralStatus.CONFIRMED.name,
+                    "paidAt" to Date()
                 )
-                _referrals.value = currentReferrals
-                
-                // Mover de pending para total earnings
-                moveEarningsFromPendingToTotal(referral.affiliateId, referral.commissionEarned)
-            }
-            
+            ).await()
+
+            // Mover de pendingEarnings para totalEarnings
+            affiliatesCollection.document(referral.affiliateId).update(
+                mapOf(
+                    "stats.pendingEarnings" to FieldValue.increment(-referral.commissionEarned),
+                    "stats.totalEarnings" to FieldValue.increment(referral.commissionEarned)
+                )
+            ).await()
+
             Result.success(true)
         } catch (e: Exception) {
             Result.failure(e)
-        }
-    }
-    
-    private suspend fun moveEarningsFromPendingToTotal(affiliateId: String, amount: Double) {
-        val currentAffiliates = _affiliates.value.toMutableList()
-        val affiliateIndex = currentAffiliates.indexOfFirst { it.id == affiliateId }
-        
-        if (affiliateIndex != -1) {
-            val affiliate = currentAffiliates[affiliateIndex]
-            val updatedStats = affiliate.stats.copy(
-                pendingEarnings = affiliate.stats.pendingEarnings - amount,
-                totalEarnings = affiliate.stats.totalEarnings + amount
-            )
-            
-            currentAffiliates[affiliateIndex] = affiliate.copy(stats = updatedStats)
-            _affiliates.value = currentAffiliates
         }
     }
 }

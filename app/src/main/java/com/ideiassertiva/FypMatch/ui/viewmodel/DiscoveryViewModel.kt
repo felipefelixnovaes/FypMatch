@@ -6,6 +6,7 @@ import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.data.repository.DiscoveryRepository
 import com.ideiassertiva.FypMatch.data.repository.ChatRepository
 import com.ideiassertiva.FypMatch.model.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,29 +20,35 @@ class DiscoveryViewModel @Inject constructor(
     private val chatRepository: ChatRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
-    
+
     private val _uiState = MutableStateFlow(DiscoveryUiState())
     val uiState: StateFlow<DiscoveryUiState> = _uiState.asStateFlow()
-    
+
     private val _currentCard = MutableStateFlow<DiscoveryCard?>(null)
     val currentCard: StateFlow<DiscoveryCard?> = _currentCard.asStateFlow()
-    
+
+    private val _boostActive = MutableStateFlow(false)
+    val boostActive: StateFlow<Boolean> = _boostActive.asStateFlow()
+
     private var currentUserId = ""
     private val currentUserSubscription = SubscriptionStatus.FREE
+
+    /** Stack dos últimos cards swipados para rewind */
+    private val swipeHistory = ArrayDeque<DiscoveryCard>()
 
     init {
         currentUserId = authRepository.getCurrentFirebaseUser()?.uid ?: ""
         loadNextCard()
     }
-    
+
     private fun loadNextCard() {
         val cards = discoveryRepository.getDiscoveryCards()
         _currentCard.value = cards.firstOrNull()
     }
-    
+
     fun performSwipe(swipeType: SwipeType) {
         val card = _currentCard.value ?: return
-        
+
         // Verificar limites baseados na assinatura
         when (swipeType) {
             SwipeType.LIKE -> {
@@ -66,9 +73,13 @@ class DiscoveryViewModel @Inject constructor(
                 // Passar não tem limites
             }
         }
-        
+
+        // Salvar card na história antes de avançar
+        swipeHistory.addFirst(card)
+        if (swipeHistory.size > 10) swipeHistory.removeLast()
+
         _uiState.value = _uiState.value.copy(isLoading = true)
-        
+
         viewModelScope.launch {
             try {
                 val result = discoveryRepository.performSwipe(
@@ -76,7 +87,7 @@ class DiscoveryViewModel @Inject constructor(
                     toUserId = card.user.id,
                     swipeType = swipeType
                 )
-                
+
                 result.onSuccess { swipeResult ->
                     if (swipeResult.isMatch) {
                         // Criar conversa automaticamente quando há match
@@ -84,7 +95,7 @@ class DiscoveryViewModel @Inject constructor(
                             match = swipeResult.match!!,
                             currentUserId = currentUserId
                         )
-                        
+
                         // Mostrar modal de match com opção de ir para chat
                         _uiState.value = _uiState.value.copy(
                             showMatchModal = true,
@@ -95,11 +106,11 @@ class DiscoveryViewModel @Inject constructor(
                     } else {
                         _uiState.value = _uiState.value.copy(isLoading = false)
                     }
-                    
+
                     // Carregar próximo card
                     loadNextCard()
                 }
-                
+
                 result.onFailure { exception ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -114,7 +125,24 @@ class DiscoveryViewModel @Inject constructor(
             }
         }
     }
-    
+
+    /** Desfaz o último swipe, reinserindo o card no topo */
+    fun rewindLastSwipe() {
+        val lastCard = swipeHistory.removeFirstOrNull() ?: return
+        _currentCard.value = lastCard
+        _uiState.value = _uiState.value.copy(rewindUsed = true)
+    }
+
+    /** Ativa o boost por 30 minutos */
+    fun activateBoost() {
+        if (_boostActive.value) return
+        viewModelScope.launch {
+            _boostActive.value = true
+            delay(30 * 60 * 1000L) // 30 minutos
+            _boostActive.value = false
+        }
+    }
+
     fun dismissMatchModal() {
         _uiState.value = _uiState.value.copy(
             showMatchModal = false,
@@ -122,21 +150,21 @@ class DiscoveryViewModel @Inject constructor(
             conversationId = null
         )
     }
-    
+
     fun dismissLimitModal() {
         _uiState.value = _uiState.value.copy(
             showLimitModal = false,
             limitType = ""
         )
     }
-    
+
     fun refreshCards() {
         _uiState.value = _uiState.value.copy(isLoading = true)
-        
+
         viewModelScope.launch {
             try {
                 // Simular reload (no app real, faria nova busca no servidor)
-                kotlinx.coroutines.delay(1000)
+                delay(1000)
                 loadNextCard()
                 _uiState.value = _uiState.value.copy(isLoading = false)
             } catch (e: Exception) {
@@ -147,7 +175,7 @@ class DiscoveryViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -160,5 +188,6 @@ data class DiscoveryUiState(
     val showLimitModal: Boolean = false,
     val lastMatch: Match? = null,
     val conversationId: String? = null,
-    val limitType: String = ""
-) 
+    val limitType: String = "",
+    val rewindUsed: Boolean = false
+)

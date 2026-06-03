@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.FiltersViewModel
@@ -32,7 +32,7 @@ fun AdvancedFiltersScreen(
     onNavigateBack: () -> Unit = {},
     onUpgradeToPremium: () -> Unit = {},
     currentSubscription: SubscriptionStatus = SubscriptionStatus.FREE,
-    viewModel: FiltersViewModel = viewModel()
+    viewModel: FiltersViewModel = hiltViewModel()
 ) {
     val filters by viewModel.filters.collectAsState()
     val appliedFiltersCount by viewModel.appliedFiltersCount.collectAsState()

@@ -25,7 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
@@ -42,7 +42,7 @@ import java.util.*
 fun MatchesScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToChat: (String) -> Unit = {},
-    viewModel: MatchesViewModel = viewModel()
+    viewModel: MatchesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

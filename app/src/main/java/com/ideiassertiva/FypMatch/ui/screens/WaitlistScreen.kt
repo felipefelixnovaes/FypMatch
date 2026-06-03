@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.WaitlistScreen
@@ -29,7 +29,7 @@ import com.ideiassertiva.FypMatch.ui.viewmodel.WaitlistViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WaitlistScreen(
-    viewModel: WaitlistViewModel = viewModel(),
+    viewModel: WaitlistViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

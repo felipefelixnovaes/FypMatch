@@ -174,23 +174,41 @@ private fun DiscoveryTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Botão de perfil do usuário
-        IconButton(
-            onClick = onProfileClick,
-            modifier = Modifier
-                .size(40.dp)
-                .background(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    CircleShape
+        // Botões de perfil e configurações
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(
+                onClick = onProfileClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Meu Perfil",
+                    tint = MaterialTheme.colorScheme.primary
                 )
-        ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Meu Perfil",
-                tint = MaterialTheme.colorScheme.primary
-            )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Menu e Configurações",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
-        
+
         // Título e botão do conselheiro
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(

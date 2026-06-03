@@ -91,7 +91,7 @@ fun FypMatchNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = Screen.AccessCode.route
+        startDestination = Screen.Welcome.route
     ) {
         composable(Screen.Welcome.route) {
             WelcomeScreen(
@@ -165,6 +165,9 @@ fun FypMatchNavigation(
                 },
                 onNavigateToPhase3Demo = {
                     navController.navigate(Screen.Phase3Demo.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
                 }
             )
         }
@@ -278,7 +281,10 @@ fun FypMatchNavigation(
                     navController.popBackStack()
                 },
                 onNavigateToHome = {
-                    navController.navigate(Screen.AICounselor.createRoute("mock_user_id"))
+                    // Após resgatar o código, vai para a tela principal (Discovery)
+                    navController.navigate(Screen.Discovery.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -319,12 +325,36 @@ fun FypMatchNavigation(
 
         // ─── Configurações de conta ───────────────────────────────────────
         composable(Screen.Settings.route) {
+            val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: PLACEHOLDER_USER_ID
             SettingsScreen(
                 onNavigateToPremium = {
                     navController.navigate(Screen.Premium.route)
                 },
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onNavigateToSelfKnowledge = {
+                    navController.navigate(Screen.SelfKnowledge.createRoute(uid))
+                },
+                onNavigateToQuickMode = {
+                    navController.navigate(Screen.QuickMode.createRoute(uid))
+                },
+                onNavigateToDeepMode = {
+                    navController.navigate(Screen.DeepMode.createRoute(uid))
+                },
+                onNavigateToAffiliate = {
+                    navController.navigate(Screen.Affiliate.route)
+                },
+                onNavigateToAds = {
+                    navController.navigate(Screen.Ads.createRoute(uid))
+                },
+                onNavigateToNeuroProfile = {
+                    navController.navigate(Screen.NeuroProfile.route)
                 }
             )
         }

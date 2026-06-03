@@ -35,6 +35,12 @@ fun SettingsScreen(
     onNavigateToPremium: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToLogin: () -> Unit = {},
+    onNavigateToSelfKnowledge: () -> Unit = {},
+    onNavigateToQuickMode: () -> Unit = {},
+    onNavigateToDeepMode: () -> Unit = {},
+    onNavigateToAffiliate: () -> Unit = {},
+    onNavigateToAds: () -> Unit = {},
+    onNavigateToNeuroProfile: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
@@ -229,6 +235,76 @@ fun SettingsScreen(
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = FypColors.Primary)
                     }
                 }
+            }
+
+            item { Divider(modifier = Modifier.padding(vertical = 8.dp)) }
+
+            // ═══════════════════════════════════════════════════════════════
+            // SEÇÃO: DESCOBERTAS & AUTOCONHECIMENTO
+            // ═══════════════════════════════════════════════════════════════
+            item { SectionHeader(title = "Descobertas & Autoconhecimento") }
+
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Psychology,
+                    title = "Autoconhecimento",
+                    subtitle = "Eneagrama, Linguagens do Amor e Arquétipos",
+                    tint = FypColors.Secondary,
+                    onClick = onNavigateToSelfKnowledge
+                )
+            }
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Bolt,
+                    title = "Questionário rápido",
+                    subtitle = "Descubra sua compatibilidade em minutos",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToQuickMode
+                )
+            }
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Insights,
+                    title = "Questionário profundo",
+                    subtitle = "Análise detalhada de personalidade e valores",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToDeepMode
+                )
+            }
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Favorite,
+                    title = "Perfil de neurodiversidade",
+                    subtitle = "Personalize sua experiência",
+                    tint = FypColors.Secondary,
+                    onClick = onNavigateToNeuroProfile
+                )
+            }
+
+            item { Divider(modifier = Modifier.padding(vertical = 8.dp)) }
+
+            // ═══════════════════════════════════════════════════════════════
+            // SEÇÃO: CRÉDITOS & AFILIADOS
+            // ═══════════════════════════════════════════════════════════════
+            item { SectionHeader(title = "Créditos & Afiliados") }
+
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.PlayCircle,
+                    title = "Ganhar créditos IA",
+                    subtitle = "Assista anúncios e ganhe créditos",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToAds
+                )
+            }
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Group,
+                    title = "Programa de afiliados",
+                    subtitle = "Indique amigos e ganhe comissões",
+                    tint = FypColors.Secondary,
+                    onClick = onNavigateToAffiliate
+                )
             }
 
             item { Divider(modifier = Modifier.padding(vertical = 8.dp)) }
@@ -484,6 +560,40 @@ fun SettingsScreen(
             }
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun SettingsNavRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    tint: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = null, tint = tint)
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
     }
 }

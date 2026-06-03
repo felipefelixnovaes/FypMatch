@@ -12,6 +12,9 @@ import com.ideiassertiva.FypMatch.model.SwipeType
 import com.ideiassertiva.FypMatch.ui.screens.*
 import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryViewModel
 
+/** Placeholder de userId — substituir por auth state real (FirebaseAuth.currentUser.uid) */
+private const val PLACEHOLDER_USER_ID = "placeholder_user"
+
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Waitlist : Screen("waitlist")
@@ -88,7 +91,7 @@ fun FypMatchNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Welcome.route
+        startDestination = Screen.AccessCode.route
     ) {
         composable(Screen.Welcome.route) {
             WelcomeScreen(
@@ -189,7 +192,7 @@ fun FypMatchNavigation(
 
         composable(Screen.Conversations.route) {
             ConversationsScreen(
-                currentUserId = "current_user_123", // Em um app real, viria da autenticação
+                currentUserId = PLACEHOLDER_USER_ID, // Em um app real, viria da autenticação
                 onConversationClick = { conversationId ->
                     navController.navigate(Screen.EnhancedChat.createRoute(conversationId, true))
                 },
@@ -203,7 +206,7 @@ fun FypMatchNavigation(
             val conversationId = backStackEntry.arguments?.getString("conversationId") ?: ""
             ChatScreen(
                 conversationId = conversationId,
-                currentUserId = "current_user_123", // Em um app real, viria da autenticação
+                currentUserId = PLACEHOLDER_USER_ID, // Em um app real, viria da autenticação
                 onBackClick = {
                     navController.popBackStack()
                 }
@@ -215,7 +218,7 @@ fun FypMatchNavigation(
             val useFirebase = backStackEntry.arguments?.getString("useFirebase")?.toBooleanStrictOrNull() ?: true
             EnhancedChatScreen(
                 conversationId = conversationId,
-                currentUserId = "current_user_123", // Em um app real, viria da autenticação
+                currentUserId = PLACEHOLDER_USER_ID, // Em um app real, viria da autenticação
                 useFirebase = useFirebase,
                 onBackClick = {
                     navController.popBackStack()
@@ -275,9 +278,7 @@ fun FypMatchNavigation(
                     navController.popBackStack()
                 },
                 onNavigateToHome = {
-                    navController.navigate(Screen.Discovery.route) {
-                        popUpTo(Screen.Welcome.route) { inclusive = true }
-                    }
+                    navController.navigate(Screen.AICounselor.createRoute("mock_user_id"))
                 }
             )
         }

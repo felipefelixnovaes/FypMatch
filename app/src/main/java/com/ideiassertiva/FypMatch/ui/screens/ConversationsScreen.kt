@@ -25,7 +25,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.ConversationsViewModel
+import com.ideiassertiva.FypMatch.ui.components.EmptyState
+import com.ideiassertiva.FypMatch.ui.components.SkeletonListLoading
 import com.ideiassertiva.FypMatch.ui.viewmodel.ConversationsUiState
 import java.time.format.DateTimeFormatter
 
@@ -55,7 +58,7 @@ fun ConversationsScreen(
                 title = {
                     Text(
                         text = "Conversas",
-                        MaterialTheme.typography.headlineSmall.fontSize,
+                        fontSize = MaterialTheme.typography.headlineSmall.fontSize,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -63,16 +66,17 @@ fun ConversationsScreen(
             
             when (uiState) {
                 is ConversationsUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    SkeletonListLoading(count = 5)
                 }
 
                 is ConversationsUiState.Empty -> {
-                    EmptyConversationsState()
+                    EmptyState(
+                        icon = Icons.Default.Favorite,
+                        title = "Nenhuma conversa ainda",
+                        description = "Quando você der match com alguém,\nsuas conversas aparecerão aqui",
+                        actionLabel = "Explorar perfis",
+                        onAction = onNavigateToPhase3Demo
+                    )
                 }
 
                 is ConversationsUiState.Error -> {
@@ -185,7 +189,7 @@ fun ConversationItem(
                 ) {
                     Text(
                         text = otherUser?.profile?.fullName ?: "Usuário",
-                        MaterialTheme.typography.bodyLarge.fontSize,
+                        fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -193,7 +197,7 @@ fun ConversationItem(
                     conversation.lastMessageAt?.let { timestamp ->
                         Text(
                             text = formatTimestamp(timestamp),
-                            MaterialTheme.typography.bodySmall.fontSize,
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
@@ -208,7 +212,7 @@ fun ConversationItem(
                 ) {
                     Text(
                         text = getLastMessagePreview(conversation.lastMessage, currentUserId),
-                        MaterialTheme.typography.bodyMedium.fontSize,
+                        fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                         color = MaterialTheme.colorScheme.onSurface.copy(
                             alpha = if (unreadCount > 0) 1f else 0.7f
                         ),
@@ -223,7 +227,7 @@ fun ConversationItem(
                             Text(
                                 text = if (unreadCount > 9) "9+" else unreadCount.toString(),
                                 color = Color.White,
-                                MaterialTheme.typography.labelSmall.fontSize
+                                fontSize = MaterialTheme.typography.labelSmall.fontSize
                             )
                         }
                     }
@@ -233,53 +237,10 @@ fun ConversationItem(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = lastSeen,
-                        MaterialTheme.typography.bodySmall.fontSize,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun EmptyConversationsState(onExploreProfiles: (() -> Unit)? = null) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            Icons.Default.Favorite,
-            contentDescription = "Sem conversas",
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Nenhuma conversa ainda",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Quando você der match com alguém,\nsuas conversas aparecerão aqui",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-            textAlign = TextAlign.Center
-        )
-
-        if (onExploreProfiles != null) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = onExploreProfiles) {
-                Text("Explorar perfis")
             }
         }
     }

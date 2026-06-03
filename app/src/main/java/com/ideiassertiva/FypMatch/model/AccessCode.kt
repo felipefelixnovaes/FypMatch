@@ -43,6 +43,7 @@ object PreGeneratedCodes {
     )
     
     val VIP_CODES = listOf(
+        AccessCode("FYPMATCH-ADMIN-VIP", AccessCodeType.VIP, description = "Código Admin VIP"),
         AccessCode("MATCH-VIP-2024-U1V2", AccessCodeType.VIP, description = "Código VIP #1"),
         AccessCode("MATCH-VIP-2024-W3X4", AccessCodeType.VIP, description = "Código VIP #2"),
         AccessCode("MATCH-VIP-2024-Y5Z6", AccessCodeType.VIP, description = "Código VIP #3"),

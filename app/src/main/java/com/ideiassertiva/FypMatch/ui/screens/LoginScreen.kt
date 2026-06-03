@@ -4,11 +4,17 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -54,7 +60,11 @@ fun LoginScreen(
     }
     
     // Navegar automaticamente se usuário já estiver logado
-    LaunchedEffect(currentUser) {
+    LaunchedEffect(currentUser, uiState.isSignedIn) {
+        if (uiState.isSignedIn) {
+            onNavigateToDiscovery()
+            return@LaunchedEffect
+        }
         currentUser?.let { user ->
             if (user.isProfileComplete()) {
                 onNavigateToDiscovery()
@@ -72,22 +82,33 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Logo e título
+        // Logo e título (Clickable for Mock Login in Emulator)
         Icon(
             imageVector = Icons.Default.Favorite,
             contentDescription = null,
-            modifier = Modifier.size(80.dp),
+            modifier = Modifier
+                .size(80.dp)
+                .clickable { viewModel.signInMock() },
             tint = MaterialTheme.colorScheme.primary
         )
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Text(
-            text = "💕 FypMatch",
-            style = MaterialTheme.typography.displayMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "FypMatch",
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
         
         Spacer(modifier = Modifier.height(8.dp))
         
@@ -110,19 +131,19 @@ fun LoginScreen(
             Column(
                 modifier = Modifier.padding(20.dp)
             ) {
-                Text(
-                    text = "✨ Por que escolher o FypMatch?",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Por que escolher o FypMatch?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                }
+
                 Spacer(modifier = Modifier.height(12.dp))
-                
-                Text("🤖 IA para compatibilidade real")
-                Text("🌈 Assistente para neurodiversidade")
-                Text("🏆 Sistema de verificação inclusivo")
-                Text("💕 Relacionamentos autênticos")
-                Text("🔒 Privacidade e segurança")
+
+                BenefitRow(Icons.Default.SmartToy, "IA para compatibilidade real")
+                BenefitRow(Icons.Default.WbSunny, "Assistente para neurodiversidade")
+                BenefitRow(Icons.Default.EmojiEvents, "Sistema de verificação inclusivo")
+                BenefitRow(Icons.Default.Favorite, "Relacionamentos autênticos")
+                BenefitRow(Icons.Default.Lock, "Privacidade e segurança")
             }
         }
         
@@ -189,6 +210,15 @@ fun LoginScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun BenefitRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+    Row(modifier = Modifier.padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(8.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

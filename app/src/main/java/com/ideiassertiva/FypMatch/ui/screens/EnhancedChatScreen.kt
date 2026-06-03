@@ -29,6 +29,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.EmptyState
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.EnhancedChatViewModel
 import com.ideiassertiva.FypMatch.ui.viewmodel.ConnectionState
 import kotlinx.coroutines.launch
@@ -73,7 +75,7 @@ fun EnhancedChatScreen(
                 Column {
                     Text(
                         text = uiState.otherUser?.profile?.fullName ?: "Chat",
-                        fontSize = 16.sp,
+                        fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -90,15 +92,15 @@ fun EnhancedChatScreen(
                             uiState.isOtherUserTyping -> {
                                 Text(
                                     "digitando...",
-                                    fontSize = 12.sp,
+                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
                             uiState.isOtherUserOnline -> {
                                 Text(
                                     "online",
-                                    fontSize = 12.sp,
-                                    color = Color(0xFF4CAF50)
+                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                    color = MaterialTheme.colorScheme.tertiary
                                 )
                             }
                             else -> {
@@ -106,7 +108,7 @@ fun EnhancedChatScreen(
                                 if (!lastSeen.isNullOrBlank()) {
                                     Text(
                                         lastSeen,
-                                        fontSize = 12.sp,
+                                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )
                                 }
@@ -119,9 +121,9 @@ fun EnhancedChatScreen(
                                 Icons.Filled.Cloud,
                                 contentDescription = "Firebase",
                                 tint = when (uiState.connectionState) {
-                                    ConnectionState.CONNECTED -> Color(0xFF4CAF50)
+                                    ConnectionState.CONNECTED -> MaterialTheme.colorScheme.tertiary
                                     ConnectionState.CONNECTING -> MaterialTheme.colorScheme.primary
-                                    ConnectionState.ERROR -> Color(0xFFFF5722)
+                                    ConnectionState.ERROR -> MaterialTheme.colorScheme.error
                                     ConnectionState.DISCONNECTED -> MaterialTheme.colorScheme.onSurface.copy(0.4f)
                                 },
                                 modifier = Modifier.size(14.dp)
@@ -246,9 +248,9 @@ fun EnhancedChatScreen(
 @Composable
 fun ConnectionStatusIndicator(connectionState: ConnectionState) {
     val color = when (connectionState) {
-        ConnectionState.CONNECTED -> Color(0xFF4CAF50)
+        ConnectionState.CONNECTED -> FypColors.Success
         ConnectionState.CONNECTING -> MaterialTheme.colorScheme.primary
-        ConnectionState.ERROR -> Color(0xFFFF5722)
+        ConnectionState.ERROR -> FypColors.Tertiary
         ConnectionState.DISCONNECTED -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
     }
     
@@ -269,7 +271,7 @@ fun ErrorMessage(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -278,7 +280,7 @@ fun ErrorMessage(
             Icon(
                 Icons.Filled.Error,
                 contentDescription = null,
-                tint = Color(0xFFE57373)
+                tint = MaterialTheme.colorScheme.error
             )
             
             Spacer(modifier = Modifier.width(12.dp))
@@ -392,7 +394,7 @@ fun EnhancedMessageBubble(
                                     Icons.Filled.DoneAll,
                                     contentDescription = "Lido",
                                     modifier = Modifier.size(12.dp),
-                                    tint = Color(0xFF4CAF50)
+                                    tint = FypColors.Success
                                 )
                             }
                         }
@@ -417,7 +419,7 @@ fun EnhancedMessageBubble(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(emoji.toString(), fontSize = 14.sp)
+                            Text(emoji.toString(), fontSize = MaterialTheme.typography.bodyMedium.fontSize)
                             if (reactions.size > 1) {
                                 Text(
                                     text = reactions.size.toString(),
@@ -494,7 +496,7 @@ fun EnhancedMessageInput(
                 modifier = Modifier.fillMaxWidth(),
                 color = when (connectionState) {
                     ConnectionState.CONNECTING -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                    ConnectionState.ERROR -> Color(0xFFFFEBEE)
+                    ConnectionState.ERROR -> FypColors.ErrorContainer
                     else -> MaterialTheme.colorScheme.surfaceVariant
                 }
             ) {
@@ -512,7 +514,7 @@ fun EnhancedMessageInput(
                         textAlign = TextAlign.Center,
                         color = when (connectionState) {
                             ConnectionState.CONNECTING -> MaterialTheme.colorScheme.primary
-                            ConnectionState.ERROR -> Color(0xFFD32F2F)
+                            ConnectionState.ERROR -> MaterialTheme.colorScheme.error
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )
@@ -603,7 +605,7 @@ fun EnhancedMessageInput(
                 Icon(
                     Icons.Filled.Send,
                     contentDescription = "Enviar",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }

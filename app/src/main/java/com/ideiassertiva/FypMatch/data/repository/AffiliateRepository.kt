@@ -2,13 +2,13 @@ package com.ideiassertiva.FypMatch.data.repository
 
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.ideiassertivas.FypMatch.model.Affiliate
-import com.ideiassertivas.FypMatch.model.AffiliateStats
-import com.ideiassertivas.FypMatch.model.CommissionConfig
-import com.ideiassertivas.FypMatch.model.PayoutRequest
-import com.ideiassertivas.FypMatch.model.PayoutStatus
-import com.ideiassertivas.FypMatch.model.Referral
-import com.ideiassertivas.FypMatch.model.ReferralStatus
+import com.ideiassertiva.FypMatch.model.Affiliate
+import com.ideiassertiva.FypMatch.model.AffiliateStats
+import com.ideiassertiva.FypMatch.model.CommissionConfig
+import com.ideiassertiva.FypMatch.model.PayoutRequest
+import com.ideiassertiva.FypMatch.model.PayoutStatus
+import com.ideiassertiva.FypMatch.model.Referral
+import com.ideiassertiva.FypMatch.model.ReferralStatus
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import java.util.UUID

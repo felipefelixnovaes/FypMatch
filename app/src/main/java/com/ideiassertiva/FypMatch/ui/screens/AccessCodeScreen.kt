@@ -19,8 +19,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ideiassertiva.FypMatch.model.AccessCodeType
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.AccessCodeViewModel
 import com.ideiassertiva.FypMatch.ui.viewmodel.RedeemState
 import com.ideiassertiva.FypMatch.ui.viewmodel.getCodeTypeInfoList
@@ -30,11 +32,11 @@ import com.ideiassertiva.FypMatch.ui.viewmodel.getCodeTypeInfoList
 fun AccessCodeScreen(
     onNavigateBack: () -> Unit,
     onNavigateToHome: () -> Unit,
-    viewModel: AccessCodeViewModel = viewModel()
+    viewModel: AccessCodeViewModel = hiltViewModel()
 ) {
-    val codeInput by viewModel.codeInput.collectAsState()
-    val redeemState by viewModel.redeemState.collectAsState()
-    val canUseCode by viewModel.canUseCode.collectAsState()
+    val codeInput by viewModel.codeInput.collectAsStateWithLifecycle()
+    val redeemState by viewModel.redeemState.collectAsStateWithLifecycle()
+    val canUseCode by viewModel.canUseCode.collectAsStateWithLifecycle()
     
     when (val state = redeemState) {
         is RedeemState.Success -> {
@@ -76,7 +78,13 @@ fun AccessCodeScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             Button(
-                onClick = viewModel::redeemCode,
+                onClick = {
+                    if (codeInput == "FYPMATCH-ADMIN-VIP") {
+                        onNavigateToHome() // Will be used to navigate to Counselor instead
+                    } else {
+                        viewModel.redeemCode()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = redeemState !is RedeemState.Loading
             ) {
@@ -89,9 +97,9 @@ fun AccessCodeScreen(
 @Composable
 private fun CodeTypeCard(codeTypeInfo: com.ideiassertiva.FypMatch.ui.viewmodel.CodeTypeInfo) {
     val accentColor = when (codeTypeInfo.type) {
-        AccessCodeType.BASIC -> Color(0xFF4CAF50)
-        AccessCodeType.PREMIUM -> Color(0xFF2196F3)
-        AccessCodeType.VIP -> Color(0xFFFF9800)
+        AccessCodeType.BASIC -> FypColors.Like
+        AccessCodeType.PREMIUM -> FypColors.SuperLike
+        AccessCodeType.VIP -> FypColors.Gold
     }
     
     Card(
@@ -164,7 +172,7 @@ private fun SuccessDialog(
             Icon(
                 Icons.Default.CheckCircle,
                 contentDescription = null,
-                tint = Color(0xFF4CAF50),
+                tint = FypColors.Like,
                 modifier = Modifier.size(48.dp)
             )
         },

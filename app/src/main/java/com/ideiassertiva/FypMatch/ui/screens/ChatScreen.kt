@@ -211,13 +211,13 @@ fun ChatHeader(
                 Column {
                     Text(
                         text = otherUser?.profile?.fullName ?: "Usuário",
-                        MaterialTheme.typography.bodyLarge.fontSize,
+                        fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (isOnline) "Online" else lastSeen,
-                        MaterialTheme.typography.bodySmall.fontSize,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
@@ -301,7 +301,7 @@ fun MessageItem(
                                 Text(
                                     text = message.content,
                                     color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    MaterialTheme.typography.bodyMedium.fontSize
+                                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
                                 )
                             }
                             MessageType.LOCATION -> {
@@ -314,7 +314,7 @@ fun MessageItem(
                                     Text(
                                         text = message.content,
                                         color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        MaterialTheme.typography.bodySmall.fontSize
+                                        fontSize = MaterialTheme.typography.bodySmall.fontSize
                                     )
                                 }
                             }
@@ -329,7 +329,7 @@ fun MessageItem(
                                     Text(
                                         text = "GIF",
                                         color = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        MaterialTheme.typography.bodySmall.fontSize
+                                        fontSize = MaterialTheme.typography.bodySmall.fontSize
                                     )
                                 }
                             }
@@ -337,7 +337,7 @@ fun MessageItem(
                                 Text(
                                     text = message.content,
                                     color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    MaterialTheme.typography.bodyMedium.fontSize
+                                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
                                 )
                             }
                         }
@@ -350,7 +350,7 @@ fun MessageItem(
                         ) {
                             Text(
                                 text = message.timestamp.format(DateTimeFormatter.ofPattern("HH:mm")),
-                                MaterialTheme.typography.labelSmall.fontSize,
+                                fontSize = MaterialTheme.typography.labelSmall.fontSize,
                                 color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) 
                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
@@ -358,7 +358,7 @@ fun MessageItem(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = getStatusIcon(message.status),
-                                    MaterialTheme.typography.labelSmall.fontSize,
+                                    fontSize = MaterialTheme.typography.labelSmall.fontSize,
                                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                                 )
                             }
@@ -381,7 +381,7 @@ fun MessageItem(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             "IA",
-                            MaterialTheme.typography.bodySmall.fontSize,
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -423,7 +423,7 @@ fun MessageItem(
                                 shadowElevation = 2.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(text = emoji, MaterialTheme.typography.bodyLarge.fontSize)
+                                    Text(text = emoji, fontSize = MaterialTheme.typography.bodyLarge.fontSize)
                                 }
                             }
                         }
@@ -508,13 +508,13 @@ fun AISuggestionsCard(
                     Column {
                         Text(
                             suggestion.text,
-                            MaterialTheme.typography.bodyMedium.fontSize,
+                            fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                             textAlign = TextAlign.Start,
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
                             suggestion.reason,
-                            MaterialTheme.typography.bodySmall.fontSize,
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                             textAlign = TextAlign.Start,
                             modifier = Modifier.fillMaxWidth()
@@ -554,12 +554,12 @@ fun AIAnalysisModal(
                     Text(
                         "Mensagem:",
                         fontWeight = FontWeight.Bold,
-                        MaterialTheme.typography.bodyMedium.fontSize
+                        fontSize = MaterialTheme.typography.bodyMedium.fontSize
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         message.content,
-                        MaterialTheme.typography.bodyMedium.fontSize,
+                        fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
@@ -584,13 +584,13 @@ fun AIAnalysisModal(
                             Text(
                                 item.category,
                                 fontWeight = FontWeight.Bold,
-                                MaterialTheme.typography.bodySmall.fontSize,
+                                fontSize = MaterialTheme.typography.bodySmall.fontSize,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 item.analysis,
-                                MaterialTheme.typography.bodyMedium.fontSize
+                                fontSize = MaterialTheme.typography.bodyMedium.fontSize
                             )
                         }
                     }
@@ -621,12 +621,12 @@ fun ReactionChip(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = emoji, MaterialTheme.typography.bodySmall.fontSize)
+            Text(text = emoji, fontSize = MaterialTheme.typography.bodySmall.fontSize)
             if (count > 1) {
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = count.toString(),
-                    MaterialTheme.typography.labelSmall.fontSize,
+                    fontSize = MaterialTheme.typography.labelSmall.fontSize,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -820,7 +820,7 @@ private fun AttachmentOption(
         
         Text(
             text = text,
-            MaterialTheme.typography.bodySmall.fontSize,
+            fontSize = MaterialTheme.typography.bodySmall.fontSize,
             color = MaterialTheme.colorScheme.onSurface
         )
     }

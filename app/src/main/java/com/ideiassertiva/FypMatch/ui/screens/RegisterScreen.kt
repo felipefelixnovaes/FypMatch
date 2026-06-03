@@ -23,8 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
 import com.ideiassertiva.FypMatch.ui.components.FypTextField
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.RegisterViewModel
 
 /** Opções de gênero disponíveis no cadastro */
@@ -102,7 +101,7 @@ fun RegisterScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        Brush.horizontalGradient(listOf(MatchPink40, MatchPurple40))
+                        Brush.horizontalGradient(listOf(FypColors.Primary, FypColors.Secondary))
                     )
                     .padding(vertical = 40.dp),
                 contentAlignment = Alignment.Center
@@ -206,8 +205,8 @@ fun RegisterScreen(
                             valueRange = 18f..60f,
                             steps = 41,
                             colors = SliderDefaults.colors(
-                                thumbColor = MatchPink40,
-                                activeTrackColor = MatchPink40
+                                thumbColor = FypColors.Primary,
+                                activeTrackColor = FypColors.Primary
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -238,7 +237,7 @@ fun RegisterScreen(
                                     onClick = { generoSelecionado = opcao },
                                     label = { Text(opcao, style = MaterialTheme.typography.labelMedium) },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MatchPink40,
+                                        selectedContainerColor = FypColors.Primary,
                                         selectedLabelColor = Color.White
                                     ),
                                     modifier = Modifier.weight(1f)
@@ -256,7 +255,7 @@ fun RegisterScreen(
                                     onClick = { generoSelecionado = opcao },
                                     label = { Text(opcao, style = MaterialTheme.typography.labelMedium) },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MatchPink40,
+                                        selectedContainerColor = FypColors.Primary,
                                         selectedLabelColor = Color.White
                                     ),
                                     modifier = Modifier.weight(1f)
@@ -308,7 +307,7 @@ fun RegisterScreen(
                 )
                 Text(
                     text = "Fazer login",
-                    color = MatchPink40,
+                    color = FypColors.Primary,
                     fontWeight = FontWeight.SemiBold
                 )
             }

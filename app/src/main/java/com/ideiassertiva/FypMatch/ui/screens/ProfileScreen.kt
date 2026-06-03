@@ -118,7 +118,7 @@ fun ProfileScreen(
                 value = selectedGender.getDisplayName(),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Genero") },
+                label = { Text("Gênero") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showGenderDropdown) },
                 modifier = Modifier.fillMaxWidth().menuAnchor()
             )
@@ -145,7 +145,7 @@ fun ProfileScreen(
                 value = selectedOrientation.getDisplayName(),
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Orientacao Sexual") },
+                label = { Text("Orientação Sexual") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showOrientationDropdown) },
                 modifier = Modifier.fillMaxWidth().menuAnchor()
             )

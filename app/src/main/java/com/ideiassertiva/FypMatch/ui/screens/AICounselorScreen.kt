@@ -1,6 +1,5 @@
 package com.ideiassertiva.FypMatch.ui.screens
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -30,8 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.AICounselorViewModel
+import com.ideiassertiva.FypMatch.ui.viewmodel.AICounselorUiState
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,9 +46,6 @@ fun AICounselorScreen(
     val currentSession by viewModel.currentSession.collectAsState(initial = null)
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
 
-    val listState = rememberLazyListState()
-    val keyboardController = LocalSoftwareKeyboardController.current
-
     // Iniciar sessão quando a tela carrega — subscription obtida do UserRepository no ViewModel
     LaunchedEffect(userId) {
         if (userId.isNotBlank() && !uiState.hasActiveSession) {
@@ -55,23 +53,53 @@ fun AICounselorScreen(
         }
     }
 
+    AICounselorContent(
+        uiState = uiState,
+        currentSession = currentSession,
+        isLoading = isLoading,
+        userCredits = viewModel.getUserCredits().current,
+        canWatchAd = viewModel.canWatchAd(),
+        onNavigateBack = onNavigateBack,
+        onUpdateMessage = { viewModel.updateCurrentMessage(it) },
+        onSendMessage = { viewModel.sendMessage(it) },
+        onWatchAd = { viewModel.watchAdForCredits() },
+        onDismissAdModal = { viewModel.dismissAdRewardModal() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AICounselorContent(
+    uiState: AICounselorUiState,
+    currentSession: CounselorSession?,
+    isLoading: Boolean,
+    userCredits: Int,
+    canWatchAd: Boolean,
+    onNavigateBack: () -> Unit,
+    onUpdateMessage: (String) -> Unit,
+    onSendMessage: (String) -> Unit,
+    onWatchAd: () -> Unit,
+    onDismissAdModal: () -> Unit
+) {
+    val listState = rememberLazyListState()
+
     // Modal de anúncio recompensa
     if (uiState.showAdRewardModal) {
         AdRewardModal(
             earnedCredits = uiState.lastEarnedCredits,
-            onDismiss = { viewModel.dismissAdRewardModal() }
+            onDismiss = onDismissAdModal
         )
     }
 
     // Auto-scroll para a última mensagem
-                LaunchedEffect(currentSession?.messages?.size) {
-                currentSession?.let { session ->
-                    if (session.messages.isNotEmpty()) {
-                        delay(100)
-                        listState.animateScrollToItem(session.messages.size - 1)
-                    }
-                }
+    LaunchedEffect(currentSession?.messages?.size) {
+        currentSession?.let { session ->
+            if (session.messages.isNotEmpty()) {
+                delay(100)
+                listState.animateScrollToItem(session.messages.size - 1)
             }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -88,13 +116,9 @@ fun AICounselorScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             CreditsDisplay(
-                                credits = viewModel.getUserCredits().current,
-                                onWatchAd = {
-                                    if (viewModel.canWatchAd()) {
-                                        viewModel.watchAdForCredits()
-                                    }
-                                },
-                                canWatchAd = viewModel.canWatchAd()
+                                credits = userCredits,
+                                onWatchAd = onWatchAd,
+                                canWatchAd = canWatchAd
                             )
                         }
                     }
@@ -131,16 +155,12 @@ fun AICounselorScreen(
 
             MessageInput(
                 message = uiState.currentMessage,
-                onMessageChange = viewModel::updateCurrentMessage,
-                onSend = viewModel::sendMessage,
-                enabled = uiState.hasActiveSession && !isLoading && viewModel.getUserCredits().current > 0,
-                hasCredits = viewModel.getUserCredits().current > 0,
-                onWatchAd = {
-                    if (viewModel.canWatchAd()) {
-                        viewModel.watchAdForCredits()
-                    }
-                },
-                canWatchAd = viewModel.canWatchAd()
+                onMessageChange = onUpdateMessage,
+                onSend = onSendMessage,
+                enabled = uiState.hasActiveSession && !isLoading && userCredits > 0,
+                hasCredits = userCredits > 0,
+                onWatchAd = onWatchAd,
+                canWatchAd = canWatchAd
             )
         }
     }
@@ -300,7 +320,7 @@ private fun CreditsDisplay(
         Icon(
             imageVector = Icons.Default.Star,
             contentDescription = "Créditos",
-            tint = Color(0xFFFFD700),
+            tint = FypColors.Gold,
             modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.width(4.dp))
@@ -347,7 +367,7 @@ private fun AdRewardModal(
                 Icon(
                     imageVector = Icons.Default.Star,
                     contentDescription = null,
-                    tint = Color(0xFFFFD700),
+                    tint = FypColors.Gold,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -380,10 +400,29 @@ private fun AdRewardModal(
     )
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun AICounselorScreenPreview() {
     FypMatchTheme {
-        AICounselorScreen(userId = "preview")
+        AICounselorContent(
+            uiState = AICounselorUiState(
+                hasActiveSession = true,
+                currentMessage = "Olá, preciso de ajuda."
+            ),
+            currentSession = CounselorSession(
+                messages = listOf(
+                    CounselorMessage(content = "Olá! Como posso te ajudar hoje?", sender = MessageSender.AI_COUNSELOR),
+                    CounselorMessage(content = "Estou com dificuldades em iniciar conversas.", sender = MessageSender.USER)
+                )
+            ),
+            isLoading = false,
+            userCredits = 3,
+            canWatchAd = true,
+            onNavigateBack = {},
+            onUpdateMessage = {},
+            onSendMessage = {},
+            onWatchAd = {},
+            onDismissAdModal = {}
+        )
     }
 }

@@ -1,6 +1,8 @@
 package com.ideiassertiva.FypMatch.ui.screens
 
+import android.provider.Settings
 import androidx.compose.animation.core.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -35,6 +37,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.SkeletonLoading
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryViewModel
@@ -109,10 +112,7 @@ fun DiscoveryScreen(
         ) {
             when (uiState) {
                 is DiscoveryUiState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    SkeletonLoading(count = 3, itemHeight = 200)
                 }
 
                 is DiscoveryUiState.Content -> {
@@ -328,32 +328,40 @@ private fun SwipeCard(
     
     val haptic = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
-    
-    // Estados das animações melhoradas
+    val context = LocalContext.current
+
+    // Respeita preferência de reduced motion do sistema
+    val reducedMotion = remember {
+        try {
+            Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+        } catch (_: Exception) { false }
+    }
+
+    // Estados das animações melhoradas — instantâneas se reducedMotion
     val animatedOffsetX by animateFloatAsState(
         targetValue = offsetX,
-        animationSpec = if (isDragging) {
-            spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
-        } else {
-            spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
+        animationSpec = when {
+            reducedMotion -> tween(durationMillis = 0)
+            isDragging -> spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
+            else -> spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
         },
         label = "offsetX"
     )
     val animatedOffsetY by animateFloatAsState(
         targetValue = offsetY,
-        animationSpec = if (isDragging) {
-            spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
-        } else {
-            spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
+        animationSpec = when {
+            reducedMotion -> tween(durationMillis = 0)
+            isDragging -> spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
+            else -> spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
         },
         label = "offsetY"
     )
     val animatedRotation by animateFloatAsState(
         targetValue = rotation,
-        animationSpec = if (isDragging) {
-            spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
-        } else {
-            spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
+        animationSpec = when {
+            reducedMotion -> tween(durationMillis = 0)
+            isDragging -> spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
+            else -> spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium)
         },
         label = "rotation"
     )

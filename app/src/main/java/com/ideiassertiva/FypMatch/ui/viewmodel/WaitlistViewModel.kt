@@ -4,48 +4,38 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.WaitlistRepository
 import com.ideiassertiva.FypMatch.model.*
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
 class WaitlistViewModel @Inject constructor(
     private val waitlistRepository: WaitlistRepository
 ) : ViewModel() {
-    
-    // Estado da UI
+
     private val _uiState = MutableStateFlow(WaitlistUiState())
     val uiState: StateFlow<WaitlistUiState> = _uiState.asStateFlow()
-    
-    // Dados do usuário atual
-    private val _currentUser = MutableStateFlow<WaitlistUser?>(null)
-    val currentUser: StateFlow<WaitlistUser?> = _currentUser.asStateFlow()
-    
-    // Estatísticas da lista de espera
-    private val _stats = MutableStateFlow(WaitlistStats())
-    val stats: StateFlow<WaitlistStats> = _stats.asStateFlow()
-    
+
+    private val _waitlistCount = MutableStateFlow(0)
+    val waitlistCount: StateFlow<Int> = _waitlistCount.asStateFlow()
+
+    // Compatibilidade com WaitlistScreen
+    val currentUser: StateFlow<WaitlistUser?> = MutableStateFlow<WaitlistUser?>(null).asStateFlow()
+    val stats: StateFlow<WaitlistStats> = MutableStateFlow(WaitlistStats()).asStateFlow()
+
     init {
-        observeWaitlistData()
+        loadWaitlistCount()
     }
-    
-    private fun observeWaitlistData() {
+
+    private fun loadWaitlistCount() {
         viewModelScope.launch {
-            waitlistRepository.currentUser.collect { user ->
-                _currentUser.value = user
-                if (user != null) {
-                    _stats.value = waitlistRepository.getWaitlistStats()
-                    _uiState.value = _uiState.value.copy(
-                        currentScreen = WaitlistScreen.DASHBOARD
-                    )
-                }
-            }
+            _waitlistCount.value = waitlistRepository.getWaitlistCount()
         }
     }
-    
+
     fun joinWaitlist(
         fullName: String,
         email: String,
@@ -59,8 +49,17 @@ class WaitlistViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            
-            val result = waitlistRepository.joinWaitlist(
+
+            val alreadyOnList = waitlistRepository.isOnWaitlist(email.trim().lowercase())
+            if (alreadyOnList) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Este email já está na lista de espera"
+                )
+                return@launch
+            }
+
+            val user = WaitlistUser(
                 fullName = fullName.trim(),
                 email = email.trim().lowercase(),
                 city = city.trim(),
@@ -68,12 +67,13 @@ class WaitlistViewModel @Inject constructor(
                 age = age,
                 gender = gender,
                 orientation = orientation,
-                intention = intention,
-                invitedByCode = inviteCode?.trim()?.uppercase()
+                intention = intention
             )
-            
+
+            val result = waitlistRepository.addToWaitlist(user)
             result.fold(
-                onSuccess = { user ->
+                onSuccess = {
+                    _waitlistCount.value = waitlistRepository.getWaitlistCount()
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         currentScreen = WaitlistScreen.SUCCESS,
@@ -83,13 +83,13 @@ class WaitlistViewModel @Inject constructor(
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = error.message ?: "Erro desconhecido"
+                        errorMessage = error.message ?: "Erro ao entrar na lista"
                     )
                 }
             )
         }
     }
-    
+
     fun validateForm(
         fullName: String,
         email: String,
@@ -101,10 +101,9 @@ class WaitlistViewModel @Inject constructor(
         intention: Intention
     ): FormValidation {
         val errors = mutableListOf<String>()
-        
         if (fullName.isBlank()) errors.add("Nome completo é obrigatório")
         if (email.isBlank()) errors.add("Email é obrigatório")
-        else if (!isValidEmail(email)) errors.add("Email inválido")
+        else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) errors.add("Email inválido")
         if (city.isBlank()) errors.add("Cidade é obrigatória")
         if (state.isBlank()) errors.add("Estado é obrigatório")
         if (age.isBlank()) errors.add("Idade é obrigatória")
@@ -112,47 +111,17 @@ class WaitlistViewModel @Inject constructor(
         if (gender == Gender.NOT_SPECIFIED) errors.add("Gênero é obrigatório")
         if (orientation == Orientation.NOT_SPECIFIED) errors.add("Orientação sexual é obrigatória")
         if (intention == Intention.NOT_SPECIFIED) errors.add("Intenção de uso é obrigatória")
-        
-        return FormValidation(
-            isValid = errors.isEmpty(),
-            errors = errors
-        )
+        return FormValidation(isValid = errors.isEmpty(), errors = errors)
     }
-    
-    fun validateInviteCode(code: String): Boolean {
-        return if (code.isBlank()) true // Código é opcional
-        else waitlistRepository.validateInviteCode(code.uppercase())
-    }
-    
-    private fun isValidEmail(email: String): Boolean {
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
-    }
-    
-    fun navigateToForm() {
-        _uiState.value = _uiState.value.copy(currentScreen = WaitlistScreen.FORM)
-    }
-    
-    fun navigateToDashboard() {
-        _uiState.value = _uiState.value.copy(currentScreen = WaitlistScreen.DASHBOARD)
-    }
-    
-    fun navigateToShare() {
-        _uiState.value = _uiState.value.copy(currentScreen = WaitlistScreen.SHARE)
-    }
-    
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
-    }
-    
-    fun clearSuccess() {
-        _uiState.value = _uiState.value.copy(successMessage = null)
-    }
-    
-    fun refreshStats() {
-        viewModelScope.launch {
-            _stats.value = waitlistRepository.getWaitlistStats()
-        }
-    }
+
+    fun validateInviteCode(code: String): Boolean = code.isBlank() // código é opcional
+
+    fun navigateToForm() { _uiState.value = _uiState.value.copy(currentScreen = WaitlistScreen.FORM) }
+    fun navigateToDashboard() { _uiState.value = _uiState.value.copy(currentScreen = WaitlistScreen.DASHBOARD) }
+    fun navigateToShare() { _uiState.value = _uiState.value.copy(currentScreen = WaitlistScreen.SHARE) }
+    fun clearError() { _uiState.value = _uiState.value.copy(errorMessage = null) }
+    fun clearSuccess() { _uiState.value = _uiState.value.copy(successMessage = null) }
+    fun refreshStats() { loadWaitlistCount() }
 }
 
 data class WaitlistUiState(
@@ -162,14 +131,6 @@ data class WaitlistUiState(
     val currentScreen: WaitlistScreen = WaitlistScreen.FORM
 )
 
-enum class WaitlistScreen {
-    FORM,       // Formulário de cadastro
-    SUCCESS,    // Tela de sucesso
-    DASHBOARD,  // Dashboard com estatísticas
-    SHARE       // Tela de compartilhamento
-}
+enum class WaitlistScreen { FORM, SUCCESS, DASHBOARD, SHARE }
 
-data class FormValidation(
-    val isValid: Boolean,
-    val errors: List<String>
-) 
+data class FormValidation(val isValid: Boolean, val errors: List<String>)

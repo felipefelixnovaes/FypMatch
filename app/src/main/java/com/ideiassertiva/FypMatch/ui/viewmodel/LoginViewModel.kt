@@ -57,6 +57,21 @@ class LoginViewModel @Inject constructor(
         }
     }
 
+    fun signInMock() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            val result = authRepository.signInMock()
+            result.fold(
+                onSuccess = { 
+                    _uiState.value = _uiState.value.copy(isLoading = false, isSignedIn = true)
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = error.message)
+                }
+            )
+        }
+    }
+
     fun handleSignInError(message: String) {
         _uiState.value = _uiState.value.copy(
             isLoading = false,

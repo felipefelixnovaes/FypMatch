@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -117,7 +118,7 @@ fun Phase3DemoScreen(
         // Próximos passos
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFF3E5F5)
+                containerColor = FypColors.SecondaryContainer
             )
         ) {
             Column(
@@ -175,7 +176,7 @@ fun FeatureStatusRow(
         Icon(
             if (isImplemented) Icons.Filled.CheckCircle else Icons.Filled.RadioButtonUnchecked,
             contentDescription = null,
-            tint = if (isImplemented) Color(0xFF4CAF50) else Color(0xFF9E9E9E),
+            tint = if (isImplemented) FypColors.Like else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
         )
         
@@ -232,7 +233,7 @@ fun DemoOptionCard(
                 if (isNew) {
                     Surface(
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                        color = Color(0xFF4CAF50)
+                        color = FypColors.Like
                     ) {
                         Text(
                             "NOVO",

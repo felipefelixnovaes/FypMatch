@@ -39,8 +39,7 @@ import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.QuestionnaireRepository
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +54,7 @@ import javax.inject.Inject
 // ─────────────────────────────────────────────────────────────────────────────
 
 private val fypGradient = Brush.horizontalGradient(
-    colors = listOf(Color(0xFFE91E63), Color(0xFF9C27B0))
+    colors = listOf(FypColors.Primary, FypColors.Secondary)
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -246,7 +245,7 @@ fun DeepModeScreen(
     val state = uiState as? DeepModeViewModel.UiState.Content
         ?: run {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MatchPink40)
+                CircularProgressIndicator(color = FypColors.Primary)
             }
             return
         }
@@ -290,8 +289,8 @@ fun DeepModeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp),
-                    color = MatchPink40,
-                    trackColor = MatchPink40.copy(alpha = 0.2f)
+                    color = FypColors.Primary,
+                    trackColor = FypColors.Primary.copy(alpha = 0.2f)
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -394,8 +393,8 @@ fun DeepModeScreen(
                     if (state.currentStep > 0) {
                         OutlinedButton(
                             onClick = { viewModel.previousStep() },
-                            border = BorderStroke(1.5.dp, MatchPink40),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MatchPink40)
+                            border = BorderStroke(1.5.dp, FypColors.Primary),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = FypColors.Primary)
                         ) {
                             Text("← Anterior")
                         }
@@ -454,13 +453,13 @@ private fun DeepModeCompleteContent(
             modifier = Modifier
                 .size((80 * scale.value).dp)
                 .clip(CircleShape)
-                .background(MatchPink40.copy(alpha = 0.12f)),
+                .background(FypColors.Primary.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.CheckCircle,
                 contentDescription = null,
-                tint = MatchPink40,
+                tint = FypColors.Primary,
                 modifier = Modifier.size(52.dp)
             )
         }
@@ -489,9 +488,9 @@ private fun DeepModeCompleteContent(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MatchPurple40.copy(alpha = 0.08f)
+                containerColor = FypColors.Secondary.copy(alpha = 0.08f)
             ),
-            border = BorderStroke(1.5.dp, MatchPurple40.copy(alpha = 0.4f))
+            border = BorderStroke(1.5.dp, FypColors.Secondary.copy(alpha = 0.4f))
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
@@ -505,14 +504,14 @@ private fun DeepModeCompleteContent(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = attachmentStyle.emoji,
-                    fontSize = 40.sp
+                    fontSize = MaterialTheme.typography.displaySmall.fontSize
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = attachmentStyle.displayName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MatchPurple40
+                    color = FypColors.Secondary
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
@@ -590,11 +589,11 @@ private val ipip20Items = listOf(
 )
 
 private val ipip20FactorColors = mapOf(
-    "Extroversão" to Color(0xFFE91E63),
-    "Amabilidade" to Color(0xFF9C27B0),
-    "Conscienciosidade" to Color(0xFF3F51B5),
-    "Neuroticismo" to Color(0xFFFF5722),
-    "Abertura" to Color(0xFF009688)
+    "Extroversão" to FypColors.Primary,
+    "Amabilidade" to FypColors.Secondary,
+    "Conscienciosidade" to FypColors.SuperLike,
+    "Neuroticismo" to FypColors.Tertiary,
+    "Abertura" to FypColors.Success
 )
 
 @Composable
@@ -619,7 +618,7 @@ private fun IPIP20Step(
                 Spacer(Modifier.height(4.dp))
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MatchPink40.copy(alpha = 0.07f)
+                        containerColor = FypColors.Primary.copy(alpha = 0.07f)
                     )
                 ) {
                     Text(
@@ -636,7 +635,7 @@ private fun IPIP20Step(
         ipip20Items.forEachIndexed { idx, (text, factor, _) ->
             if (factor != lastFactor) {
                 lastFactor = factor
-                val color = ipip20FactorColors[factor] ?: MatchPink40
+                val color = ipip20FactorColors[factor] ?: FypColors.Primary
                 item(key = "header_$factor") {
                     Surface(
                         modifier = Modifier
@@ -742,7 +741,7 @@ private fun PVQ21Step(
                 Spacer(Modifier.height(4.dp))
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MatchPurple40.copy(alpha = 0.07f)
+                        containerColor = FypColors.Secondary.copy(alpha = 0.07f)
                     )
                 ) {
                     Text(
@@ -763,7 +762,7 @@ private fun PVQ21Step(
                 onValueChange = { onUpdate(idx, it) },
                 minLabel = "Muito parecido",
                 maxLabel = "Nada parecido",
-                activeColor = MatchPurple40
+                activeColor = FypColors.Secondary
             )
         }
     }
@@ -816,7 +815,7 @@ private fun ECRRSStep(
                 Spacer(Modifier.height(4.dp))
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MatchPink40.copy(alpha = 0.07f)
+                        containerColor = FypColors.Primary.copy(alpha = 0.07f)
                     )
                 ) {
                     Text(
@@ -833,14 +832,14 @@ private fun ECRRSStep(
         item {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = Color(0xFFE91E63).copy(alpha = 0.10f),
+                color = FypColors.Primary.copy(alpha = 0.10f),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
                     text = "Ansiedade de Apego",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color(0xFFE91E63),
+                    color = FypColors.Primary,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -854,7 +853,7 @@ private fun ECRRSStep(
                 onValueChange = { onUpdate(idx, it) },
                 minLabel = "Discordo",
                 maxLabel = "Concordo",
-                activeColor = Color(0xFFE91E63)
+                activeColor = FypColors.Primary
             )
         }
 
@@ -864,14 +863,14 @@ private fun ECRRSStep(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp),
-                color = Color(0xFF9C27B0).copy(alpha = 0.10f),
+                color = FypColors.Secondary.copy(alpha = 0.10f),
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Text(
                     text = "Conforto com Proximidade",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color(0xFF9C27B0),
+                    color = FypColors.Secondary,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -886,7 +885,7 @@ private fun ECRRSStep(
                 onValueChange = { onUpdate(idx, it) },
                 minLabel = "Discordo",
                 maxLabel = "Concordo",
-                activeColor = Color(0xFF9C27B0)
+                activeColor = FypColors.Secondary
             )
         }
 
@@ -898,9 +897,9 @@ private fun ECRRSStep(
                         .fillMaxWidth()
                         .padding(top = 8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = MatchPurple40.copy(alpha = 0.08f)
+                        containerColor = FypColors.Secondary.copy(alpha = 0.08f)
                     ),
-                    border = BorderStroke(1.dp, MatchPurple40.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, FypColors.Secondary.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
@@ -913,7 +912,7 @@ private fun ECRRSStep(
                                 text = "Estilo de apego atual: ${attachmentStyle.displayName}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MatchPurple40
+                                color = FypColors.Secondary
                             )
                             Text(
                                 text = attachmentStyle.description,
@@ -1086,7 +1085,7 @@ fun DiscreteSliderRow(
     onValueChange: (Int) -> Unit,
     minLabel: String = "",
     maxLabel: String = "",
-    activeColor: Color = MatchPink40
+    activeColor: Color = FypColors.Primary
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1121,7 +1120,7 @@ fun DiscreteSliderRow(
                             .background(
                                 if (selected)
                                     Brush.horizontalGradient(
-                                        colors = listOf(Color(0xFFE91E63), Color(0xFF9C27B0))
+                                        colors = listOf(FypColors.Primary, FypColors.Secondary)
                                     )
                                 else
                                     Brush.horizontalGradient(
@@ -1209,13 +1208,13 @@ private fun <T> DeepQuizCard(
                         .fillMaxWidth()
                         .padding(vertical = 2.dp),
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MatchPink40.copy(alpha = 0.15f),
-                        selectedLabelColor = MatchPink40
+                        selectedContainerColor = FypColors.Primary.copy(alpha = 0.15f),
+                        selectedLabelColor = FypColors.Primary
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = ativo,
-                        selectedBorderColor = MatchPink40,
+                        selectedBorderColor = FypColors.Primary,
                         selectedBorderWidth = 1.5.dp
                     )
                 )

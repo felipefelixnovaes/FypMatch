@@ -12,17 +12,28 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+sealed class MatchesUiState {
+    /** Carregando lista de matches */
+    object Loading : MatchesUiState()
+
+    /** Matches carregados com sucesso */
+    data class Success(val matches: List<Match>) : MatchesUiState()
+
+    /** Nenhum match encontrado */
+    object Empty : MatchesUiState()
+
+    /** Erro ao carregar matches */
+    data class Error(val message: String) : MatchesUiState()
+}
+
 @HiltViewModel
 class MatchesViewModel @Inject constructor(
     private val discoveryRepository: DiscoveryRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MatchesUiState())
+    private val _uiState = MutableStateFlow<MatchesUiState>(MatchesUiState.Loading)
     val uiState: StateFlow<MatchesUiState> = _uiState.asStateFlow()
-
-    private val _matches = MutableStateFlow<List<Match>>(emptyList())
-    val matches: StateFlow<List<Match>> = _matches.asStateFlow()
 
     private var currentUserId = ""
 
@@ -30,34 +41,27 @@ class MatchesViewModel @Inject constructor(
         currentUserId = authRepository.getCurrentFirebaseUser()?.uid ?: ""
         loadMatches()
     }
-    
+
     private fun loadMatches() {
-        _uiState.value = _uiState.value.copy(isLoading = true)
-        
+        _uiState.value = MatchesUiState.Loading
+
         viewModelScope.launch {
             try {
                 val userMatches = discoveryRepository.getUserMatches(currentUserId)
-                _matches.value = userMatches
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _uiState.value = if (userMatches.isEmpty()) {
+                    MatchesUiState.Empty
+                } else {
+                    MatchesUiState.Success(matches = userMatches)
+                }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Erro ao carregar matches"
+                _uiState.value = MatchesUiState.Error(
+                    message = e.message ?: "Erro ao carregar matches"
                 )
             }
         }
     }
-    
+
     fun refreshMatches() {
         loadMatches()
     }
-    
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
 }
-
-data class MatchesUiState(
-    val isLoading: Boolean = false,
-    val error: String? = null
-) 

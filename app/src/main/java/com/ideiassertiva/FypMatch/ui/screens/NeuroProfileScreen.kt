@@ -11,9 +11,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Water
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -33,23 +45,22 @@ import com.ideiassertiva.FypMatch.model.AccommodationType
 import com.ideiassertiva.FypMatch.model.NeuroPreferences
 import com.ideiassertiva.FypMatch.model.NeuroProfile
 import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 
 // ─── Dados internos da tela ──────────────────────────────────────────────────
 
-private data class NeurotipoItem(val label: String, val emoji: String)
+private data class NeurotipoItem(val label: String, val icon: ImageVector)
 
 private val neurotipos = listOf(
-    NeurotipoItem("TDAH", "⚡"),
-    NeurotipoItem("Autismo (TEA)", "🧩"),
-    NeurotipoItem("Dislexia", "📖"),
-    NeurotipoItem("Ansiedade", "💭"),
-    NeurotipoItem("TOC", "🔄"),
-    NeurotipoItem("Bipolaridade", "🌊"),
-    NeurotipoItem("Depressão", "🌧"),
-    NeurotipoItem("Processamento Sensorial", "🎵"),
-    NeurotipoItem("Outro", "✨")
+    NeurotipoItem("TDAH", Icons.Default.Bolt),
+    NeurotipoItem("Autismo (TEA)", Icons.Default.Extension),
+    NeurotipoItem("Dislexia", Icons.Default.MenuBook),
+    NeurotipoItem("Ansiedade", Icons.Default.Psychology),
+    NeurotipoItem("TOC", Icons.Default.Sync),
+    NeurotipoItem("Bipolaridade", Icons.Default.Water),
+    NeurotipoItem("Depressão", Icons.Default.Cloud),
+    NeurotipoItem("Processamento Sensorial", Icons.Default.MusicNote),
+    NeurotipoItem("Outro", Icons.Default.AutoAwesome)
 )
 
 private data class PreferenciaSwitch(
@@ -68,15 +79,15 @@ private val preferencias = listOf(
 
 private data class AcomodacaoCard(
     val label: String,
-    val emoji: String,
+    val icon: ImageVector,
     val tipo: AccommodationType
 )
 
 private val acomodacoes = listOf(
-    AcomodacaoCard("Interface simplificada", "📱", AccommodationType.SIMPLIFIED_INTERFACE),
-    AcomodacaoCard("Menos estímulos", "🔕", AccommodationType.REDUCED_STIMULATION),
-    AcomodacaoCard("Instruções claras", "📋", AccommodationType.CLEAR_INSTRUCTIONS),
-    AcomodacaoCard("Filtro sensorial", "🎛", AccommodationType.SENSORY_FILTERING)
+    AcomodacaoCard("Interface simplificada", Icons.Default.Smartphone, AccommodationType.SIMPLIFIED_INTERFACE),
+    AcomodacaoCard("Menos estímulos", Icons.Default.NotificationsOff, AccommodationType.REDUCED_STIMULATION),
+    AcomodacaoCard("Instruções claras", Icons.Default.Description, AccommodationType.CLEAR_INSTRUCTIONS),
+    AcomodacaoCard("Filtro sensorial", Icons.Default.Tune, AccommodationType.SENSORY_FILTERING)
 )
 
 // ─── Tela principal ───────────────────────────────────────────────────────────
@@ -200,7 +211,7 @@ private fun StepBoasVindas(
     onComecar: () -> Unit,
     onPular: () -> Unit
 ) {
-    val gradient = Brush.verticalGradient(listOf(MatchPink40, MatchPurple40))
+    val gradient = Brush.verticalGradient(listOf(FypColors.Primary, FypColors.Secondary))
 
     Column(
         modifier = Modifier
@@ -218,7 +229,7 @@ private fun StepBoasVindas(
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("🧠", fontSize = 72.sp)
+                Icon(Icons.Default.Psychology, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.White)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = "Perfil de Neurodiversidade",
@@ -286,8 +297,8 @@ private fun StepNeurotipos(
         LinearProgressIndicator(
             progress = { 0.25f },
             modifier = Modifier.fillMaxWidth(),
-            color = MatchPink40,
-            trackColor = MatchPink40.copy(alpha = 0.2f)
+            color = FypColors.Primary,
+            trackColor = FypColors.Primary.copy(alpha = 0.2f)
         )
 
         Spacer(Modifier.height(24.dp))
@@ -319,15 +330,15 @@ private fun StepNeurotipos(
                 FilterChip(
                     selected = selecionado,
                     onClick = { onToggle(item.label) },
-                    label = { Text("${item.emoji} ${item.label}") },
+                    label = { Row(verticalAlignment = Alignment.CenterVertically) { Icon(item.icon, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(4.dp)); Text(item.label) } },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MatchPink40.copy(alpha = 0.15f),
-                        selectedLabelColor = MatchPink40
+                        selectedContainerColor = FypColors.Primary.copy(alpha = 0.15f),
+                        selectedLabelColor = FypColors.Primary
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = selecionado,
-                        selectedBorderColor = MatchPink40,
+                        selectedBorderColor = FypColors.Primary,
                         borderColor = MaterialTheme.colorScheme.outline
                     )
                 )
@@ -383,8 +394,8 @@ private fun StepPreferencias(
         LinearProgressIndicator(
             progress = { 0.50f },
             modifier = Modifier.fillMaxWidth(),
-            color = MatchPink40,
-            trackColor = MatchPink40.copy(alpha = 0.2f)
+            color = FypColors.Primary,
+            trackColor = FypColors.Primary.copy(alpha = 0.2f)
         )
 
         Spacer(Modifier.height(24.dp))
@@ -426,7 +437,7 @@ private fun StepPreferencias(
                         onCheckedChange = item.onChange,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = MatchPink40
+                            checkedTrackColor = FypColors.Primary
                         )
                     )
                 }
@@ -464,8 +475,8 @@ private fun StepAcomodacoes(
         LinearProgressIndicator(
             progress = { 0.75f },
             modifier = Modifier.fillMaxWidth(),
-            color = MatchPink40,
-            trackColor = MatchPink40.copy(alpha = 0.2f)
+            color = FypColors.Primary,
+            trackColor = FypColors.Primary.copy(alpha = 0.2f)
         )
 
         Spacer(Modifier.height(24.dp))
@@ -496,8 +507,8 @@ private fun StepAcomodacoes(
             ) {
                 par.forEach { item ->
                     val selecionado = selecionadas.contains(item.tipo)
-                    val borderColor = if (selecionado) MatchPink40 else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                    val bgColor = if (selecionado) MatchPink40.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
+                    val borderColor = if (selecionado) FypColors.Primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                    val bgColor = if (selecionado) FypColors.Primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
 
                     Card(
                         modifier = Modifier
@@ -520,13 +531,13 @@ private fun StepAcomodacoes(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            Text(item.emoji, fontSize = 32.sp)
+                            Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(32.dp), tint = if (selecionado) FypColors.Primary else MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 text = item.label,
                                 style = MaterialTheme.typography.labelMedium.copy(
                                     fontWeight = if (selecionado) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (selecionado) MatchPink40 else MaterialTheme.colorScheme.onSurface
+                                    color = if (selecionado) FypColors.Primary else MaterialTheme.colorScheme.onSurface
                                 ),
                                 textAlign = TextAlign.Center
                             )
@@ -590,8 +601,8 @@ private fun StepResumo(
         LinearProgressIndicator(
             progress = { 1f },
             modifier = Modifier.fillMaxWidth(),
-            color = MatchPink40,
-            trackColor = MatchPink40.copy(alpha = 0.2f)
+            color = FypColors.Primary,
+            trackColor = FypColors.Primary.copy(alpha = 0.2f)
         )
 
         Spacer(Modifier.height(48.dp))
@@ -599,7 +610,7 @@ private fun StepResumo(
         Icon(
             imageVector = Icons.Default.CheckCircle,
             contentDescription = "Concluído",
-            tint = MatchPink40,
+            tint = FypColors.Primary,
             modifier = Modifier
                 .size(96.dp)
                 .scale(animatedScale)
@@ -628,7 +639,7 @@ private fun StepResumo(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MatchPink40.copy(alpha = 0.06f)
+                containerColor = FypColors.Primary.copy(alpha = 0.06f)
             )
         ) {
             Text(

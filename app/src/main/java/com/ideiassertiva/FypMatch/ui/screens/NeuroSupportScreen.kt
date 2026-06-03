@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -24,8 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 
 // ─── Dados internos ───────────────────────────────────────────────────────────
 
@@ -161,7 +161,7 @@ private fun SecaoAssistenteMensagem() {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("💬", fontSize = 24.sp)
+                    Icon(Icons.Default.Chat, contentDescription = null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
                     Text(
                         text = "Assistente de Mensagem",
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
@@ -185,8 +185,8 @@ private fun SecaoAssistenteMensagem() {
                         maxLines = 6,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MatchPink40,
-                            cursorColor = MatchPink40
+                            focusedBorderColor = FypColors.Primary,
+                            cursorColor = FypColors.Primary
                         )
                     )
 
@@ -211,7 +211,7 @@ private fun SecaoAssistenteMensagem() {
                                 Card(
                                     shape = RoundedCornerShape(12.dp),
                                     colors = CardDefaults.cardColors(
-                                        containerColor = MatchPink40.copy(alpha = 0.07f)
+                                        containerColor = FypColors.Primary.copy(alpha = 0.07f)
                                     )
                                 ) {
                                     Row(
@@ -224,9 +224,9 @@ private fun SecaoAssistenteMensagem() {
                                         Text(
                                             text = "Tom: ${r.tom}",
                                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                            color = MatchPink40
+                                            color = FypColors.Primary
                                         )
-                                        Text(r.tonEmoji, fontSize = 18.sp)
+                                        Text(r.tonEmoji, fontSize = MaterialTheme.typography.titleMedium.fontSize)
                                     }
                                 }
 
@@ -242,8 +242,8 @@ private fun SecaoAssistenteMensagem() {
                                 LinearProgressIndicator(
                                     progress = { r.clareza },
                                     modifier = Modifier.fillMaxWidth(),
-                                    color = MatchPurple40,
-                                    trackColor = MatchPurple40.copy(alpha = 0.2f)
+                                    color = FypColors.Secondary,
+                                    trackColor = FypColors.Secondary.copy(alpha = 0.2f)
                                 )
                                 Text(
                                     text = "${(r.clareza * 100).toInt()}%",
@@ -264,7 +264,7 @@ private fun SecaoAssistenteMensagem() {
                                             modifier = Modifier.padding(top = 6.dp),
                                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
-                                            Text("•", color = MatchPink40, fontWeight = FontWeight.Bold)
+                                            Text("•", color = FypColors.Primary, fontWeight = FontWeight.Bold)
                                             Text(
                                                 text = sug,
                                                 style = MaterialTheme.typography.bodySmall,
@@ -376,7 +376,7 @@ private fun SecaoPistasSociais() {
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (itemExpandido)
-                                    MatchPurple40.copy(alpha = 0.07f)
+                                    FypColors.Secondary.copy(alpha = 0.07f)
                                 else
                                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                             )
@@ -386,7 +386,7 @@ private fun SecaoPistasSociais() {
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(pista.emoji, fontSize = 20.sp)
+                                    Text(pista.emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize)
                                     Text(
                                         text = pista.titulo,
                                         style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
@@ -427,17 +427,17 @@ private fun SecaoPistasSociais() {
                                         Spacer(Modifier.height(8.dp))
                                         Card(
                                             shape = RoundedCornerShape(8.dp),
-                                            colors = CardDefaults.cardColors(containerColor = MatchPurple40.copy(alpha = 0.1f))
+                                            colors = CardDefaults.cardColors(containerColor = FypColors.Secondary.copy(alpha = 0.1f))
                                         ) {
                                             Row(
                                                 modifier = Modifier.padding(10.dp),
                                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                                             ) {
-                                                Text("💡", fontSize = 14.sp)
+                                                Text("💡", fontSize = MaterialTheme.typography.bodyMedium.fontSize)
                                                 Text(
                                                     text = pista.comoResponder,
                                                     style = MaterialTheme.typography.bodySmall,
-                                                    color = MatchPurple40,
+                                                    color = FypColors.Secondary,
                                                     fontWeight = FontWeight.Medium
                                                 )
                                             }
@@ -476,7 +476,7 @@ private fun SecaoSuporteEmocional() {
         CardEmocional(
             emoji = "💙",
             titulo = "Técnica 5-4-3-2-1",
-            cor = Color(0xFF2196F3)
+            cor = FypColors.SuperLike
         ) {
             Column {
                 passos54321.forEachIndexed { i, texto ->
@@ -490,7 +490,7 @@ private fun SecaoSuporteEmocional() {
                                 .size(24.dp)
                                 .then(
                                     Modifier.background(
-                                        Color(0xFF2196F3).copy(alpha = 0.15f),
+                                        FypColors.SuperLike.copy(alpha = 0.15f),
                                         shape = androidx.compose.foundation.shape.CircleShape
                                     )
                                 ),
@@ -500,7 +500,7 @@ private fun SecaoSuporteEmocional() {
                                 text = "${i + 1}",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2196F3)
+                                    color = FypColors.SuperLike
                                 )
                             )
                         }
@@ -516,7 +516,7 @@ private fun SecaoSuporteEmocional() {
         CardEmocional(
             emoji = "🌬️",
             titulo = "Respiração guiada",
-            cor = Color(0xFF4CAF50)
+            cor = FypColors.Like
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(
@@ -535,11 +535,11 @@ private fun SecaoSuporteEmocional() {
                             text = tempo,
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF4CAF50)
+                                color = FypColors.Like
                             )
                         )
                     }
-                    if (acao != "⏸ Segure...") HorizontalDivider(color = Color(0xFF4CAF50).copy(alpha = 0.15f))
+                    if (acao != "⏸ Segure...") HorizontalDivider(color = FypColors.Like.copy(alpha = 0.15f))
                 }
                 Text(
                     text = "Repita 4 vezes para sentir o efeito.",
@@ -552,7 +552,7 @@ private fun SecaoSuporteEmocional() {
         CardEmocional(
             emoji = "💚",
             titulo = "Afirmações positivas",
-            cor = Color(0xFF66BB6A)
+            cor = FypColors.Success
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 afirmacoes.forEach { afirmacao ->
@@ -560,7 +560,7 @@ private fun SecaoSuporteEmocional() {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.Top
                     ) {
-                        Text("✦", color = Color(0xFF66BB6A), fontSize = 12.sp)
+                        Text("✦", color = FypColors.Success, fontSize = MaterialTheme.typography.bodySmall.fontSize)
                         Text(
                             text = afirmacao,
                             style = MaterialTheme.typography.bodySmall
@@ -597,7 +597,7 @@ private fun SecaoSuporteEmocional() {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(card.emoji, fontSize = 22.sp)
+                            Text(card.emoji, fontSize = MaterialTheme.typography.headlineSmall.fontSize)
                             Text(
                                 text = card.titulo,
                                 style = MaterialTheme.typography.titleSmall.copy(
@@ -677,7 +677,7 @@ private fun SecaoConfiguracoes(
                     },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
-                        checkedTrackColor = MatchPink40
+                        checkedTrackColor = FypColors.Primary
                     )
                 )
             }
@@ -691,7 +691,7 @@ private fun SecaoConfiguracoes(
             ) {
                 Text(
                     text = "Editar perfil neuro completo →",
-                    color = MatchPink40,
+                    color = FypColors.Primary,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
                 )
             }

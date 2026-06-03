@@ -7,6 +7,12 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,42 +24,41 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import kotlinx.coroutines.delay
 
 // Dados dos slides de onboarding — copy aprovado pelo Squad de Copy
 private data class OnboardingPage(
-    val emoji: String,
+    val icon: ImageVector,
     val title: String,
     val body: String
 )
 
 private val onboardingPages = listOf(
     OnboardingPage(
-        emoji = "💕",
+        icon = Icons.Default.Favorite,
         title = "Bem-vindo ao FypMatch",
         body = "O app de relacionamento criado para quem nunca se sentiu em casa nos outros."
     ),
     OnboardingPage(
-        emoji = "🏳️‍🌈",
+        icon = Icons.Default.Flag,
         title = "Um espaço feito para você",
         body = "LGBTQIA+, neurodiverso ou simplesmente cansado da superficialidade? Aqui você é bem-vindo do jeito que é."
     ),
     OnboardingPage(
-        emoji = "🧠",
+        icon = Icons.Default.Psychology,
         title = "Matches que fazem sentido",
         body = "Nosso score analisa personalidade, valores e intenções — não só fotos. Menos swipes, mais conexões reais."
     ),
     OnboardingPage(
-        emoji = "🤖",
+        icon = Icons.Default.SmartToy,
         title = "Você não está sozinho",
         body = "Seu conselheiro IA está sempre aqui. Para sugerir icebreakers, ajudar na conversa ou apoiar quando a ansiedade aparecer."
     ),
     OnboardingPage(
-        emoji = "✨",
+        icon = Icons.Default.AutoAwesome,
         title = "Pronto para começar?",
         body = "Junte-se a milhares de pessoas encontrando conexões reais todos os dias. Seu match está esperando."
     )
@@ -68,7 +73,7 @@ fun WelcomeScreen(
     onNavigateToAccessCode: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val gradient = Brush.verticalGradient(listOf(MatchPink40, MatchPurple40))
+    val gradient = Brush.verticalGradient(listOf(FypColors.Primary, FypColors.Secondary))
     val pagerState = rememberPagerState(pageCount = { onboardingPages.size })
 
     // Auto-scroll do carousel a cada 3 segundos
@@ -94,10 +99,11 @@ fun WelcomeScreen(
             Spacer(Modifier.height(56.dp))
 
             // Logo
-            Text(
-                text = "💕",
-                fontSize = 72.sp,
-                textAlign = TextAlign.Center
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = "FypMatch",
+                modifier = Modifier.size(72.dp),
+                tint = Color.White
             )
             Text(
                 text = "FypMatch",
@@ -160,7 +166,7 @@ fun WelcomeScreen(
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
-                    contentColor = MatchPink40
+                    contentColor = FypColors.Primary
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -225,10 +231,11 @@ private fun OnboardingCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = page.emoji,
-                fontSize = 40.sp,
-                textAlign = TextAlign.Center
+            Icon(
+                imageVector = page.icon,
+                contentDescription = page.title,
+                modifier = Modifier.size(40.dp),
+                tint = Color.White
             )
             Spacer(Modifier.height(12.dp))
             Text(
@@ -246,7 +253,7 @@ private fun OnboardingCard(
                     color = Color.White.copy(alpha = 0.85f)
                 ),
                 textAlign = TextAlign.Center,
-                lineHeight = 20.sp
+                lineHeight = MaterialTheme.typography.bodyLarge.lineHeight
             )
         }
     }

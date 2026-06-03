@@ -31,6 +31,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.QuestionnaireRepository
 import com.ideiassertiva.FypMatch.model.SelfKnowledgeQuestionnaire
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,8 +44,8 @@ import javax.inject.Inject
 // CORES DO DESIGN SYSTEM
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val SkFypPink   = Color(0xFFE91E63)
-private val SkFypPurple = Color(0xFF9C27B0)
+private val SkFypPink   = FypColors.Primary
+private val SkFypPurple = FypColors.Secondary
 private val SkFypGradient = Brush.horizontalGradient(listOf(SkFypPink, SkFypPurple))
 private val SkFypLinearGradient = Brush.linearGradient(listOf(SkFypPink, SkFypPurple))
 
@@ -319,7 +320,7 @@ fun SelfKnowledgeModuleCard(
                     ) {
                         Text(
                             text = "🔒",
-                            fontSize = 40.sp
+                            fontSize = MaterialTheme.typography.displaySmall.fontSize
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
@@ -384,11 +385,11 @@ fun CombinationCard(questionnaire: SelfKnowledgeQuestionnaire) {
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = enneagramEmoji, fontSize = 40.sp)
+                Text(text = enneagramEmoji, fontSize = MaterialTheme.typography.displaySmall.fontSize)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = loveLanguageEmoji, fontSize = 40.sp)
+                Text(text = loveLanguageEmoji, fontSize = MaterialTheme.typography.displaySmall.fontSize)
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(text = archetypeEmoji, fontSize = 40.sp)
+                Text(text = archetypeEmoji, fontSize = MaterialTheme.typography.displaySmall.fontSize)
             }
 
             Spacer(modifier = Modifier.height(16.dp))

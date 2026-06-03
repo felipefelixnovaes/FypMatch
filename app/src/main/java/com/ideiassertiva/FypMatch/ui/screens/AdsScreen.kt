@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,8 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -85,7 +85,7 @@ fun AdsScreen(
             Spacer(Modifier.height(24.dp))
 
             // Header
-            Text("🎬", fontSize = 64.sp, textAlign = TextAlign.Center)
+            Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(12.dp))
             Text(
                 "Assista e Ganhe Créditos",
@@ -119,23 +119,23 @@ fun AdsScreen(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         Text("$adsWatched/$MAX_ADS_PER_DAY",
                             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                            color = MatchPink40)
+                            color = FypColors.Primary)
                     }
                     Spacer(Modifier.height(10.dp))
                     LinearProgressIndicator(
                         progress = { adsWatched.toFloat() / MAX_ADS_PER_DAY.toFloat() },
                         modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
-                        color = MatchPink40,
+                        color = FypColors.Primary,
                         trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
                         strokeCap = StrokeCap.Round
                     )
                     Spacer(Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🧠 ", fontSize = 14.sp)
+                        Text("🧠 ", fontSize = MaterialTheme.typography.bodyMedium.fontSize)
                         Text(
                             "${adsWatched * CREDITS_PER_AD} créditos ganhos hoje",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MatchPurple40
+                            color = FypColors.Secondary
                         )
                     }
                 }
@@ -173,7 +173,7 @@ fun AdsScreen(
                     if (!canWatch) {
                         Spacer(Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🕐 ", fontSize = 14.sp)
+                            Text("🕐 ", fontSize = MaterialTheme.typography.bodyMedium.fontSize)
                             Text("Volte amanhã para mais créditos",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
@@ -187,11 +187,11 @@ fun AdsScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD))
+                    colors = CardDefaults.cardColors(containerColor = FypColors.Gold.copy(alpha = 0.15f))
                 ) {
                     Text(msg, modifier = Modifier.padding(12.dp),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF856404))
+                        color = FypColors.Gold)
                 }
             }
 
@@ -238,7 +238,7 @@ private fun WatchingAdIndicator() {
                 CircularProgressIndicator(
                     progress = { progress },
                     modifier = Modifier.size(72.dp),
-                    color = MatchPink40,
+                    color = FypColors.Primary,
                     strokeWidth = 6.dp,
                     strokeCap = StrokeCap.Round
                 )
@@ -261,24 +261,24 @@ private fun SuccessCreditsCard(credits: Int, onDismiss: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+        colors = CardDefaults.cardColors(containerColor = FypColors.SuccessContainer)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(Icons.Default.Check, "Sucesso",
-                modifier = Modifier.size(48.dp), tint = Color(0xFF4CAF50))
+                modifier = Modifier.size(48.dp), tint = FypColors.Like)
             Spacer(Modifier.height(12.dp))
             Text("+$credits créditos adicionados!",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF2E7D32))
+                color = FypColors.Success)
             Text("Use com seu conselheiro IA",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF388E3C))
+                color = FypColors.Success)
             Spacer(Modifier.height(16.dp))
             TextButton(onClick = onDismiss) {
-                Text("Continuar", color = MatchPink40, fontWeight = FontWeight.SemiBold)
+                Text("Continuar", color = FypColors.Primary, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -287,7 +287,7 @@ private fun SuccessCreditsCard(credits: Int, onDismiss: () -> Unit) {
 @Composable
 private fun PlanCreditsItem(plan: String, credits: String, emoji: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(emoji, fontSize = 20.sp)
+        Text(emoji, fontSize = MaterialTheme.typography.titleLarge.fontSize)
         Spacer(Modifier.height(4.dp))
         Text(plan, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
         Text(credits, style = MaterialTheme.typography.labelSmall,

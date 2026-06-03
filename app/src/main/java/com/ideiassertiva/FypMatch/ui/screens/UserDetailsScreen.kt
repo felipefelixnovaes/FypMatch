@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.UserDetailsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -180,7 +181,7 @@ private fun SwipeBottomBar(onPass: () -> Unit, onSuperLike: () -> Unit, onLike: 
             FloatingActionButton(onClick = onPass, containerColor = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.size(56.dp)) {
                 Icon(Icons.Default.Close, "Passar", tint = MaterialTheme.colorScheme.onErrorContainer)
             }
-            FloatingActionButton(onClick = onSuperLike, containerColor = Color(0xFF4FC3F7), modifier = Modifier.size(48.dp)) {
+            FloatingActionButton(onClick = onSuperLike, containerColor = FypColors.SuperLike, modifier = Modifier.size(48.dp)) {
                 Icon(Icons.Default.Star, "Super Curtir", tint = Color.White)
             }
             FloatingActionButton(onClick = onLike, containerColor = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp)) {

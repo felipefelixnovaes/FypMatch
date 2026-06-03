@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,8 +29,7 @@ import com.ideiassertiva.FypMatch.model.Referral
 import com.ideiassertiva.FypMatch.model.ReferralStatus
 import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
 import com.ideiassertiva.FypMatch.ui.components.FypTextField
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.viewmodel.AffiliateViewModel
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -98,9 +98,11 @@ fun AffiliateScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "🤝",
-                    style = MaterialTheme.typography.displayLarge
+                Icon(
+                    imageVector = Icons.Default.Handshake,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
@@ -217,7 +219,7 @@ fun AffiliateScreen(
                                     text = affiliate.code,
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
-                                    color = MatchPink40
+                                    color = FypColors.Primary
                                 )
                                 Row {
                                     IconButton(onClick = {
@@ -260,7 +262,7 @@ fun AffiliateScreen(
                                 Text(
                                     text = referralLink,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MatchPurple40,
+                                    color = FypColors.Secondary,
                                     modifier = Modifier.weight(1f)
                                 )
                                 IconButton(onClick = {
@@ -325,8 +327,8 @@ fun AffiliateScreen(
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 singleLine = true,
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MatchPink40,
-                                    focusedLabelColor = MatchPink40
+                                    focusedBorderColor = FypColors.Primary,
+                                    focusedLabelColor = FypColors.Primary
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -448,7 +450,7 @@ private fun StatCard(
                 text = value,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MatchPink40
+                color = FypColors.Primary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -463,10 +465,10 @@ private fun StatCard(
 @Composable
 private fun ReferralItem(referral: Referral) {
     val (badgeColor, badgeLabel) = when (referral.status) {
-        ReferralStatus.PENDING -> Color(0xFFFFC107) to "Pendente"
-        ReferralStatus.CONFIRMED -> Color(0xFF4CAF50) to "Confirmado"
-        ReferralStatus.PAID -> Color(0xFF2196F3) to "Pago"
-        ReferralStatus.CANCELLED -> Color(0xFF9E9E9E) to "Cancelado"
+        ReferralStatus.PENDING -> FypColors.Gold to "Pendente"
+        ReferralStatus.CONFIRMED -> FypColors.Like to "Confirmado"
+        ReferralStatus.PAID -> FypColors.SuperLike to "Pago"
+        ReferralStatus.CANCELLED -> MaterialTheme.colorScheme.onSurfaceVariant to "Cancelado"
     }
 
     Card(

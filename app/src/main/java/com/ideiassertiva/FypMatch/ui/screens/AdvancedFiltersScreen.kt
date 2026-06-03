@@ -278,7 +278,7 @@ private fun FilterSection(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (isPremium) Color(0xFFFF9800) else MaterialTheme.colorScheme.primary
+                    tint = if (isPremium) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
                 )
                 
                 Text(
@@ -290,14 +290,14 @@ private fun FilterSection(
                 if (isPremium) {
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFF9800)
+                            containerColor = MaterialTheme.colorScheme.tertiary
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = "PREMIUM",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onTertiary,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -321,9 +321,9 @@ private fun PremiumFeatureCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(8.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -332,7 +332,7 @@ private fun PremiumFeatureCard(
             Icon(
                 imageVector = Icons.Default.Star,
                 contentDescription = null,
-                tint = Color(0xFFFF9800),
+                tint = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.size(48.dp)
             )
             
@@ -357,12 +357,12 @@ private fun PremiumFeatureCard(
                 onClick = onUpgrade,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF9800)
+                    containerColor = MaterialTheme.colorScheme.tertiary
                 )
             ) {
                 Text(
                     text = "Upgrade para Premium",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onTertiary,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -461,7 +461,7 @@ private fun MinPhotosFilter(
             text = "Mínimo de fotos: $currentMin",
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
-            color = if (enabled) Color.Unspecified else Color.Gray
+            color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         Slider(
@@ -490,7 +490,7 @@ private fun HeightRangeFilter(
             },
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
-            color = if (enabled) Color.Unspecified else Color.Gray
+            color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         Row(
@@ -535,7 +535,7 @@ private fun <T> MultiSelectFilter(
             text = "$title (${selectedOptions.size} selecionados)",
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium,
-            color = if (enabled) Color.Unspecified else Color.Gray
+            color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         Spacer(modifier = Modifier.height(8.dp))

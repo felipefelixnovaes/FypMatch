@@ -2,19 +2,21 @@ package com.ideiassertiva.FypMatch.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.ideiassertiva.FypMatch.data.repository.AccessCodeRepository
 import com.ideiassertiva.FypMatch.data.repository.UserRepository
 import com.ideiassertiva.FypMatch.model.*
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Date
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
 class AccessCodeViewModel @Inject constructor(
     private val accessCodeRepository: AccessCodeRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
     
     // Estado do código sendo inserido
@@ -43,10 +45,10 @@ class AccessCodeViewModel @Inject constructor(
     
     private fun loadCurrentUser() {
         viewModelScope.launch {
-            userRepository.getCurrentUser().collect { user ->
+            userRepository.currentUser.collect { user ->
                 _currentUser.value = user
-                user?.let {
-                    _canUseCode.value = accessCodeRepository.canUserUseCode(it.email)
+                if (user != null) {
+                    _canUseCode.value = accessCodeRepository.canUserUseCode(user.email)
                 }
             }
         }
@@ -57,11 +59,15 @@ class AccessCodeViewModel @Inject constructor(
     }
     
     fun redeemCode() {
-        val user = _currentUser.value
+        // Usar usuário do UserRepository ou fallback para FirebaseAuth
+        val user = _currentUser.value ?: run {
+            val fbUser = firebaseAuth.currentUser
+            if (fbUser != null) User(id = fbUser.uid, email = fbUser.email ?: "") else null
+        }
         val code = _codeInput.value.trim()
-        
+
         if (user == null) {
-            _redeemState.value = RedeemState.Error("Usuário não encontrado")
+            _redeemState.value = RedeemState.Error("Faça login para usar um código de acesso")
             return
         }
         
@@ -112,7 +118,10 @@ class AccessCodeViewModel @Inject constructor(
             )
         }
         
-        userRepository.updateUser(updatedUser)
+        val fields = mutableMapOf<String, Any>()
+        if (updatedUser.subscription != user.subscription) fields["subscription"] = updatedUser.subscription.name
+        if (updatedUser.accessLevel != user.accessLevel) fields["accessLevel"] = updatedUser.accessLevel.name
+        if (fields.isNotEmpty()) userRepository.updateUser(user.id, fields)
     }
     
     fun clearResult() {

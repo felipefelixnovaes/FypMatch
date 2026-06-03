@@ -6,9 +6,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,8 +27,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GRADIENTE PADRÃO DO FYPMATCH
@@ -33,7 +35,7 @@ import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
 
 /** Gradiente horizontal rosa→roxo, identidade visual do FypMatch */
 val FypGradient: Brush = Brush.horizontalGradient(
-    colors = listOf(MatchPink40, MatchPurple40)
+    colors = listOf(FypColors.Primary, FypColors.Secondary)
 )
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,7 +58,7 @@ fun FypGradientButton(
         Modifier.background(FypGradient, shape = RoundedCornerShape(16.dp))
     } else {
         Modifier.background(
-            Color(0xFFE91E63).copy(alpha = 0.5f),
+            FypColors.Primary.copy(alpha = 0.5f),
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -97,7 +99,7 @@ fun FypGradientButton(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Botão secundário do FypMatch com borda na cor [MatchPink40].
+ * Botão secundário do FypMatch com borda na cor [FypColors.Primary].
  */
 @Composable
 fun FypOutlineButton(
@@ -109,9 +111,9 @@ fun FypOutlineButton(
         onClick = onClick,
         modifier = modifier,
         colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = MatchPink40
+            contentColor = FypColors.Primary
         ),
-        border = androidx.compose.foundation.BorderStroke(1.5.dp, MatchPink40)
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, FypColors.Primary)
     ) {
         Text(
             text = text,
@@ -138,12 +140,12 @@ fun PremiumBadge(
 ) {
     val gradiente = when (tier) {
         PremiumTier.VIP -> Brush.horizontalGradient(
-            listOf(Color(0xFFFFD700), Color(0xFFFF8C00))
+            listOf(FypColors.Gold, FypColors.Tertiary)
         )
         PremiumTier.PREMIUM -> FypGradient
     }
 
-    val icone = if (tier == PremiumTier.VIP) "👑" else "✨"
+    val icon = if (tier == PremiumTier.VIP) Icons.Default.Star else Icons.Default.WorkspacePremium
     val rotulo = if (tier == PremiumTier.VIP) "VIP" else "Premium"
 
     Box(
@@ -156,10 +158,11 @@ fun PremiumBadge(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Text(
-                text = icone,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White
+            Icon(
+                imageVector = icon,
+                contentDescription = rotulo,
+                modifier = Modifier.size(12.dp),
+                tint = Color.White
             )
             Text(
                 text = rotulo,
@@ -268,9 +271,9 @@ fun FypTextField(
                 }
             } else null,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MatchPink40,
-                focusedLabelColor = MatchPink40,
-                cursorColor = MatchPink40
+                focusedBorderColor = FypColors.Primary,
+                focusedLabelColor = FypColors.Primary,
+                cursorColor = FypColors.Primary
             ),
             modifier = Modifier.fillMaxWidth()
         )
@@ -303,9 +306,9 @@ fun CompatibilityBadge(
     modifier: Modifier = Modifier
 ) {
     val corFundo = when {
-        score > 80 -> Color(0xFF4CAF50)  // Verde
-        score > 60 -> Color(0xFFFF9800)  // Amarelo/Laranja
-        else -> Color(0xFF9E9E9E)         // Cinza
+        score > 80 -> FypColors.Success
+        score > 60 -> FypColors.Gold
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Surface(
@@ -324,9 +327,11 @@ fun CompatibilityBadge(
                 fontWeight = FontWeight.Bold,
                 color = corFundo
             )
-            Text(
-                text = "❤️",
-                style = MaterialTheme.typography.labelSmall
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = "Compatibilidade",
+                modifier = Modifier.size(12.dp),
+                tint = corFundo
             )
         }
     }

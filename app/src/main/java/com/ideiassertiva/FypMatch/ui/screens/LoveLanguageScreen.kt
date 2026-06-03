@@ -35,6 +35,7 @@ import com.ideiassertiva.FypMatch.data.repository.QuestionnaireRepository
 import com.ideiassertiva.FypMatch.model.LoveLanguage
 import com.ideiassertiva.FypMatch.model.LoveLanguageResult
 import com.ideiassertiva.FypMatch.model.SelfKnowledgeQuestionnaire
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,8 +48,8 @@ import javax.inject.Inject
 // CORES DO DESIGN SYSTEM
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val LlFypPink   = Color(0xFFE91E63)
-private val LlFypPurple = Color(0xFF9C27B0)
+private val LlFypPink   = FypColors.Primary
+private val LlFypPurple = FypColors.Secondary
 private val LlFypGradient = Brush.horizontalGradient(listOf(LlFypPink, LlFypPurple))
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -437,7 +438,7 @@ fun LoveLanguageScreen(
                             color = if (enabled) Color.White
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
+                            fontSize = MaterialTheme.typography.bodyLarge.fontSize
                         )
                     }
                 }
@@ -668,7 +669,7 @@ fun LoveLanguageResultSheet(
                     text = "Continuar",
                     color = Color.White,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
+                    fontSize = MaterialTheme.typography.bodyLarge.fontSize
                 )
             }
 

@@ -35,6 +35,7 @@ import com.ideiassertiva.FypMatch.data.repository.QuestionnaireRepository
 import com.ideiassertiva.FypMatch.model.EnneagramResult
 import com.ideiassertiva.FypMatch.model.EnneagramType
 import com.ideiassertiva.FypMatch.model.SelfKnowledgeQuestionnaire
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,8 +48,8 @@ import javax.inject.Inject
 // CORES DO DESIGN SYSTEM
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val FypPink   = Color(0xFFE91E63)
-private val FypPurple = Color(0xFF9C27B0)
+private val FypPink   = FypColors.Primary
+private val FypPurple = FypColors.Secondary
 private val FypGradient = Brush.horizontalGradient(listOf(FypPink, FypPurple))
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -415,7 +416,7 @@ fun EnneagramScreen(
                             color = if (enabled) Color.White
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
+                            fontSize = MaterialTheme.typography.bodyLarge.fontSize
                         )
                     }
                 }
@@ -647,7 +648,7 @@ fun EnneagramResultSheet(
                     text = "Continuar",
                     color = Color.White,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
+                    fontSize = MaterialTheme.typography.bodyLarge.fontSize
                 )
             }
 

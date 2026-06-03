@@ -35,6 +35,7 @@ import com.ideiassertiva.FypMatch.data.repository.QuestionnaireRepository
 import com.ideiassertiva.FypMatch.model.ArchetypeResult
 import com.ideiassertiva.FypMatch.model.FypArchetype
 import com.ideiassertiva.FypMatch.model.SelfKnowledgeQuestionnaire
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,8 +48,8 @@ import javax.inject.Inject
 // CORES DO DESIGN SYSTEM
 // ─────────────────────────────────────────────────────────────────────────────
 
-private val AtFypPink   = Color(0xFFE91E63)
-private val AtFypPurple = Color(0xFF9C27B0)
+private val AtFypPink   = FypColors.Primary
+private val AtFypPurple = FypColors.Secondary
 private val AtFypGradient = Brush.horizontalGradient(listOf(AtFypPink, AtFypPurple))
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -406,7 +407,7 @@ fun ArchetypeScreen(
                             color = if (enabled) Color.White
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
+                            fontSize = MaterialTheme.typography.bodyLarge.fontSize
                         )
                     }
                 }
@@ -613,7 +614,7 @@ fun ArchetypeResultSheet(
                     text = "Continuar",
                     color = Color.White,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
+                    fontSize = MaterialTheme.typography.bodyLarge.fontSize
                 )
             }
 

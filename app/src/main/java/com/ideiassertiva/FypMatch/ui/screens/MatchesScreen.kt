@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,12 +24,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.EmptyState
+import com.ideiassertiva.FypMatch.ui.components.SkeletonListLoading
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.MatchesViewModel
+import com.ideiassertiva.FypMatch.ui.viewmodel.MatchesUiState
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,8 +45,7 @@ fun MatchesScreen(
     viewModel: MatchesViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val matches by viewModel.matches.collectAsStateWithLifecycle()
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,31 +72,30 @@ fun MatchesScreen(
                 containerColor = MaterialTheme.colorScheme.surface
             )
         )
-        
-        when {
-            uiState.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+
+        when (uiState) {
+            is MatchesUiState.Loading -> {
+                SkeletonListLoading(count = 5)
             }
-            
-            matches.isEmpty() -> {
-                EmptyMatchesView()
+
+            is MatchesUiState.Empty -> {
+                EmptyState(
+                    icon = Icons.Default.Favorite,
+                    title = "Ainda não há matches",
+                    description = "Continue curtindo perfis para encontrar pessoas especiais!",
+                    actionLabel = "Explorar perfis",
+                    onAction = onNavigateBack
+                )
             }
-            
-            else -> {
+
+            is MatchesUiState.Success -> {
+                val state = uiState as MatchesUiState.Success
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(matches) { match ->
+                    items(state.matches) { match ->
                         MatchCard(
                             match = match,
                             onClick = { onNavigateToChat(match.id) }
@@ -100,41 +103,23 @@ fun MatchesScreen(
                     }
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun EmptyMatchesView() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "💕",
-            style = MaterialTheme.typography.displayLarge
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = "Ainda não há matches",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = "Continue curtindo perfis para encontrar pessoas especiais!",
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            is MatchesUiState.Error -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = (uiState as MatchesUiState.Error).message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { viewModel.refreshMatches() }) {
+                            Text("Tentar novamente")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -160,9 +145,13 @@ private fun MatchCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Foto do perfil
+            val photoData = match.photoUrl.ifBlank {
+                val name = match.matchedUserName.ifBlank { "M" }
+                "https://ui-avatars.com/api/?name=$name&background=E91E63&color=fff&size=100"
+            }
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(match.photoUrl.ifBlank { "https://ui-avatars.com/api/?name=${match.matchedUserName.ifBlank { \"M\" }}&background=E91E63&color=fff&size=100" })
+                    .data(photoData)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Foto do match",
@@ -194,7 +183,7 @@ private fun MatchCard(
                     Icon(
                         imageVector = Icons.Default.Star,
                         contentDescription = "Match",
-                        tint = Color(0xFFFFD700),
+                        tint = FypColors.Gold,
                         modifier = Modifier.size(16.dp)
                     )
                 }

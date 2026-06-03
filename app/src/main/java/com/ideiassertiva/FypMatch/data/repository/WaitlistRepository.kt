@@ -2,7 +2,7 @@ package com.ideiassertiva.FypMatch.data.repository
 
 import com.google.firebase.firestore.AggregateSource
 import com.google.firebase.firestore.FirebaseFirestore
-import com.ideiassertivas.FypMatch.model.WaitlistUser
+import com.ideiassertiva.FypMatch.model.WaitlistUser
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton

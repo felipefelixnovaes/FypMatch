@@ -31,8 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ideiassertiva.FypMatch.data.repository.*
 import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
-import com.ideiassertiva.FypMatch.ui.theme.MatchPurple40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -145,8 +144,8 @@ fun QuickModeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp),
-                    color = MatchPink40,
-                    trackColor = MatchPink40.copy(alpha = 0.2f)
+                    color = FypColors.Primary,
+                    trackColor = FypColors.Primary.copy(alpha = 0.2f)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -230,9 +229,9 @@ fun QuickModeScreen(
                 if (step > 0) {
                     OutlinedButton(
                         onClick = { step-- },
-                        border = BorderStroke(1.5.dp, MatchPink40),
+                        border = BorderStroke(1.5.dp, FypColors.Primary),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MatchPink40
+                            contentColor = FypColors.Primary
                         )
                     ) {
                         Text("← Voltar")
@@ -307,7 +306,7 @@ private fun BigFiveStep(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MatchPink40.copy(alpha = 0.07f)
+                    containerColor = FypColors.Primary.copy(alpha = 0.07f)
                 )
             ) {
                 Text(
@@ -326,11 +325,11 @@ private fun BigFiveStep(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = if (respondido)
-                        MatchPink40.copy(alpha = 0.06f)
+                        FypColors.Primary.copy(alpha = 0.06f)
                     else
                         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                 ),
-                border = if (respondido) BorderStroke(1.dp, MatchPink40.copy(alpha = 0.4f)) else null
+                border = if (respondido) BorderStroke(1.dp, FypColors.Primary.copy(alpha = 0.4f)) else null
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
@@ -345,8 +344,8 @@ private fun BigFiveStep(
                         valueRange = 1f..7f,
                         steps = 5,
                         colors = SliderDefaults.colors(
-                            thumbColor = MatchPink40,
-                            activeTrackColor = MatchPink40
+                            thumbColor = FypColors.Primary,
+                            activeTrackColor = FypColors.Primary
                         )
                     )
                     Row(
@@ -361,7 +360,7 @@ private fun BigFiveStep(
                         Text(
                             "${values[idx].toInt()}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MatchPink40,
+                            color = FypColors.Primary,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
@@ -415,7 +414,7 @@ private fun ValuesStep(
         Text(
             text = "${selecionados.size}/3 selecionados",
             style = MaterialTheme.typography.labelMedium,
-            color = if (selecionados.size == 3) MatchPink40 else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (selecionados.size == 3) FypColors.Primary else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -436,12 +435,12 @@ private fun ValuesStep(
                         .fillMaxWidth()
                         .clickable(enabled = habilitado) { onToggle(valor) },
                     border = if (selecionado)
-                        BorderStroke(2.dp, MatchPink40)
+                        BorderStroke(2.dp, FypColors.Primary)
                     else
                         BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                     colors = CardDefaults.cardColors(
                         containerColor = if (selecionado)
-                            MatchPink40.copy(alpha = 0.1f)
+                            FypColors.Primary.copy(alpha = 0.1f)
                         else if (!habilitado)
                             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         else
@@ -463,7 +462,7 @@ private fun ValuesStep(
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .size(20.dp)
-                                    .background(MatchPink40, CircleShape),
+                                    .background(FypColors.Primary, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
@@ -641,14 +640,14 @@ private fun DealBreakersStep(
                     onClick = { onToggle(item) },
                     label = { Text(item, style = MaterialTheme.typography.bodySmall) },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color(0xFFD32F2F).copy(alpha = 0.15f),
-                        selectedLabelColor = Color(0xFFD32F2F),
-                        selectedLeadingIconColor = Color(0xFFD32F2F)
+                        selectedContainerColor = FypColors.Error.copy(alpha = 0.15f),
+                        selectedLabelColor = FypColors.Error,
+                        selectedLeadingIconColor = FypColors.Error
                     ),
                     border = FilterChipDefaults.filterChipBorder(
                         enabled = true,
                         selected = selecionado,
-                        selectedBorderColor = Color(0xFFD32F2F),
+                        selectedBorderColor = FypColors.Error,
                         selectedBorderWidth = 1.5.dp
                     )
                 )
@@ -659,14 +658,14 @@ private fun DealBreakersStep(
             Spacer(modifier = Modifier.height(16.dp))
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFD32F2F).copy(alpha = 0.07f)
+                    containerColor = FypColors.Error.copy(alpha = 0.07f)
                 )
             ) {
                 Text(
                     text = "${selecionados.size} item(s) selecionado(s) como inaceitável(is)",
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFD32F2F)
+                    color = FypColors.Error
                 )
             }
         }
@@ -717,13 +716,13 @@ private fun QuizCard(
                         },
                         modifier = Modifier.weight(1f),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MatchPink40.copy(alpha = 0.15f),
-                            selectedLabelColor = MatchPink40
+                            selectedContainerColor = FypColors.Primary.copy(alpha = 0.15f),
+                            selectedLabelColor = FypColors.Primary
                         ),
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true,
                             selected = ativo,
-                            selectedBorderColor = MatchPink40,
+                            selectedBorderColor = FypColors.Primary,
                             selectedBorderWidth = 1.5.dp
                         )
                     )

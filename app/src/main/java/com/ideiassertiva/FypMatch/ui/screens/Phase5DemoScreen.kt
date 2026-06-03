@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,7 +90,7 @@ fun Phase5DemoScreen(
                     title = "Gerenciamento de Fotos",
                     description = "Sistema completo para upload e organização de múltiplas fotos",
                     icon = Icons.Default.Image,
-                    color = Color(0xFF4CAF50),
+                    color = FypColors.Like,
                     features = listOf(
                         "Upload de até 6/12/20 fotos (Free/Premium/VIP)",
                         "Detecção automática de qualidade",
@@ -104,7 +105,7 @@ fun Phase5DemoScreen(
                     title = "Filtros Avançados",
                     description = "Sistema de filtragem detalhado para encontrar matches perfeitos",
                     icon = Icons.Default.FilterList,
-                    color = Color(0xFF2196F3),
+                    color = FypColors.SuperLike,
                     features = listOf(
                         "Filtros por idade e distância",
                         "Estilo de vida (fumo, bebida)",
@@ -119,7 +120,7 @@ fun Phase5DemoScreen(
                     title = "Analytics Premium",
                     description = "Dashboard com insights detalhados do seu perfil",
                     icon = Icons.Default.Analytics,
-                    color = Color(0xFF9C27B0),
+                    color = FypColors.Secondary,
                     features = listOf(
                         "Visualizações do perfil detalhadas",
                         "Estatísticas de matches e taxa de sucesso",
@@ -134,7 +135,7 @@ fun Phase5DemoScreen(
                     title = "Boost e Visibilidade",
                     description = "Sistema de boost para aumentar a visibilidade do perfil",
                     icon = Icons.Default.TrendingUp,
-                    color = Color(0xFFFF9800),
+                    color = FypColors.Gold,
                     features = listOf(
                         "Boost regular (30 min)",
                         "Super boost (2h - VIP only)",
@@ -149,7 +150,7 @@ fun Phase5DemoScreen(
                     title = "Sistema de Verificação",
                     description = "Badges e verificações para aumentar a credibilidade",
                     icon = Icons.Default.Verified,
-                    color = Color(0xFF00BCD4),
+                    color = FypColors.SuperLike,
                     features = listOf(
                         "Verificação por foto/selfie",
                         "Verificação por documento",
@@ -193,9 +194,9 @@ private fun Phase5HeroCard(subscription: SubscriptionStatus) {
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(
-                            Color(0xFFE91E63),
-                            Color(0xFF9C27B0),
-                            Color(0xFF2196F3)
+                            FypColors.Primary,
+                            FypColors.Secondary,
+                            FypColors.SuperLike
                         )
                     )
                 )
@@ -254,7 +255,7 @@ private fun ImplementationStatusCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f)
+            containerColor = FypColors.Like.copy(alpha = 0.1f)
         )
     ) {
         Column(
@@ -267,7 +268,7 @@ private fun ImplementationStatusCard() {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = Color(0xFF4CAF50),
+                    tint = FypColors.Like,
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
@@ -368,9 +369,9 @@ private fun FeatureCategoryCard(
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = if (category.isImplemented) {
-                            Color(0xFF4CAF50)
+                            FypColors.Like
                         } else {
-                            Color(0xFFFF9800)
+                            FypColors.Gold
                         }
                     ),
                     shape = RoundedCornerShape(8.dp)
@@ -396,7 +397,7 @@ private fun FeatureCategoryCard(
                     Icon(
                         imageVector = if (category.isImplemented) Icons.Default.Check else Icons.Default.Circle,
                         contentDescription = null,
-                        tint = if (category.isImplemented) Color(0xFF4CAF50) else Color.Gray,
+                        tint = if (category.isImplemented) FypColors.Like else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp).padding(top = 2.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -437,7 +438,7 @@ private fun NextStepsCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF2196F3).copy(alpha = 0.1f)
+            containerColor = FypColors.SuperLike.copy(alpha = 0.1f)
         )
     ) {
         Column(
@@ -463,7 +464,7 @@ private fun NextStepsCard() {
                 Row(
                     modifier = Modifier.padding(vertical = 4.dp)
                 ) {
-                    Text("• ", color = Color(0xFF2196F3), fontWeight = FontWeight.Bold)
+                    Text("• ", color = FypColors.SuperLike, fontWeight = FontWeight.Bold)
                     Text(
                         text = step,
                         style = MaterialTheme.typography.bodyMedium

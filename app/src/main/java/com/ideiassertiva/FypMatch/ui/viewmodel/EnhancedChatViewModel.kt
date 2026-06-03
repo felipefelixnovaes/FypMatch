@@ -2,7 +2,7 @@ package com.ideiassertiva.FypMatch.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ideiassertivas.FypMatch.data.repository.FirebaseChatRepository
+import com.ideiassertiva.FypMatch.data.repository.FirebaseChatRepository
 import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.model.Conversation
 import com.ideiassertiva.FypMatch.model.Message

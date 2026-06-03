@@ -1,16 +1,16 @@
 package com.ideiassertiva.FypMatch.data.repository
 
-import com.ideiassertivas.FypMatch.model.BehaviorAnalyzer
-import com.ideiassertivas.FypMatch.model.CompatibilityMLEngine
-import com.ideiassertivas.FypMatch.model.CompatibilityScore
-import com.ideiassertivas.FypMatch.model.NeuroPreferences
-import com.ideiassertivas.FypMatch.model.NeuroProfile
-import com.ideiassertivas.FypMatch.model.PersonalityAnalyzer
-import com.ideiassertivas.FypMatch.model.PersonalityProfile
-import com.ideiassertivas.FypMatch.model.PersonalityTraits
-import com.ideiassertivas.FypMatch.model.SwipeBehavior
-import com.ideiassertivas.FypMatch.model.SwipeRecord
-import com.ideiassertivas.FypMatch.model.User
+import com.ideiassertiva.FypMatch.model.BehaviorAnalyzer
+import com.ideiassertiva.FypMatch.model.CompatibilityMLEngine
+import com.ideiassertiva.FypMatch.model.CompatibilityScore
+import com.ideiassertiva.FypMatch.model.NeuroPreferences
+import com.ideiassertiva.FypMatch.model.NeuroProfile
+import com.ideiassertiva.FypMatch.model.PersonalityAnalyzer
+import com.ideiassertiva.FypMatch.model.PersonalityProfile
+import com.ideiassertiva.FypMatch.model.PersonalityTraits
+import com.ideiassertiva.FypMatch.model.SwipeBehavior
+import com.ideiassertiva.FypMatch.model.SwipeRecord
+import com.ideiassertiva.FypMatch.model.User
 import javax.inject.Inject
 import javax.inject.Singleton
 

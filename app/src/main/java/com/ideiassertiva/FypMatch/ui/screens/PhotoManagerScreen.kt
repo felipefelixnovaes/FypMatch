@@ -2,7 +2,6 @@ package com.ideiassertiva.FypMatch.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,9 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.EmptyState
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.PhotoManagerViewModel
 
@@ -45,7 +43,6 @@ fun PhotoManagerScreen(
     
     val uploadLimits = PhotoUploadLimits.forSubscription(currentSubscription)
     
-    // Initialize user photos
     LaunchedEffect(userId) {
         if (userId.isNotBlank()) {
             viewModel.loadUserPhotos(userId)
@@ -57,7 +54,6 @@ fun PhotoManagerScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Top Bar
         TopAppBar(
             title = {
                 Column {
@@ -86,46 +82,51 @@ fun PhotoManagerScreen(
             )
         )
         
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Add Photo Button
-            if (photos.size < uploadLimits.maxPhotos) {
-                item {
-                    AddPhotoCard(
-                        subscription = currentSubscription,
-                        onAddPhoto = {
-                            if (currentSubscription == SubscriptionStatus.FREE && photos.size >= 6) {
-                                onUpgradeToPremium()
-                            } else {
-                                viewModel.addPhoto(userId)
-                            }
-                        },
-                        isUploading = isUploading
+        if (photos.isEmpty()) {
+            EmptyState(
+                icon = Icons.Default.Image,
+                title = "Nenhuma foto adicionada",
+                description = "Adicione pelo menos 2 fotos para ter um perfil atraente.",
+                actionLabel = "Adicionar foto",
+                onAction = { viewModel.addPhoto(userId) }
+            )
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (photos.size < uploadLimits.maxPhotos) {
+                    item {
+                        AddPhotoCard(
+                            subscription = currentSubscription,
+                            onAddPhoto = {
+                                if (currentSubscription == SubscriptionStatus.FREE && photos.size >= 6) {
+                                    onUpgradeToPremium()
+                                } else {
+                                    viewModel.addPhoto(userId)
+                                }
+                            },
+                            isUploading = isUploading
+                        )
+                    }
+                }
+                
+                items(photos) { photo ->
+                    PhotoCard(
+                        photo = photo,
+                        onSetAsMain = { viewModel.setAsMainPhoto(userId, photo.id) },
+                        onDelete = { viewModel.deletePhoto(userId, photo.id) },
+                        subscription = currentSubscription
                     )
                 }
-            }
-            
-            // Existing Photos
-            items(photos) { photo ->
-                PhotoCard(
-                    photo = photo,
-                    onSetAsMain = { viewModel.setAsMainPhoto(userId, photo.id) },
-                    onDelete = { viewModel.deletePhoto(userId, photo.id) },
-                    subscription = currentSubscription
-                )
-            }
-            
-            // Empty slots for visual feedback
-            if (photos.size < uploadLimits.maxPhotos) {
-                val emptySlots = uploadLimits.maxPhotos - photos.size - 1 // -1 for add button
-                repeat(emptySlots) {
-                    item {
-                        EmptyPhotoSlot()
+                
+                if (photos.size < uploadLimits.maxPhotos) {
+                    val emptySlots = uploadLimits.maxPhotos - photos.size - 1
+                    repeat(emptySlots) {
+                        item { EmptyPhotoSlot() }
                     }
                 }
             }
@@ -144,7 +145,7 @@ private fun AddPhotoCard(
             .fillMaxWidth()
             .aspectRatio(1f)
             .clickable(enabled = !isUploading) { onAddPhoto() },
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
@@ -173,9 +174,7 @@ private fun AddPhotoCard(
                         modifier = Modifier.size(32.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    
                     Spacer(modifier = Modifier.height(8.dp))
-                    
                     Text(
                         text = "Adicionar",
                         style = MaterialTheme.typography.bodySmall,
@@ -183,12 +182,11 @@ private fun AddPhotoCard(
                         color = MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center
                     )
-                    
                     if (subscription != SubscriptionStatus.FREE) {
                         Text(
                             text = "HD",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFFF9800),
+                            color = MaterialTheme.colorScheme.tertiary,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -211,13 +209,10 @@ private fun PhotoCard(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Photo
+        Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = photo.url,
                 contentDescription = null,
@@ -225,7 +220,6 @@ private fun PhotoCard(
                 contentScale = ContentScale.Crop
             )
             
-            // Main photo indicator
             if (photo.isMain) {
                 Card(
                     modifier = Modifier
@@ -237,56 +231,52 @@ private fun PhotoCard(
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
-                        text = "PRINCIPAL",
+                        text = "Principal",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
             }
             
-            // Quality indicator for premium users
-            if (subscription != SubscriptionStatus.FREE) {
-                if (photo.isHighQuality()) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Alta qualidade",
-                        tint = Color(0xFFFF9800),
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .size(16.dp)
-                    )
-                }
+            if (subscription != SubscriptionStatus.FREE && photo.isHighQuality()) {
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = "Alta qualidade",
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(16.dp)
+                )
             }
             
-            // Options menu
             IconButton(
                 onClick = { showOptions = true },
-                modifier = Modifier.align(Alignment.BottomEnd)
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(44.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.MoreVert,
                     contentDescription = "Opções",
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
             
-            // Background for options button
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .size(48.dp)
                     .background(
-                        Color.Black.copy(alpha = 0.3f),
-                        RoundedCornerShape(bottomEnd = 12.dp)
+                        MaterialTheme.colorScheme.scrim.copy(alpha = 0.3f),
+                        RoundedCornerShape(bottomEnd = 8.dp)
                     )
             )
         }
     }
     
-    // Options Menu
     DropdownMenu(
         expanded = showOptions,
         onDismissRequest = { showOptions = false }
@@ -305,13 +295,13 @@ private fun PhotoCard(
         }
         
         DropdownMenuItem(
-            text = { Text("Excluir", color = Color.Red) },
+            text = { Text("Excluir permanentemente", color = MaterialTheme.colorScheme.error) },
             onClick = {
                 onDelete()
                 showOptions = false
             },
             leadingIcon = {
-                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
             }
         )
     }
@@ -323,7 +313,7 @@ private fun EmptyPhotoSlot() {
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
         ),
@@ -340,7 +330,7 @@ private fun EmptyPhotoSlot() {
                 imageVector = Icons.Default.Image,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(32.dp)
             )
         }
     }
@@ -350,9 +340,7 @@ private fun EmptyPhotoSlot() {
 @Composable
 fun PhotoManagerScreenPreview() {
     FypMatchTheme {
-        PhotoManagerScreen(
-            currentSubscription = SubscriptionStatus.PREMIUM
-        )
+        PhotoManagerScreen(currentSubscription = SubscriptionStatus.PREMIUM)
     }
 }
 
@@ -360,8 +348,6 @@ fun PhotoManagerScreenPreview() {
 @Composable
 fun PhotoManagerScreenFreePreview() {
     FypMatchTheme {
-        PhotoManagerScreen(
-            currentSubscription = SubscriptionStatus.FREE
-        )
+        PhotoManagerScreen(currentSubscription = SubscriptionStatus.FREE)
     }
 }

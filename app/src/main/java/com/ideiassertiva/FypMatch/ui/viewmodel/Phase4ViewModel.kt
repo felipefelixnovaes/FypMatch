@@ -46,7 +46,7 @@ class Phase4ViewModel @Inject constructor(
         viewModelScope.launch {
             _isAnalyzing.value = true
             try {
-                val result = phase4Repository.analyzePersonality(null, emptyList())
+                val result = phase4Repository.analyzePersonality("", PersonalityTraits())
                 _personalityProfile.value = result.getOrNull() as? PersonalityProfile
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
@@ -73,7 +73,7 @@ class Phase4ViewModel @Inject constructor(
         viewModelScope.launch {
             _isAnalyzing.value = true
             try {
-                phase4Repository.createNeuroProfile("", null)
+                phase4Repository.createNeuroProfile("", PersonalityTraits())
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)
             } finally {
@@ -83,16 +83,8 @@ class Phase4ViewModel @Inject constructor(
     }
 
     fun generateSmartSuggestions() {
-        viewModelScope.launch {
-            _isAnalyzing.value = true
-            try {
-                phase4Repository.generateSmartSuggestions("", emptyList(), "")
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
-            } finally {
-                _isAnalyzing.value = false
-            }
-        }
+        // Delegado para analyzePersonality — generateSmartSuggestions foi consolidado
+        analyzePersonality()
     }
 
     fun analyzeBehaviorPatterns() {

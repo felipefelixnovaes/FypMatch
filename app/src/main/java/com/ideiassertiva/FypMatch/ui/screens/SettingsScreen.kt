@@ -21,7 +21,7 @@ import com.ideiassertiva.FypMatch.ui.components.PremiumBadge
 import com.ideiassertiva.FypMatch.ui.components.PremiumTier
 import com.ideiassertiva.FypMatch.ui.components.SectionHeader
 import com.ideiassertiva.FypMatch.ui.components.UserAvatar
-import com.ideiassertiva.FypMatch.ui.theme.MatchPink40
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.SettingsViewModel
 
 /**
@@ -77,7 +77,7 @@ fun SettingsScreen(
                         onNavigateToLogin()
                     }
                 ) {
-                    Text("Sair", color = Color(0xFFFF6600))
+                    Text("Sair", color = FypColors.Tertiary)
                 }
             },
             dismissButton = {
@@ -205,33 +205,6 @@ fun SettingsScreen(
 
             // Ver planos Premium
             item {
-                ListItem(
-                    headlineContent = { Text("Ver planos Premium", color = MatchPink40) },
-                    leadingContent = {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = null,
-                            tint = MatchPink40
-                        )
-                    },
-                    trailingContent = {
-                        Icon(Icons.Default.ChevronRight, contentDescription = null)
-                    },
-                    modifier = androidx.compose.ui.Modifier
-                        .then(
-                            Modifier
-                        )
-                )
-                // Clique em toda a linha
-                Surface(
-                    onClick = onNavigateToPremium,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Color.Transparent
-                ) {}
-            }
-
-            // Linha de clique funcional para "Ver planos Premium"
-            item {
                 Card(
                     onClick = onNavigateToPremium,
                     modifier = Modifier.fillMaxWidth(),
@@ -245,15 +218,15 @@ fun SettingsScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Star, contentDescription = null, tint = MatchPink40)
+                        Icon(Icons.Default.Star, contentDescription = "Planos Premium", tint = FypColors.Primary)
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             "Ver planos Premium",
-                            color = MatchPink40,
+                            color = FypColors.Primary,
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MatchPink40)
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = FypColors.Primary)
                     }
                 }
             }
@@ -267,7 +240,7 @@ fun SettingsScreen(
 
             item {
                 ListItem(
-                    headlineContent = { Text("Push notifications") },
+                    headlineContent = { Text("Notificações push") },
                     leadingContent = {
                         Icon(Icons.Default.Notifications, contentDescription = null)
                     },
@@ -278,7 +251,7 @@ fun SettingsScreen(
                                 pushNotificacoes = it
                                 salvarPreferencia("push_enabled", it)
                             },
-                            colors = SwitchDefaults.colors(checkedThumbColor = MatchPink40)
+                            colors = SwitchDefaults.colors(checkedThumbColor = FypColors.Primary)
                         )
                     }
                 )
@@ -288,7 +261,7 @@ fun SettingsScreen(
                 ListItem(
                     headlineContent = { Text("Notificar novos matches") },
                     leadingContent = {
-                        Icon(Icons.Default.Favorite, contentDescription = null, tint = MatchPink40)
+                        Icon(Icons.Default.Favorite, contentDescription = null, tint = FypColors.Primary)
                     },
                     trailingContent = {
                         Switch(
@@ -297,7 +270,7 @@ fun SettingsScreen(
                                 notificarMatches = it
                                 salvarPreferencia("notificar_matches", it)
                             },
-                            colors = SwitchDefaults.colors(checkedThumbColor = MatchPink40)
+                            colors = SwitchDefaults.colors(checkedThumbColor = FypColors.Primary)
                         )
                     }
                 )
@@ -316,7 +289,7 @@ fun SettingsScreen(
                                 notificarMensagens = it
                                 salvarPreferencia("notificar_mensagens", it)
                             },
-                            colors = SwitchDefaults.colors(checkedThumbColor = MatchPink40)
+                            colors = SwitchDefaults.colors(checkedThumbColor = FypColors.Primary)
                         )
                     }
                 )
@@ -333,7 +306,7 @@ fun SettingsScreen(
                 ListItem(
                     headlineContent = { Text("Mostrar status online") },
                     leadingContent = {
-                        Icon(Icons.Default.Circle, contentDescription = null, tint = Color.Green)
+                        Icon(Icons.Default.Circle, contentDescription = null, tint = FypColors.Success)
                     },
                     trailingContent = {
                         Switch(
@@ -342,7 +315,7 @@ fun SettingsScreen(
                                 mostrarOnline = it
                                 salvarPreferencia("mostrar_online", it)
                             },
-                            colors = SwitchDefaults.colors(checkedThumbColor = MatchPink40)
+                            colors = SwitchDefaults.colors(checkedThumbColor = FypColors.Primary)
                         )
                     }
                 )
@@ -361,7 +334,7 @@ fun SettingsScreen(
                                 mostrarDistancia = it
                                 salvarPreferencia("mostrar_distancia", it)
                             },
-                            colors = SwitchDefaults.colors(checkedThumbColor = MatchPink40)
+                            colors = SwitchDefaults.colors(checkedThumbColor = FypColors.Primary)
                         )
                     }
                 )
@@ -390,7 +363,7 @@ fun SettingsScreen(
                 ListItem(
                     headlineContent = { Text("Central de ajuda") },
                     leadingContent = {
-                        Icon(Icons.Default.Help, contentDescription = null, tint = MatchPink40)
+                        Icon(Icons.Default.Help, contentDescription = null, tint = FypColors.Primary)
                     },
                     trailingContent = {
                         Icon(Icons.Default.OpenInNew, contentDescription = null)
@@ -409,7 +382,7 @@ fun SettingsScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Help, contentDescription = null, tint = MatchPink40)
+                        Icon(Icons.Default.Help, contentDescription = null, tint = FypColors.Primary)
                         Spacer(modifier = Modifier.width(16.dp))
                         Text("Central de ajuda", modifier = Modifier.weight(1f))
                         Icon(Icons.Default.OpenInNew, contentDescription = null)
@@ -484,7 +457,7 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFF6600)
+                        containerColor = FypColors.Tertiary
                     )
                 ) {
                     Icon(Icons.Default.Logout, contentDescription = null)

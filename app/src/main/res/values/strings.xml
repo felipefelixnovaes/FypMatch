@@ -1,46 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FypMatch</string>
-    
+
     <!-- Welcome -->
-    <string name="welcome_title">💕 FypMatch</string>
+    <string name="welcome_title">FypMatch</string>
     <string name="welcome_subtitle">Relacionamentos reais com IA inclusiva</string>
-    <string name="welcome_waitlist">🎯 Lista de Espera</string>
-    <string name="welcome_login">🚀 Fazer Login</string>
-    <string name="welcome_access_code">🎟️ Tenho um código de acesso</string>
-    
+    <string name="welcome_waitlist">Entrar na lista de espera</string>
+    <string name="welcome_login">Entrar</string>
+    <string name="welcome_access_code">Usar código de acesso</string>
+
     <!-- Login -->
-    <string name="login_title">💕 FypMatch</string>
-    <string name="login_subtitle">✨ Por que escolher o FypMatch?</string>
+    <string name="login_title">FypMatch</string>
+    <string name="login_subtitle">Conexões que fazem sentido para você</string>
     <string name="login_google_button">Continuar com Google</string>
     <string name="login_terms">Ao continuar, você concorda com nossos Termos de Uso e Política de Privacidade</string>
-    <string name="login_error">Erro no login: %s</string>
-    
+    <string name="login_error">Não foi possível entrar. Verifique sua conexão e tente novamente.</string>
+    <string name="login_error_invalid_email">O email informado não é válido. Verifique o endereço e tente novamente.</string>
+    <string name="login_error_network">Sem conexão com a internet. Verifique sua rede e tente novamente.</string>
+    <string name="login_error_timeout">O servidor demorou para responder. Tente novamente em alguns instantes.</string>
+
     <!-- Discovery -->
-    <string name="discovery_ia_button">IA</string>
-    <string name="discovery_chat_button">Chat</string>
-    <string name="discovery_details">Ver mais detalhes</string>
-    <string name="discovery_swipe_like">CURTIR</string>
-    <string name="discovery_swipe_pass">PASSAR</string>
-    <string name="discovery_swipe_super">SUPER CURTIR</string>
+    <string name="discovery_assistant">Assistente</string>
+    <string name="discovery_chat">Conversas</string>
+    <string name="discovery_view_profile">Ver perfil completo</string>
+    <string name="discovery_swipe_like">Curtir</string>
+    <string name="discovery_swipe_pass">Passar</string>
+    <string name="discovery_swipe_super">Super curtir</string>
     <string name="discovery_rewind">Desfazer</string>
-    <string name="discovery_boost">Boost</string>
-    <string name="discovery_no_more_cards">Sem mais perfis por enquanto</string>
-    <string name="discovery_no_more_subtitle">Volte mais tarde para novos perfis!</string>
-    <string name="discovery_match_celebration">🎉 Novo Match!</string>
+    <string name="discovery_boost">Impulsionar</string>
+    <string name="discovery_no_more_cards">Perfis acabaram por hoje</string>
+    <string name="discovery_no_more_subtitle">Novos perfis chegam em breve. Aumente seus critérios ou volte mais tarde.</string>
+    <string name="discovery_match_celebration">Novo match!</string>
     <string name="discovery_match_message">Você e %s curtiram um ao outro</string>
-    <string name="discovery_limit_reached">Limite de curtidas atingido</string>
-    <string name="discovery_upgrade_prompt">Faça upgrade para Premium e tenha mais curtidas</string>
-    
+    <string name="discovery_match_send_message">Enviar mensagem</string>
+    <string name="discovery_match_keep_swiping">Continuar deslizando</string>
+    <string name="discovery_limit_reached">Limite de curtidas alcançado</string>
+    <string name="discovery_upgrade_prompt">Assine o Premium para ter mais curtidas por dia</string>
+
     <!-- Matches -->
-    <string name="matches_title">Matches</string>
-    <string name="matches_empty">Nenhum match ainda</string>
-    <string name="matches_empty_subtitle">Continue deslizando para encontrar conexões</string>
+    <string name="matches_title">Conexões</string>
+    <string name="matches_empty">Nenhuma conexão ainda</string>
+    <string name="matches_empty_subtitle">Continue explorando perfis para encontrar pessoas compatíveis</string>
     <string name="matches_new_message">Nova mensagem</string>
     <string name="matches_time_ago_hours">%dh atrás</string>
     <string name="matches_time_ago_days">%dd atrás</string>
     <string name="matches_time_ago_minutes">%dm atrás</string>
-    
+
     <!-- Premium -->
     <string name="premium_title">Premium</string>
     <string name="premium_free">Grátis</string>
@@ -49,96 +54,101 @@
     <string name="premium_free_price">Grátis</string>
     <string name="premium_premium_price">R$ 19,90/mês</string>
     <string name="premium_vip_price">R$ 39,90/mês</string>
-    <string name="premium_upgrade_button">Fazer Upgrade</string>
+    <string name="premium_upgrade_button">Assinar plano</string>
     <string name="premium_terms">Termos e condições se aplicam</string>
-    <string name="premium_popular_badge">POPULAR</string>
+    <string name="premium_popular_badge">Mais escolhido</string>
     <string name="premium_cancel_anytime">Cancele quando quiser. Sem fidelidade.</string>
     <string name="premium_restore_purchases">Restaurar compras</string>
     <string name="premium_auto_renewal">Renovação automática</string>
     <string name="premium_subscribe_button">Assinar %s</string>
-    <!-- Benefícios Premium -->
-    <string name="benefit_premium_likes">100 curtidas/dia</string>
-    <string name="benefit_premium_super_likes">5 super curtidas/dia</string>
-    <string name="benefit_premium_see_who_liked">Ver quem te curtiu</string>
-    <string name="benefit_premium_boost">1 boost/mês (30 min)</string>
-    <string name="benefit_premium_ai_credits">10 créditos IA/dia</string>
+    <string name="benefit_premium_likes">100 curtidas por dia</string>
+    <string name="benefit_premium_super_likes">5 super curtidas por dia</string>
+    <string name="benefit_premium_see_who_liked">Ver quem curtiu você</string>
+    <string name="benefit_premium_boost">1 impulso por mês (30 min)</string>
+    <string name="benefit_premium_ai_credits">10 créditos de IA por dia</string>
     <string name="benefit_premium_no_ads">Sem anúncios</string>
     <string name="benefit_premium_advanced_filters">Filtros avançados</string>
-    <!-- Benefícios VIP -->
     <string name="benefit_vip_unlimited_likes">Curtidas ilimitadas</string>
     <string name="benefit_vip_unlimited_super_likes">Super curtidas ilimitadas</string>
-    <string name="benefit_vip_boosts">5 boosts/mês + Super Boost 2h</string>
-    <string name="benefit_vip_ai_credits">25 créditos IA/dia</string>
+    <string name="benefit_vip_boosts">5 impulsos por mês + Super Boost 2h</string>
+    <string name="benefit_vip_ai_credits">25 créditos de IA por dia</string>
     <string name="benefit_vip_algorithm_priority">Prioridade no algoritmo</string>
     <string name="benefit_vip_seal">Selo VIP exclusivo</string>
-    <string name="benefit_vip_analytics">Analytics avançado</string>
+    <string name="benefit_vip_analytics">Análises avançadas</string>
     <string name="benefit_vip_priority_support">Suporte prioritário</string>
-    
+
     <!-- Profile -->
     <string name="profile_title">Perfil</string>
-    <string name="profile_edit">Editar Perfil</string>
-    <string name="profile_save">Salvar</string>
+    <string name="profile_edit">Editar perfil</string>
+    <string name="profile_save">Salvar alterações</string>
     <string name="profile_cancel">Cancelar</string>
     <string name="profile_photos">Fotos</string>
-    <string name="profile_add_photo">Adicionar Foto</string>
+    <string name="profile_add_photo">Adicionar foto</string>
     <string name="profile_bio">Sobre você</string>
     <string name="profile_interests">Interesses</string>
-    <string name="profile_basic_info">Informações Básicas</string>
-    <string name="profile_personal_info">Informações Pessoais</string>
-    
+    <string name="profile_basic_info">Informações básicas</string>
+    <string name="profile_personal_info">Informações pessoais</string>
+    <string name="profile_empty_photos">Nenhuma foto adicionada</string>
+    <string name="profile_empty_photos_subtitle">Adicione pelo menos 2 fotos para ter um perfil atraente</string>
+
     <!-- Waitlist -->
-    <string name="waitlist_title">Lista de Espera</string>
+    <string name="waitlist_title">Lista de espera</string>
     <string name="waitlist_position">Sua posição: #%d</string>
     <string name="waitlist_invites">Convites enviados: %d</string>
     <string name="waitlist_share">Compartilhar código</string>
     <string name="waitlist_code">Seu código: %s</string>
-    
+
     <!-- Access Code -->
-    <string name="access_code_title">Código de Acesso</string>
+    <string name="access_code_title">Código de acesso</string>
     <string name="access_code_input">Digite seu código</string>
     <string name="access_code_submit">Entrar</string>
-    <string name="access_code_invalid">Código inválido</string>
-    <string name="access_code_success">Acesso liberado!</string>
-    
+    <string name="access_code_invalid">Código inválido. Verifique se digitou corretamente.</string>
+    <string name="access_code_success">Acesso liberado! Bem-vindo ao FypMatch.</string>
+
     <!-- Chat -->
-    <string name="chat_title">Chat</string>
-    <string name="chat_input_hint">Digite sua mensagem...</string>
+    <string name="chat_title">Conversa</string>
+    <string name="chat_input_hint">Escreva sua mensagem…</string>
     <string name="chat_send">Enviar</string>
     <string name="chat_empty">Nenhuma conversa ainda</string>
-    <string name="chat_typing">digitando...</string>
-    <string name="chat_free_limit">Limite de 3 conversas no plano gratuito</string>
-    
+    <string name="chat_empty_subtitle">Quando você der match com alguém, a conversa aparecerá aqui</string>
+    <string name="chat_typing">escrevendo…</string>
+    <string name="chat_free_limit">Você atingiu o limite de 3 conversas do plano gratuito. Assine o Premium para conversar sem limites.</string>
+    <string name="chat_message_sent">Mensagem enviada</string>
+    <string name="chat_message_failed">Não foi possível enviar a mensagem. Toque para tentar novamente.</string>
+
     <!-- AI Counselor -->
     <string name="ai_title">Conselheiro IA</string>
     <string name="ai_credits">Créditos: %d</string>
-    <string name="ai_no_credits">Sem créditos disponíveis</string>
+    <string name="ai_no_credits">Você usou todos os seus créditos de IA.</string>
+    <string name="ai_no_credits_action">Assista a um anúncio para ganhar +3 créditos ou assine o Premium.</string>
     <string name="ai_watch_ad">Assistir anúncio (+3 créditos)</string>
     <string name="ai_send">Enviar mensagem</string>
-    <string name="ai_ethical_warning">⚠️ Se estiver passando por problemas sérios, busque ajuda profissional.</string>
-    
+    <string name="ai_ethical_warning">Se estiver passando por problemas sérios, busque ajuda profissional. O CVV oferece apoio 24h: ligue 188.</string>
+
     <!-- Report -->
     <string name="report_title">Denunciar</string>
     <string name="report_reason">Motivo da denúncia</string>
     <string name="report_description">Descrição (opcional)</string>
-    <string name="report_submit">Enviar Denúncia</string>
+    <string name="report_submit">Enviar denúncia</string>
     <string name="report_success">Denúncia enviada com sucesso</string>
     <string name="report_thank_you">Obrigado por ajudar a manter a comunidade segura</string>
-    
+
     <!-- Block -->
-    <string name="block_title">Bloquear Usuário</string>
+    <string name="block_title">Bloquear usuário</string>
     <string name="block_confirm">Tem certeza que deseja bloquear %s?</string>
     <string name="block_explanation">Vocês não poderão mais se ver nem trocar mensagens</string>
-    <string name="block_confirm_button">Bloquear</string>
+    <string name="block_confirm_button">Bloquear permanentemente</string>
     <string name="block_cancel_button">Cancelar</string>
-    
+
     <!-- Policies -->
     <string name="policy_terms">Termos de Uso</string>
     <string name="policy_privacy">Política de Privacidade</string>
     <string name="policy_title">Políticas</string>
-    
-    <!-- General -->
-    <string name="loading">Carregando...</string>
+
+    <!-- General / A11y -->
+    <string name="loading">Carregando…</string>
     <string name="error_generic">Algo deu errado. Tente novamente.</string>
+    <string name="error_network">Sem conexão com a internet. Verifique sua rede.</string>
     <string name="retry">Tentar novamente</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancelar</string>
@@ -147,5 +157,7 @@
     <string name="back">Voltar</string>
     <string name="settings">Configurações</string>
     <string name="logout">Sair</string>
-    <string name="delete_account">Excluir Conta</string>
+    <string name="delete_account">Excluir conta</string>
+    <string name="undo">Desfazer</string>
+    <string name="deleted">Removido com sucesso</string>
 </resources>

@@ -24,6 +24,7 @@ google-services.json
 *.p12
 *.pem
 signing.properties
+keystore.properties
 
 # Android
 app/release/

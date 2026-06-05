@@ -106,10 +106,10 @@ fun UserDetailsScreen(
                                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                                     AsyncImage(
                                         model = ImageRequest.Builder(LocalContext.current)
-                                            .data(u.profile.photos.getOrElse(page) { "https://ui-avatars.com/api/?name={u.profile.fullName}&background=E91E63&color=fff&size=400" })
+                                            .data(u.profile.photos.getOrElse(page) { "https://ui-avatars.com/api/?name=${u.profile.fullName}&background=E91E63&color=fff&size=400" })
                                             .crossfade(true)
                                             .build(),
-                                        contentDescription = "Foto {page + 1}",
+                                        contentDescription = "Foto ${page + 1}",
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier.fillMaxSize()
                                     )
@@ -137,6 +137,14 @@ fun UserDetailsScreen(
                     }
 
                     item { UserBasicInfo(u) }
+
+                    // Resultados dos questionários de autoconhecimento
+                    if (u.profile.enneagramType.isNotBlank() ||
+                        u.profile.personalityArchetype.isNotBlank() ||
+                        u.profile.loveLanguage.isNotBlank()
+                    ) {
+                        item { SelfKnowledgeSection(u) }
+                    }
 
                     if (u.profile.aboutMe.isNotBlank()) {
                         item {
@@ -187,6 +195,70 @@ private fun SwipeBottomBar(onPass: () -> Unit, onSuperLike: () -> Unit, onLike: 
             FloatingActionButton(onClick = onLike, containerColor = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp)) {
                 Icon(Icons.Default.Favorite, "Curtir", tint = Color.White)
             }
+        }
+    }
+}
+
+@Composable
+private fun SelfKnowledgeSection(user: User) {
+    InfoSection(title = "Autoconhecimento") {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (user.profile.enneagramType.isNotBlank()) {
+                SelfKnowledgeRow(
+                    icon = Icons.Default.Psychology,
+                    tint = FypColors.Secondary,
+                    label = "Eneagrama",
+                    value = user.profile.enneagramType
+                )
+            }
+            if (user.profile.personalityArchetype.isNotBlank()) {
+                SelfKnowledgeRow(
+                    icon = Icons.Default.AutoAwesome,
+                    tint = FypColors.Primary,
+                    label = "Arquétipo de personalidade",
+                    value = user.profile.personalityArchetype
+                )
+            }
+            if (user.profile.loveLanguage.isNotBlank()) {
+                SelfKnowledgeRow(
+                    icon = Icons.Default.Favorite,
+                    tint = FypColors.Primary,
+                    label = "Linguagem do amor",
+                    value = user.profile.loveLanguage
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelfKnowledgeRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color,
+    label: String,
+    value: String
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

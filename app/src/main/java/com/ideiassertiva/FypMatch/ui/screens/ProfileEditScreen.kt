@@ -451,13 +451,12 @@ private fun AboutMeSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun InterestsSection(
     interests: List<String>,
     onInterestsChange: (List<String>) -> Unit
 ) {
-    var newInterest by remember { mutableStateOf("") }
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -468,56 +467,56 @@ private fun InterestsSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Interesses",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = newInterest,
-                    onValueChange = { newInterest = it },
-                    label = { Text("Adicionar interesse") },
-                    modifier = Modifier.weight(1f)
+                Text(
+                    text = "Interesses",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
-
-                Button(
-                    onClick = {
-                        if (newInterest.isNotBlank() && newInterest !in interests) {
-                            onInterestsChange(interests + newInterest.trim())
-                            newInterest = ""
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Adicionar"
-                    )
-                }
+                Text(
+                    text = "${interests.size} selecionados",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
 
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(interests) { interest ->
-                    FilterChip(
-                        onClick = {
-                            onInterestsChange(interests - interest)
-                        },
-                        label = { Text(interest) },
-                        selected = true,
-                        trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Remover",
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    )
+            com.ideiassertiva.FypMatch.data.InterestCatalog.categories.forEach { (categoria, opcoes) ->
+                Text(
+                    text = categoria,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    opcoes.forEach { opcao ->
+                        val selecionado = opcao in interests
+                        FilterChip(
+                            selected = selecionado,
+                            onClick = {
+                                onInterestsChange(
+                                    if (selecionado) interests - opcao else interests + opcao
+                                )
+                            },
+                            label = { Text(opcao) },
+                            leadingIcon = if (selecionado) {
+                                {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            } else null
+                        )
+                    }
                 }
             }
         }

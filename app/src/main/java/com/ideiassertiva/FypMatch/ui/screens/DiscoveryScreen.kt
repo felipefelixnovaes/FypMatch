@@ -688,7 +688,9 @@ private fun SwipeIndicators(
     }
 }
 
-/** Linha de badges no card: eneagrama, arquétipo, signo, intenção, linguagem do amor */
+/** Linha de badges no card: eneagrama, arquétipo, signo, intenção, linguagem do amor.
+ *  Usa FlowRow (quebra linha) — NUNCA scroll, para não conflitar com o gesto de swipe. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProfileBadgesRow(profile: com.ideiassertiva.FypMatch.model.UserProfile) {
     val badges = buildList {
@@ -711,11 +713,11 @@ private fun ProfileBadgesRow(profile: com.ideiassertiva.FypMatch.model.UserProfi
     if (badges.isEmpty()) return
 
     Spacer(modifier = Modifier.height(10.dp))
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        maxItemsInEachRow = 3
     ) {
         badges.forEach { (icon, label) ->
             ProfileBadge(icon = icon, label = label)

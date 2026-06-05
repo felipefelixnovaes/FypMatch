@@ -134,10 +134,21 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
     
     // Obter matches do usuário
     fun getUserMatches(userId: String): List<Match> {
-        return _matches.value.filter { 
-            (it.user1Id == userId || it.user2Id == userId) && it.isActive 
+        return _matches.value.filter {
+            (it.user1Id == userId || it.user2Id == userId) && it.isActive
         }
     }
+
+    // IDs das curtidas enviadas (like/super like) — para a tela de Curtidas
+    fun getSentLikeIds(): List<String> =
+        _swipeActions.value
+            .filter { it.action != SwipeType.PASS }
+            .map { it.toUserId }
+            .distinct()
+
+    // IDs dos usuários com quem deu match — para a tela de Curtidas
+    fun getMatchUserIds(): List<String> =
+        _matches.value.map { it.user2Id }.distinct()
     
     // Verificar limites de likes (para monetização)
     fun checkLikeLimit(userId: String, subscription: SubscriptionStatus): Boolean {

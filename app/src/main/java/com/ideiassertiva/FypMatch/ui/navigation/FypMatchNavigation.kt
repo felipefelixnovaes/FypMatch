@@ -30,6 +30,8 @@ sealed class Screen(val route: String) {
     object Discovery : Screen("discovery")
     object Profile : Screen("profile")
     object Matches : Screen("matches")
+    /** Curtidas recebidas / enviadas / matches */
+    object Likes : Screen("likes")
     object Conversations : Screen("conversations")
     object Chat : Screen("chat/{conversationId}") {
         fun createRoute(conversationId: String) = "chat/$conversationId"
@@ -143,7 +145,7 @@ fun FypMatchNavigation(
         composable(Screen.Discovery.route) {
             DiscoveryScreen(
                 onNavigateToMatches = {
-                    navController.navigate(Screen.Conversations.route)
+                    navController.navigate(Screen.Likes.route)
                 },
                 onNavigateToPremium = {
                     navController.navigate(Screen.Premium.route)
@@ -189,6 +191,16 @@ fun FypMatchNavigation(
                 },
                 onNavigateToChat = { matchId ->
                     navController.navigate(Screen.Chat.createRoute(matchId))
+                }
+            )
+        }
+
+        // ─── Curtidas recebidas / enviadas / matches ──────────────────────
+        composable(Screen.Likes.route) {
+            LikesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToUserDetails = { userId ->
+                    navController.navigate(Screen.UserDetails.createRoute(userId))
                 }
             )
         }

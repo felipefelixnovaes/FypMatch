@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Water
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,7 +104,9 @@ fun NeuroProfileScreen(
     var currentStep by rememberSaveable { mutableStateOf(0) }
 
     // Step 1 — neurotipos selecionados
-    val neurotiposSelecionados = rememberSaveable { mutableStateListOf<String>() }
+    val neurotiposSelecionados = rememberSaveable(
+        saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() })
+    ) { mutableStateListOf<String>() }
 
     // Step 2 — preferências de comunicação
     var prefDirectness by rememberSaveable { mutableStateOf(false) }
@@ -113,7 +116,9 @@ fun NeuroProfileScreen(
     var prefClearComm by rememberSaveable { mutableStateOf(false) }
 
     // Step 3 — acomodações
-    val acomodacoesSelecionadas = rememberSaveable { mutableStateListOf<AccommodationType>() }
+    val acomodacoesSelecionadas = rememberSaveable(
+        saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() })
+    ) { mutableStateListOf<AccommodationType>() }
 
     fun buildProfile(): NeuroProfile = NeuroProfile(
         preferences = NeuroPreferences(

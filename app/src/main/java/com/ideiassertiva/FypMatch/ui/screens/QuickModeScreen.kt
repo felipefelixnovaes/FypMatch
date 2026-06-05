@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,8 +83,12 @@ fun QuickModeScreen(
     val repo = remember { QuestionnaireRepository() }
 
     // Estados das etapas
-    val tipiValues = rememberSaveable { mutableStateListOf(*Array(10) { 4f }) }
-    val valoresSelecionados = rememberSaveable { mutableStateListOf<String>() }
+    val tipiValues = rememberSaveable(
+        saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() })
+    ) { mutableStateListOf(*Array(10) { 4f }) }
+    val valoresSelecionados = rememberSaveable(
+        saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() })
+    ) { mutableStateListOf<String>() }
     var commConflictStyle by rememberSaveable { mutableStateOf("") }
     var commMessagingFreq by rememberSaveable { mutableStateOf("") }
     var commAbsenceReaction by rememberSaveable { mutableStateOf("") }
@@ -94,7 +99,9 @@ fun QuickModeScreen(
     var routEnergySource by rememberSaveable { mutableStateOf("") }
     var routWorkLife by rememberSaveable { mutableStateOf("") }
     var routHomeNoise by rememberSaveable { mutableStateOf("") }
-    val dealBreakers = rememberSaveable { mutableStateListOf<String>() }
+    val dealBreakers = rememberSaveable(
+        saver = listSaver(save = { it.toList() }, restore = { it.toMutableStateList() })
+    ) { mutableStateListOf<String>() }
     var isLoading by rememberSaveable { mutableStateOf(false) }
 
     val totalSteps = 5

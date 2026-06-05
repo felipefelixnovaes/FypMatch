@@ -1,7 +1,10 @@
 package com.ideiassertiva.FypMatch.ui.screens
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -62,7 +65,40 @@ fun SettingsScreen(
     // ─── Diálogos de confirmação ─────────────────────────────────────────────
     var mostrarDialogLogout by remember { mutableStateOf(false) }
     var mostrarDialogExcluir by remember { mutableStateOf(false) }
+    var mostrarDialogDenuncia by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+
+    // ─── Diálogo de bloquear/denunciar ───────────────────────────────────────
+    if (mostrarDialogDenuncia) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogDenuncia = false },
+            icon = { Icon(Icons.Default.Shield, contentDescription = null, tint = FypColors.Primary) },
+            title = { Text("Segurança e denúncias") },
+            text = {
+                Text(
+                    "Para bloquear ou denunciar uma pessoa específica, abra o perfil dela e toque no menu (⋯).\n\n" +
+                    "Em casos urgentes ou de assédio, fale diretamente com nossa equipe de segurança."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    mostrarDialogDenuncia = false
+                    enviarEmailSuporte(
+                        context = context,
+                        destino = "seguranca@fypmatch.com",
+                        assunto = "Denúncia de usuário — FypMatch"
+                    )
+                }) {
+                    Text("Falar com segurança", color = FypColors.Primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogDenuncia = false }) {
+                    Text("Fechar")
+                }
+            }
+        )
+    }
 
     // Helper para persistir preferências
     fun salvarPreferencia(chave: String, valor: Boolean) {
@@ -424,7 +460,8 @@ fun SettingsScreen(
                     },
                     trailingContent = {
                         Icon(Icons.Default.ChevronRight, contentDescription = null)
-                    }
+                    },
+                    modifier = Modifier.clickable { mostrarDialogDenuncia = true }
                 )
             }
 
@@ -514,6 +551,13 @@ fun SettingsScreen(
                     },
                     trailingContent = {
                         Icon(Icons.Default.ChevronRight, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable {
+                        enviarEmailSuporte(
+                            context = context,
+                            destino = "suporte@fypmatch.com",
+                            assunto = "Reportar problema no app FypMatch"
+                        )
                     }
                 )
             }
@@ -595,5 +639,21 @@ private fun SettingsNavRow(
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null)
         }
+    }
+}
+
+/**
+ * Abre o app de e-mail do usuário com destinatário e assunto pré-preenchidos.
+ * Se não houver app de e-mail, exibe um Toast com o endereço de contato.
+ */
+private fun enviarEmailSuporte(context: Context, destino: String, assunto: String) {
+    val intent = Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.parse("mailto:$destino")
+        putExtra(Intent.EXTRA_SUBJECT, assunto)
+    }
+    try {
+        context.startActivity(Intent.createChooser(intent, "Enviar e-mail"))
+    } catch (e: Exception) {
+        Toast.makeText(context, "Envie um e-mail para $destino", Toast.LENGTH_LONG).show()
     }
 }

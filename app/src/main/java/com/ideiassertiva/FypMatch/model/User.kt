@@ -54,7 +54,12 @@ data class UserProfile(
     val languages: List<String> = emptyList(),
     val traveledCountries: List<String> = emptyList(),
     val petPreference: PetPreference = PetPreference.NOT_SPECIFIED,
-    
+
+    // Autoconhecimento (resultado dos questionários) — exibidos como badges no card
+    val enneagramType: String = "",          // ex: "Tipo 4 — O Individualista"
+    val personalityArchetype: String = "",   // ex: "O Explorador"
+    val loveLanguage: String = "",           // ex: "Tempo de qualidade"
+
     val isProfileComplete: Boolean = false
 )
 

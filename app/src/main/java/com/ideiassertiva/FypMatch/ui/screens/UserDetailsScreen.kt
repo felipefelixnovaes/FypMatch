@@ -196,7 +196,7 @@ private fun UserBasicInfo(user: User) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "{user.profile.fullName}, {user.profile.age}",
+                text = "${user.profile.fullName}, ${user.profile.age}",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -210,10 +210,10 @@ private fun UserBasicInfo(user: User) {
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            InfoChip(icon = Icons.Default.LocationOn, text = "{user.profile.location.city}, {user.profile.location.state}")
+            InfoChip(icon = Icons.Default.LocationOn, text = "${user.profile.location.city}, ${user.profile.location.state}")
             InfoChip(icon = Icons.Default.Person, text = user.profile.profession)
             if (user.profile.height > 0) {
-                InfoChip(icon = Icons.Default.Person, text = "{user.profile.height}cm")
+                InfoChip(icon = Icons.Default.Person, text = "${user.profile.height}cm")
             }
         }
         if (user.profile.bio.isNotBlank()) {

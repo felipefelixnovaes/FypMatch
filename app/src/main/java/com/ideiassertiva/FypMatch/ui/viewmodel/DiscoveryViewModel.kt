@@ -62,7 +62,24 @@ class DiscoveryViewModel @Inject constructor(
 
     init {
         currentUserId = authRepository.getCurrentFirebaseUser()?.uid ?: ""
-        loadNextCard()
+        loadInitialCards()
+    }
+
+    private fun loadInitialCards() {
+        _uiState.value = DiscoveryUiState.Loading
+        viewModelScope.launch {
+            try {
+                discoveryRepository.loadDiscoveryCards(currentUserId)
+                loadNextCard()
+                _uiState.value = DiscoveryUiState.Content(
+                    cardsEmpty = _currentCard.value == null
+                )
+            } catch (e: Exception) {
+                _uiState.value = DiscoveryUiState.Error(
+                    message = e.message ?: "Erro ao carregar perfis"
+                )
+            }
+        }
     }
 
     private fun loadNextCard() {
@@ -164,7 +181,7 @@ class DiscoveryViewModel @Inject constructor(
         _uiState.value = DiscoveryUiState.Loading
         viewModelScope.launch {
             try {
-                delay(1000)
+                discoveryRepository.loadDiscoveryCards(currentUserId)
                 loadNextCard()
                 _uiState.value = DiscoveryUiState.Content(
                     cardsEmpty = _currentCard.value == null

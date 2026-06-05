@@ -150,7 +150,9 @@ fun DiscoveryScreen(
             onPassClick = { viewModel.performSwipe(SwipeType.PASS) },
             onSuperLikeClick = { viewModel.performSwipe(SwipeType.SUPER_LIKE) },
             onLikeClick = { viewModel.performSwipe(SwipeType.LIKE) },
-            enabled = uiState !is DiscoveryUiState.Loading && currentCard != null
+            enabled = uiState !is DiscoveryUiState.Loading && currentCard != null,
+            onRewindClick = { viewModel.rewindLastSwipe() },
+            onBoostClick = { viewModel.activateBoost() }
         )
         
         // Spacer maior para não ficar embaixo da navegação do Android
@@ -560,7 +562,10 @@ private fun SwipeCard(
                         color = Color.White.copy(alpha = 0.8f)
                     )
                 }
-                
+
+                // Badges de autoconhecimento e perfil
+                ProfileBadgesRow(profile = card.user.profile)
+
                 if (card.user.profile.bio.isNotBlank()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
@@ -683,15 +688,81 @@ private fun SwipeIndicators(
     }
 }
 
+/** Linha de badges no card: eneagrama, arquétipo, signo, intenção, linguagem do amor */
+@Composable
+private fun ProfileBadgesRow(profile: com.ideiassertiva.FypMatch.model.UserProfile) {
+    val badges = buildList {
+        if (profile.enneagramType.isNotBlank()) {
+            add(Icons.Default.Psychology to profile.enneagramType.substringBefore(" —").trim())
+        }
+        if (profile.personalityArchetype.isNotBlank()) {
+            add(Icons.Default.AutoAwesome to profile.personalityArchetype)
+        }
+        if (profile.loveLanguage.isNotBlank()) {
+            add(Icons.Default.Favorite to profile.loveLanguage)
+        }
+        if (profile.intention != Intention.NOT_SPECIFIED) {
+            add(Icons.Default.Interests to profile.intention.getDisplayName())
+        }
+        if (profile.zodiacSign != ZodiacSign.NOT_SPECIFIED) {
+            add(Icons.Default.Stars to profile.zodiacSign.getDisplayName())
+        }
+    }
+    if (badges.isEmpty()) return
+
+    Spacer(modifier = Modifier.height(10.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        badges.forEach { (icon, label) ->
+            ProfileBadge(icon = icon, label = label)
+        }
+    }
+}
+
+@Composable
+private fun ProfileBadge(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.22f))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(13.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1
+        )
+    }
+}
+
 @Composable
 private fun SwipeActionButtons(
     onPassClick: () -> Unit,
     onSuperLikeClick: () -> Unit,
     onLikeClick: () -> Unit,
-    enabled: Boolean
+    enabled: Boolean,
+    onRewindClick: () -> Unit = {},
+    onBoostClick: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -699,9 +770,12 @@ private fun SwipeActionButtons(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Botão Rewind (ainda não implementado, mas deixando espaço para futuro)
+        // Botão Rewind — desfaz o último swipe
         FloatingActionButton(
-            onClick = { /* TODO: Implementar rewind */ },
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onRewindClick()
+            },
             containerColor = FypColors.Gold.copy(alpha = 0.3f),
             modifier = Modifier.size(42.dp),
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
@@ -768,15 +842,18 @@ private fun SwipeActionButtons(
             )
         }
         
-        // Botão Boost (ainda não implementado, mas deixando espaço para futuro)
+        // Botão Boost — destaca o perfil por 30 min
         FloatingActionButton(
-            onClick = { /* TODO: Implementar boost */ },
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onBoostClick()
+            },
             containerColor = FypColors.Secondary.copy(alpha = 0.3f),
             modifier = Modifier.size(42.dp),
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.LocationOn,
+                imageVector = Icons.Default.Bolt,
                 contentDescription = "Boost",
                 tint = FypColors.Secondary,
                 modifier = Modifier.size(20.dp)

@@ -2,6 +2,7 @@
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
+import com.ideiassertiva.FypMatch.data.MockProfiles
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,17 +42,19 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
         }
     }
 
-    // Carrega os cards de discovery para um usuário específico
+    // Carrega os cards de discovery para um usuário específico.
+    // Fallback: se o Firestore ainda não tem usuários (beta/testes), usa perfis demo.
     suspend fun loadDiscoveryCards(currentUserId: String) {
-        val users = loadUsersFromFirestore(currentUserId)
+        val firestoreUsers = loadUsersFromFirestore(currentUserId)
+        val users = firestoreUsers.ifEmpty { MockProfiles.profiles }
         val cards = users.map { user ->
             DiscoveryCard(
                 user = user,
-                distance = 0,
-                compatibilityScore = 0f,
-                commonInterests = emptyList(),
+                distance = (1..25).random(),
+                compatibilityScore = (60..98).random() / 100f,
+                commonInterests = user.profile.interests.take(2),
                 photos = user.profile.photos,
-                isVerified = false
+                isVerified = user.subscription != SubscriptionStatus.FREE
             )
         }
         _discoveryCards.value = cards

@@ -1,5 +1,6 @@
 package com.ideiassertiva.FypMatch.ui.theme
 
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 /**
@@ -131,4 +132,16 @@ object FypColors {
     val DarkInverseSurface = Color(0xFFE9E1E3)
     val DarkInverseOnSurface = Color(0xFF342F30)
     val DarkInversePrimary = Color(0xFFE91E63)
+
+    // =============================================
+    // Gradientes de marca (rosa → roxo)
+    // =============================================
+
+    /** Gradiente vertical de marca — usado em headers e fundos imersivos */
+    val BrandGradientVertical: Brush
+        get() = Brush.verticalGradient(listOf(Primary, Secondary))
+
+    /** Gradiente diagonal de marca — usado em cards de destaque */
+    val BrandGradientDiagonal: Brush
+        get() = Brush.linearGradient(listOf(Primary, Secondary))
 }

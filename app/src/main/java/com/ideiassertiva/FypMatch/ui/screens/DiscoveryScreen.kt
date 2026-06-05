@@ -220,80 +220,26 @@ private fun DiscoveryTopBar(
                 contentScale = ContentScale.Fit
             )
             
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            // Único acesso destacado: Conselheiro IA (feature premium)
+            OutlinedButton(
+                onClick = onAICounselorClick,
+                modifier = Modifier.height(32.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
             ) {
-                // Botão do conselheiro VIP
-                OutlinedButton(
-                    onClick = onAICounselorClick,
-                    modifier = Modifier.height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        modifier = Modifier.size(12.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        text = "IA",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                
-                // Botão Phase 3 Demo - NOVO!
-                OutlinedButton(
-                    onClick = onPhase3DemoClick,
-                    modifier = Modifier.height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.secondary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Chat,
-                        contentDescription = null,
-                        modifier = Modifier.size(12.dp),
-                        tint = MaterialTheme.colorScheme.secondary
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        text = "Chat",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                
-                // Botão Phase 4 AI - NOVO!
-                OutlinedButton(
-                    onClick = onPhase4AIClick,
-                    modifier = Modifier.height(32.dp),
-                    contentPadding = PaddingValues(horizontal = 6.dp),
-                    border = BorderStroke(1.dp, FypColors.Secondary), // Purple color for Phase 4
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = FypColors.Secondary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Psychology,
-                        contentDescription = null,
-                        modifier = Modifier.size(12.dp),
-                        tint = FypColors.Secondary
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Text(
-                        text = "AI+",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = FypColors.Secondary,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Conselheiro IA",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
         

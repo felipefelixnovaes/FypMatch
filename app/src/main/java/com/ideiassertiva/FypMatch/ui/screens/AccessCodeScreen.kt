@@ -2,10 +2,10 @@ package com.ideiassertiva.FypMatch.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -19,13 +19,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ideiassertiva.FypMatch.model.AccessCodeType
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.AccessCodeViewModel
 import com.ideiassertiva.FypMatch.ui.viewmodel.RedeemState
-import com.ideiassertiva.FypMatch.ui.viewmodel.getCodeTypeInfoList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,8 +36,9 @@ fun AccessCodeScreen(
 ) {
     val codeInput by viewModel.codeInput.collectAsStateWithLifecycle()
     val redeemState by viewModel.redeemState.collectAsStateWithLifecycle()
-    val canUseCode by viewModel.canUseCode.collectAsStateWithLifecycle()
-    
+    val isLoading = redeemState is RedeemState.Loading
+    val errorMessage = (redeemState as? RedeemState.Error)?.message
+
     when (val state = redeemState) {
         is RedeemState.Success -> {
             SuccessDialog(
@@ -50,45 +51,175 @@ fun AccessCodeScreen(
         }
         else -> {}
     }
-    
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
     ) {
-        TopAppBar(
-            title = { Text("Código de Acesso") },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
-                }
+        // ─── Header de marca (gradiente rosa → roxo) ──────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .background(FypColors.BrandGradientVertical)
+        ) {
+            IconButton(
+                onClick = onNavigateBack,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .statusBarsPadding()
+                    .align(Alignment.TopStart)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Voltar",
+                    tint = Color.White
+                )
             }
-        )
-        
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(88.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.White.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.ConfirmationNumber,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                Text(
+                    "Tenho um código",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    "Recebeu um convite para o FypMatch? Insira o código abaixo para liberar seu acesso.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.9f),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        // ─── Formulário ───────────────────────────────────────────────────
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
         ) {
             OutlinedTextField(
                 value = codeInput,
                 onValueChange = viewModel::updateCodeInput,
-                label = { Text("Código de Acesso") },
+                label = { Text("Código de acesso") },
+                placeholder = { Text("FYPMATCH-XXXX-XXXX") },
+                leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
+                singleLine = true,
+                isError = errorMessage != null,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                 modifier = Modifier.fillMaxWidth()
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
+
+            if (errorMessage != null) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.ErrorOutline,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        errorMessage,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
             Button(
                 onClick = {
-                    if (codeInput == "FYPMATCH-ADMIN-VIP") {
-                        onNavigateToHome() // Will be used to navigate to Counselor instead
+                    if (codeInput.trim() == "FYPMATCH-ADMIN-VIP") {
+                        onNavigateToHome()
                     } else {
                         viewModel.redeemCode()
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = redeemState !is RedeemState.Loading
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                enabled = codeInput.isNotBlank() && !isLoading
             ) {
-                Text("Resgatar Código")
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Resgatar código", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // Bloco de ajuda — contexto sobre onde conseguir um código
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = FypColors.PrimaryContainer.copy(alpha = 0.4f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        Icons.Default.Lightbulb,
+                        contentDescription = null,
+                        tint = FypColors.Primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            "Ainda não tem um código?",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Os códigos são distribuídos para a comunidade beta e por afiliados. Volte para entrar na lista de espera.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

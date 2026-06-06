@@ -8,8 +8,10 @@ import com.ideiassertiva.FypMatch.data.repository.ChatRepository
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -53,6 +55,10 @@ class DiscoveryViewModel @Inject constructor(
 
     private val _boostActive = MutableStateFlow(false)
     val boostActive: StateFlow<Boolean> = _boostActive.asStateFlow()
+
+    // Contador de novidades para o badge do coração (curtidas recebidas + matches novos)
+    val newLikesCount: StateFlow<Int> = discoveryRepository.newLikesCount
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     private var currentUserId = ""
     private val currentUserSubscription = SubscriptionStatus.FREE

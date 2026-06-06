@@ -41,9 +41,12 @@ class LikesViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
 
+            // Abrir a tela zera o badge de novidades no coração
+            discoveryRepository.markLikesSeen()
+
             // Curtidas RECEBIDAS — em modo demo, alguns perfis "curtiram você".
             // Em produção, viria do Firestore (coleção likes onde toUser == currentUser).
-            _received.value = MockProfiles.profiles.takeLast(2)
+            _received.value = discoveryRepository.getReceivedLikeProfiles()
 
             // Curtidas ENVIADAS — resolve os IDs registrados nos swipes para User
             _sent.value = discoveryRepository.getSentLikeIds()

@@ -6,6 +6,7 @@ import com.ideiassertiva.FypMatch.data.MockProfiles
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
@@ -24,6 +25,23 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
 
     private val _matches = MutableStateFlow<List<Match>>(emptyList())
     val matches: Flow<List<Match>> = _matches.asStateFlow()
+
+    // Contador de novidades (curtidas recebidas + matches novos) para o badge do coração
+    private val _newLikesCount = MutableStateFlow(0)
+    val newLikesCount: StateFlow<Int> = _newLikesCount.asStateFlow()
+
+    init {
+        // Demo: curtidas recebidas começam como "novas" no badge
+        _newLikesCount.value = getReceivedLikeProfiles().size
+    }
+
+    // Perfis que curtiram o usuário (demo: fallback de mocks; produção: Firestore)
+    fun getReceivedLikeProfiles(): List<User> = MockProfiles.profiles.takeLast(2)
+
+    // Zera o badge quando o usuário abre a tela de Curtidas
+    fun markLikesSeen() {
+        _newLikesCount.value = 0
+    }
 
     // Carrega usuários reais do Firestore (excluindo o próprio usuário corrente)
     private suspend fun loadUsersFromFirestore(currentUserId: String): List<User> {
@@ -115,6 +133,7 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
                     createdAt = Date()
                 )
                 _matches.value = _matches.value + newMatch
+                _newLikesCount.value += 1 // novo match → incrementa o badge
                 newMatch
             } else null
             

@@ -65,6 +65,7 @@ fun DiscoveryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentCard by viewModel.currentCard.collectAsStateWithLifecycle()
+    val newLikesCount by viewModel.newLikesCount.collectAsStateWithLifecycle()
 
     // Modal de match
     val matchModal = uiState as? DiscoveryUiState.MatchModal
@@ -100,7 +101,8 @@ fun DiscoveryScreen(
             onAICounselorClick = { onNavigateToAICounselor("current_user_id") },
             onPhase4AIClick = { onNavigateToPhase4AI("current_user_id") },
             onProfileClick = onNavigateToProfile,
-            onPhase3DemoClick = onNavigateToPhase3Demo
+            onPhase3DemoClick = onNavigateToPhase3Demo,
+            newLikesCount = newLikesCount
         )
 
         Box(
@@ -167,7 +169,8 @@ private fun DiscoveryTopBar(
     onAICounselorClick: () -> Unit = {},
     onPhase4AIClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    onPhase3DemoClick: () -> Unit = {}
+    onPhase3DemoClick: () -> Unit = {},
+    newLikesCount: Int = 0
 ) {
     Row(
         modifier = Modifier
@@ -263,18 +266,20 @@ private fun DiscoveryTopBar(
                 )
             }
             
-            // Badge de notificação (exemplo)
-            Badge(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = (-2).dp, y = 2.dp),
-                containerColor = Color.Red
-            ) {
-                Text(
-                    text = "3",
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall
-                )
+            // Badge de novidades — curtidas recebidas + matches novos
+            if (newLikesCount > 0) {
+                Badge(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-2).dp, y = 2.dp),
+                    containerColor = FypColors.Primary
+                ) {
+                    Text(
+                        text = if (newLikesCount > 9) "9+" else newLikesCount.toString(),
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }

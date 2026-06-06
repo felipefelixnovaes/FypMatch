@@ -4,9 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -215,65 +218,78 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            // Perfil do usuário
-            item {
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = currentUser?.displayName ?: "Usuário",
-                            fontWeight = FontWeight.Medium
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            text = currentUser?.email ?: "",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    leadingContent = {
-                        UserAvatar(
-                            url = currentUser?.photoUrl?.toString(),
-                            size = 48.dp
-                        )
-                    },
-                    trailingContent = {
-                        // Exibe badge premium se usuário tiver email verificado (placeholder)
-                        if (currentUser?.isEmailVerified == true) {
-                            PremiumBadge(tier = PremiumTier.PREMIUM)
-                        }
-                    }
-                )
-            }
-
-            // Ver planos Premium
+            // Card do perfil do usuário
             item {
                 Card(
-                    onClick = onNavigateToPremium,
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    )
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Star, contentDescription = "Planos Premium", tint = FypColors.Primary)
+                        UserAvatar(url = currentUser?.photoUrl?.toString(), size = 56.dp)
                         Spacer(modifier = Modifier.width(16.dp))
-                        Text(
-                            "Ver planos Premium",
-                            color = FypColors.Primary,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = FypColors.Primary)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = currentUser?.displayName ?: "Marina Alves",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Ver seu perfil",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = FypColors.Primary
+                            )
+                        }
                     }
                 }
             }
 
-            item { Divider(modifier = Modifier.padding(vertical = 8.dp)) }
+            // Card Premium em gradiente de marca
+            item {
+                Card(
+                    onClick = onNavigateToPremium,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(FypColors.BrandGradientDiagonal)
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Ver planos Premium",
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "Mais curtidas, visibilidade e recursos exclusivos",
+                                color = Color.White.copy(alpha = 0.9f),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(Color.White.copy(alpha = 0.25f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
             // ═══════════════════════════════════════════════════════════════
             // SEÇÃO: DESCOBERTAS & AUTOCONHECIMENTO
@@ -618,26 +634,35 @@ private fun SettingsNavRow(
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = tint)
-            Spacer(modifier = Modifier.width(16.dp))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+            }
+            Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 Text(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Icon(Icons.Default.ChevronRight, contentDescription = null)
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

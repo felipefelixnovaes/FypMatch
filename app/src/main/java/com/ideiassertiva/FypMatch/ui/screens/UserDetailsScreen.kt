@@ -182,87 +182,146 @@ fun UserDetailsScreen(
 private fun SwipeBottomBar(onPass: () -> Unit, onSuperLike: () -> Unit, onLike: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Top
         ) {
-            FloatingActionButton(onClick = onPass, containerColor = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.size(56.dp)) {
-                Icon(Icons.Default.Close, "Passar", tint = MaterialTheme.colorScheme.onErrorContainer)
-            }
-            FloatingActionButton(onClick = onSuperLike, containerColor = FypColors.SuperLike, modifier = Modifier.size(48.dp)) {
-                Icon(Icons.Default.Star, "Super Curtir", tint = Color.White)
-            }
-            FloatingActionButton(onClick = onLike, containerColor = MaterialTheme.colorScheme.primary, modifier = Modifier.size(56.dp)) {
-                Icon(Icons.Default.Favorite, "Curtir", tint = Color.White)
-            }
+            BottomActionItem(
+                icon = Icons.Default.Close,
+                label = "Não",
+                color = FypColors.Pass,
+                size = 56.dp,
+                onClick = onPass
+            )
+            BottomActionItem(
+                icon = Icons.Default.Star,
+                label = "Super Like",
+                color = FypColors.SuperLike,
+                size = 56.dp,
+                highlighted = true,
+                onClick = onSuperLike
+            )
+            BottomActionItem(
+                icon = Icons.Default.Favorite,
+                label = "Curtir",
+                color = FypColors.Primary,
+                size = 56.dp,
+                onClick = onLike
+            )
         }
+    }
+}
+
+@Composable
+private fun BottomActionItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    color: Color,
+    size: androidx.compose.ui.unit.Dp,
+    highlighted: Boolean = false,
+    onClick: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        FloatingActionButton(
+            onClick = onClick,
+            containerColor = if (highlighted) color else MaterialTheme.colorScheme.surface,
+            contentColor = if (highlighted) Color.White else color,
+            modifier = Modifier.size(size),
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
+        ) {
+            Icon(icon, contentDescription = label, modifier = Modifier.size(26.dp))
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
 @Composable
 private fun SelfKnowledgeSection(user: User) {
-    InfoSection(title = "Autoconhecimento") {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (user.profile.enneagramType.isNotBlank()) {
-                SelfKnowledgeRow(
-                    icon = Icons.Default.Psychology,
-                    tint = FypColors.Secondary,
-                    label = "Eneagrama",
-                    value = user.profile.enneagramType
-                )
-            }
-            if (user.profile.personalityArchetype.isNotBlank()) {
-                SelfKnowledgeRow(
-                    icon = Icons.Default.AutoAwesome,
-                    tint = FypColors.Primary,
-                    label = "Arquétipo de personalidade",
-                    value = user.profile.personalityArchetype
-                )
-            }
-            if (user.profile.loveLanguage.isNotBlank()) {
-                SelfKnowledgeRow(
-                    icon = Icons.Default.Favorite,
-                    tint = FypColors.Primary,
-                    label = "Linguagem do amor",
-                    value = user.profile.loveLanguage
-                )
-            }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Autoconhecimento",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        if (user.profile.enneagramType.isNotBlank()) {
+            SelfKnowledgeCard(
+                icon = Icons.Default.Psychology,
+                tint = FypColors.Secondary,
+                label = "Eneagrama",
+                value = user.profile.enneagramType
+            )
+        }
+        if (user.profile.personalityArchetype.isNotBlank()) {
+            SelfKnowledgeCard(
+                icon = Icons.Default.AutoAwesome,
+                tint = FypColors.Primary,
+                label = "Arquétipo de personalidade",
+                value = user.profile.personalityArchetype
+            )
+        }
+        if (user.profile.loveLanguage.isNotBlank()) {
+            SelfKnowledgeCard(
+                icon = Icons.Default.Favorite,
+                tint = FypColors.Primary,
+                label = "Linguagem do amor",
+                value = user.profile.loveLanguage
+            )
         }
     }
 }
 
 @Composable
-private fun SelfKnowledgeRow(
+private fun SelfKnowledgeCard(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     tint: Color,
     label: String,
     value: String
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(tint.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
-            contentAlignment = Alignment.Center
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
-        }
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(tint.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun UserBasicInfo(user: User) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -272,20 +331,32 @@ private fun UserBasicInfo(user: User) {
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.width(8.dp))
             if (user.subscription != SubscriptionStatus.FREE) {
-                AssistChip(
-                    onClick = { },
-                    label = { Text(user.subscription.name) },
-                    leadingIcon = { Icon(Icons.Default.Star, null, modifier = Modifier.size(16.dp)) }
-                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(FypColors.Primary, androidx.compose.foundation.shape.CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = "Verificado",
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
             }
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            InfoChip(icon = Icons.Default.LocationOn, text = "${user.profile.location.city}, ${user.profile.location.state}")
-            InfoChip(icon = Icons.Default.Person, text = user.profile.profession)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (user.profile.location.city.isNotBlank()) {
+                InfoChip(icon = Icons.Default.LocationOn, text = "${user.profile.location.city}, ${user.profile.location.state}")
+            }
+            if (user.profile.profession.isNotBlank()) {
+                InfoChip(icon = Icons.Default.Work, text = user.profile.profession)
+            }
             if (user.profile.height > 0) {
-                InfoChip(icon = Icons.Default.Person, text = "${user.profile.height}cm")
+                InfoChip(icon = Icons.Default.Straighten, text = "${user.profile.height} cm")
             }
         }
         if (user.profile.bio.isNotBlank()) {
@@ -373,8 +444,18 @@ private fun PreferenceList(label: String, items: List<String>) {
 
 @Composable
 private fun InfoChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-        Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(15.dp), tint = FypColors.Primary)
+            Text(text = text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+        }
     }
 }

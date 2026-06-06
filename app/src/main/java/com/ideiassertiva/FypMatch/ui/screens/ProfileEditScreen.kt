@@ -10,7 +10,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -229,6 +231,42 @@ fun ProfileEditScreen(
 }
 
 @Composable
+private fun SectionTitle(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    tint: Color,
+    title: String,
+    trailing: String? = null
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .background(tint.copy(alpha = 0.15f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f)
+        )
+        if (trailing != null) {
+            Text(
+                text = trailing,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
 private fun PhotoSection(
     photos: List<String>,
     onAddPhoto: () -> Unit,
@@ -244,10 +282,11 @@ private fun PhotoSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Fotos",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SectionTitle(
+                icon = Icons.Default.PhotoCamera,
+                tint = FypColors.Primary,
+                title = "Fotos",
+                trailing = "${photos.size}/6 fotos"
             )
 
             LazyRow(
@@ -343,10 +382,10 @@ private fun BasicInfoSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Informações Básicas",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SectionTitle(
+                icon = Icons.Default.Person,
+                tint = FypColors.Secondary,
+                title = "Informações Básicas"
             )
 
             OutlinedTextField(
@@ -425,24 +464,41 @@ private fun AboutMeSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Sobre Você",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SectionTitle(
+                icon = Icons.Default.EditNote,
+                tint = FypColors.Secondary,
+                title = "Sobre Você"
             )
 
             OutlinedTextField(
                 value = bio,
-                onValueChange = onBioChange,
+                onValueChange = { if (it.length <= 200) onBioChange(it) },
                 label = { Text("Bio (descrição curta)") },
+                placeholder = { Text("Fale um pouco sobre você, seus hobbies e o que procura.") },
+                supportingText = {
+                    Text(
+                        text = "${bio.length}/200",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.End,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
-                maxLines = 2
+                maxLines = 3
             )
 
             OutlinedTextField(
                 value = aboutMe,
-                onValueChange = onAboutMeChange,
+                onValueChange = { if (it.length <= 500) onAboutMeChange(it) },
                 label = { Text("Sobre mim (descrição detalhada)") },
+                supportingText = {
+                    Text(
+                        text = "${aboutMe.length}/500",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.End,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 4,
                 maxLines = 6
@@ -467,22 +523,12 @@ private fun InterestsSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Interesses",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${interests.size} selecionados",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            SectionTitle(
+                icon = Icons.Default.Interests,
+                tint = FypColors.Primary,
+                title = "Interesses",
+                trailing = "${interests.size} selecionados"
+            )
 
             com.ideiassertiva.FypMatch.data.InterestCatalog.categories.forEach { (categoria, opcoes) ->
                 Text(
@@ -538,10 +584,10 @@ private fun PersonalInfoEditSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Informações Pessoais",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SectionTitle(
+                icon = Icons.Default.Badge,
+                tint = FypColors.Secondary,
+                title = "Informações Pessoais"
             )
 
             // Estado civil
@@ -694,10 +740,10 @@ private fun CulturalPreferencesEditSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Preferências e Gostos",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+            SectionTitle(
+                icon = Icons.Default.Favorite,
+                tint = FypColors.Primary,
+                title = "Preferências e Gostos"
             )
 
             OutlinedTextField(

@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -94,6 +95,7 @@ fun DiscoveryScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
     ) {
         DiscoveryTopBar(
             onSettingsClick = onNavigateToSettings,
@@ -216,15 +218,24 @@ private fun DiscoveryTopBar(
 
         // Título e botão do conselheiro
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = painterResource(id = R.drawable.logo),
-                contentDescription = "FypMatch Logo",
-                modifier = Modifier
-                    .height(40.dp)
-                    .width(120.dp),
-                contentScale = ContentScale.Fit
-            )
-            
+            // Wordmark de texto (a imagem R.drawable.logo renderizava quebrada)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "FypMatch",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+
             // Único acesso destacado: Conselheiro IA (feature premium)
             OutlinedButton(
                 onClick = onAICounselorClick,
@@ -773,99 +784,77 @@ private fun SwipeActionButtons(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Botão Rewind — desfaz o último swipe
-        FloatingActionButton(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onRewindClick()
-            },
-            containerColor = FypColors.Gold.copy(alpha = 0.3f),
-            modifier = Modifier.size(42.dp),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "Voltar",
-                tint = FypColors.Gold,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        
-        // Botão Passar - melhorado seguindo padrão Tinder
-        FloatingActionButton(
-            onClick = { 
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onPassClick() 
-            },
-            containerColor = Color.White,
-            modifier = Modifier.size(54.dp),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Passar",
-                tint = FypColors.Pass,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-        
-        // Botão Super Like - melhorado
-        FloatingActionButton(
-            onClick = { 
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onSuperLikeClick() 
-            },
-            containerColor = Color.White,
-            modifier = Modifier.size(44.dp),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Star,
-                contentDescription = "Super Curtir",
-                tint = FypColors.SuperLike,
-                modifier = Modifier.size(22.dp)
-            )
-        }
-        
-        // Botão Curtir - melhorado seguindo padrão Tinder
-        FloatingActionButton(
-            onClick = { 
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onLikeClick() 
-            },
-            containerColor = Color.White,
-            modifier = Modifier.size(54.dp),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "Curtir",
-                tint = FypColors.Like,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-        
-        // Botão Boost — destaca o perfil por 30 min
-        FloatingActionButton(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onBoostClick()
-            },
-            containerColor = FypColors.Secondary.copy(alpha = 0.3f),
-            modifier = Modifier.size(42.dp),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 2.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Bolt,
-                contentDescription = "Boost",
-                tint = FypColors.Secondary,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+        SwipeCircleButton(
+            icon = Icons.Default.Refresh,
+            label = "Voltar",
+            iconTint = FypColors.Gold,
+            size = 46.dp,
+            iconSize = 22.dp
+        ) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onRewindClick() }
+
+        SwipeCircleButton(
+            icon = Icons.Default.Close,
+            label = "Passar",
+            iconTint = FypColors.Pass,
+            size = 58.dp,
+            iconSize = 30.dp
+        ) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onPassClick() }
+
+        SwipeCircleButton(
+            icon = Icons.Default.Star,
+            label = "Super Curtir",
+            iconTint = FypColors.SuperLike,
+            size = 46.dp,
+            iconSize = 24.dp
+        ) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onSuperLikeClick() }
+
+        SwipeCircleButton(
+            icon = Icons.Default.Favorite,
+            label = "Curtir",
+            iconTint = FypColors.Like,
+            size = 58.dp,
+            iconSize = 30.dp
+        ) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLikeClick() }
+
+        SwipeCircleButton(
+            icon = Icons.Default.Bolt,
+            label = "Boost",
+            iconTint = FypColors.Secondary,
+            size = 46.dp,
+            iconSize = 22.dp
+        ) { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onBoostClick() }
+    }
+}
+
+/** Botão circular branco com ícone colorido — padrão Tinder/Bumble */
+@Composable
+private fun SwipeCircleButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    iconTint: Color,
+    size: androidx.compose.ui.unit.Dp,
+    iconSize: androidx.compose.ui.unit.Dp,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .shadow(elevation = 6.dp, shape = CircleShape)
+            .clip(CircleShape)
+            .background(Color.White)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = iconTint,
+            modifier = Modifier.size(iconSize)
+        )
     }
 }
 

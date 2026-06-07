@@ -96,7 +96,6 @@ fun ProfileEditScreen(
                         TextButton(
                             onClick = {
                                 viewModel.saveUser(user)
-                                onSave(user)
                             }
                         ) {
                             Text("Salvar")

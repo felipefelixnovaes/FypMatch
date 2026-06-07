@@ -2,7 +2,6 @@
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
-import com.ideiassertiva.FypMatch.data.MockProfiles
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,12 +32,12 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
     val newLikesCount: StateFlow<Int> = _newLikesCount.asStateFlow()
 
     init {
-        // Demo: curtidas recebidas começam como "novas" no badge
-        _newLikesCount.value = getReceivedLikeProfiles().size
+        _newLikesCount.value = 0
     }
 
-    // Perfis que curtiram o usuário (demo: fallback de mocks; produção: Firestore)
-    fun getReceivedLikeProfiles(): List<User> = MockProfiles.profiles.takeLast(2)
+    // Perfis que curtiram o usuário — apenas dados reais.
+    // TODO: consultar a coleção de likes no Firestore (toUser == currentUser). Sem mocks.
+    fun getReceivedLikeProfiles(): List<User> = emptyList()
 
     // Zera o badge quando o usuário abre a tela de Curtidas
     fun markLikesSeen() {
@@ -72,13 +71,10 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
         }
     }
 
-    // Carrega os cards de discovery para um usuário específico.
-    // Fallback: se o Firestore ainda não tem usuários (beta/testes), usa perfis demo.
+    // Carrega os cards de discovery para um usuário específico — apenas perfis reais do Firestore.
     suspend fun loadDiscoveryCards(currentUserId: String) {
-        val firestoreUsers = loadUsersFromFirestore(currentUserId)
-        val users = firestoreUsers.ifEmpty { MockProfiles.profiles }
+        val users = loadUsersFromFirestore(currentUserId)
         val currentUser = loadCurrentUserFromFirestore(currentUserId)
-            ?: MockProfiles.profiles.firstOrNull { it.id == currentUserId }
         val cards = users.map { user ->
             val compatibilityScore = currentUser?.let {
                 compatibilityEngine.analyzeCompatibility(it, user).overall

@@ -118,8 +118,6 @@ class UserRepository @Inject constructor(
     }
 
     suspend fun getUserById(userId: String): User? {
-        // Fallback para perfis demo (beta/testes sem backend populado)
-        com.ideiassertiva.FypMatch.data.MockProfiles.profiles.find { it.id == userId }?.let { return it }
         return try {
             val doc = usersCollection.document(userId).get().await()
             if (doc.exists()) doc.toFypUserOrNull(doc.id) else null

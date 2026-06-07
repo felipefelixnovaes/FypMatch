@@ -2,7 +2,6 @@ package com.ideiassertiva.FypMatch.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ideiassertiva.FypMatch.data.MockProfiles
 import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.data.repository.DiscoveryRepository
 import com.ideiassertiva.FypMatch.data.repository.UserRepository

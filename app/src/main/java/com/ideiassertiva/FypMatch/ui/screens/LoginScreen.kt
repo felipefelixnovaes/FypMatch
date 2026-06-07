@@ -4,7 +4,6 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -85,11 +84,8 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Logo e título (Clickable for Mock Login in Emulator)
-        FypHeartMark(
-            size = 92.dp,
-            modifier = Modifier.clickable { viewModel.signInMock() }
-        )
+        // Logo da marca
+        FypHeartMark(size = 92.dp)
         
         Spacer(modifier = Modifier.height(16.dp))
         

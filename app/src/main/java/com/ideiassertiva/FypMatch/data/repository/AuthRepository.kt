@@ -188,38 +188,6 @@ class AuthRepository @Inject constructor(@ApplicationContext private val context
 
     fun getCurrentUserId(): String? = auth.currentUser?.uid
 
-    suspend fun signInMock(): Result<User> {
-        return try {
-            _isLoading.value = true
-            val mockUser = User(
-                id = "mock_user_id",
-                email = "mock@fypmatch.com",
-                displayName = "Usuário de Teste",
-                accessLevel = AccessLevel.FULL_ACCESS,
-                subscription = SubscriptionStatus.VIP,
-                aiCredits = AiCredits(current = 25, dailyLimit = 25),
-                profile = UserProfile(
-                    fullName = "Usuário de Teste",
-                    age = 25,
-                    bio = "Bio de teste para o emulador",
-                    photos = listOf("https://example.com/photo.jpg"),
-                    location = Location(city = "São Paulo"),
-                    gender = Gender.MALE,
-                    orientation = Orientation.STRAIGHT,
-                    intention = Intention.DATING
-                ),
-                createdAt = Date(),
-                lastActive = Date()
-            )
-            _currentUser.value = mockUser
-            Result.success(mockUser)
-        } catch (e: Exception) {
-            Result.failure(e)
-        } finally {
-            _isLoading.value = false
-        }
-    }
-
     fun isUserSignedIn(): Boolean {
         return auth.currentUser != null
     }

@@ -24,7 +24,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.ideiassertiva.FypMatch.ui.components.FypHeartMark
+import com.ideiassertiva.FypMatch.ui.components.FypMatchWordmark
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import kotlinx.coroutines.delay
@@ -98,20 +101,16 @@ fun WelcomeScreen(
         ) {
             Spacer(Modifier.height(56.dp))
 
-            // Logo
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "FypMatch",
-                modifier = Modifier.size(72.dp),
-                tint = Color.White
+            // Logo da marca — coração branco sobre o gradiente
+            FypHeartMark(
+                size = 84.dp,
+                white = true
             )
-            Text(
-                text = "FypMatch",
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                ),
-                textAlign = TextAlign.Center
+            Spacer(Modifier.height(10.dp))
+            FypMatchWordmark(
+                twoTone = false,
+                solidColor = Color.White,
+                fontSize = 40.sp
             )
             Text(
                 text = "Conexões Reais",

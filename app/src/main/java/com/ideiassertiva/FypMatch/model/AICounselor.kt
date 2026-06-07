@@ -12,7 +12,8 @@ data class CounselorSession(
     val isActive: Boolean = true,
     val messages: List<CounselorMessage> = emptyList(),
     val sessionType: SessionType = SessionType.GENERAL,
-    val mood: UserMood? = null
+    val mood: UserMood? = null,
+    val complementaryProfileContext: String = ""
 )
 
 data class CounselorMessage(
@@ -115,6 +116,12 @@ Você é um conselheiro especializado em relacionamentos e habilidades sociais d
 
 Sua resposta deve ser útil, empática e prática, sempre priorizando o bem-estar e crescimento saudável do usuário.
 """
+
+    fun withComplementaryProfile(profile: ComplementaryProfile): String {
+        val context = profile.toCounselorContext()
+        if (context.isBlank()) return SYSTEM_PROMPT.trim()
+        return SYSTEM_PROMPT.trim() + "\n\n" + context
+    }
 }
 
 // Extensões úteis

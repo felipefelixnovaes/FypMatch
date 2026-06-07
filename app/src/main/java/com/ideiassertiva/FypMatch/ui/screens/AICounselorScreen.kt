@@ -1,6 +1,7 @@
 package com.ideiassertiva.FypMatch.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -40,6 +41,7 @@ import kotlinx.coroutines.delay
 fun AICounselorScreen(
     onNavigateBack: () -> Unit = {},
     userId: String = "",
+    onNavigateToComplementaryProfile: () -> Unit = {},
     viewModel: AICounselorViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -60,6 +62,7 @@ fun AICounselorScreen(
         userCredits = viewModel.getUserCredits().current,
         canWatchAd = viewModel.canWatchAd(),
         onNavigateBack = onNavigateBack,
+        onNavigateToComplementaryProfile = onNavigateToComplementaryProfile,
         onUpdateMessage = { viewModel.updateCurrentMessage(it) },
         onSendMessage = { viewModel.sendMessage(it) },
         onWatchAd = { viewModel.watchAdForCredits() },
@@ -76,6 +79,7 @@ fun AICounselorContent(
     userCredits: Int,
     canWatchAd: Boolean,
     onNavigateBack: () -> Unit,
+    onNavigateToComplementaryProfile: () -> Unit = {},
     onUpdateMessage: (String) -> Unit,
     onSendMessage: (String) -> Unit,
     onWatchAd: () -> Unit,
@@ -142,6 +146,11 @@ fun AICounselorContent(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Acesso ao Perfil Complementar via IA — sempre visível, sem custo de créditos
+                item {
+                    ComplementaryProfileEntryCard(onClick = onNavigateToComplementaryProfile)
+                }
+
                 currentSession?.messages?.let { messages ->
                     items(messages) { message ->
                         MessageBubble(message = message)
@@ -169,6 +178,51 @@ fun AICounselorContent(
     uiState.error?.let { error ->
         LaunchedEffect(error) {
             // Mostrar snackbar ou dialog de erro
+        }
+    }
+}
+
+@Composable
+private fun ComplementaryProfileEntryCard(onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .background(FypColors.BrandGradientDiagonal)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.AutoAwesome,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Turbine seu perfil com sua IA",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Gere um perfil complementar na IA que você já usa. Grátis, sem gastar créditos.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.92f)
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color.White
+            )
         }
     }
 }
@@ -419,6 +473,7 @@ private fun AICounselorScreenPreview() {
             userCredits = 3,
             canWatchAd = true,
             onNavigateBack = {},
+            onNavigateToComplementaryProfile = {},
             onUpdateMessage = {},
             onSendMessage = {},
             onWatchAd = {},

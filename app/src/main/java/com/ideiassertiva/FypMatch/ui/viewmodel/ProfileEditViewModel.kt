@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.data.repository.UserRepository
 import com.ideiassertiva.FypMatch.model.User
+import com.ideiassertiva.FypMatch.model.withCompletionStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,13 +56,14 @@ class ProfileEditViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val result = userRepository.saveUserProfile(user)
+                val completedUser = user.copy(profile = user.profile.withCompletionStatus())
+                val result = userRepository.saveUserProfile(completedUser)
                 result.fold(
                     onSuccess = {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             savedSuccessfully = true,
-                            user = user
+                            user = completedUser
                         )
                     },
                     onFailure = { e ->

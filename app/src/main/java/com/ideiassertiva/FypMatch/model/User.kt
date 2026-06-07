@@ -1,7 +1,10 @@
 package com.ideiassertiva.FypMatch.model
 
+import com.google.firebase.firestore.Exclude
+import com.google.firebase.firestore.IgnoreExtraProperties
 import java.util.Date
 
+@IgnoreExtraProperties
 data class User(
     val id: String = "",
     val email: String = "",
@@ -16,9 +19,11 @@ data class User(
     val lastActive: Date = Date(),
     val isActive: Boolean = true,
     val waitlistData: WaitlistUser? = null,
-    val aiCredits: AiCredits = AiCredits()
+    val aiCredits: AiCredits = AiCredits(),
+    val complementaryProfile: ComplementaryProfile = ComplementaryProfile()
 )
 
+@IgnoreExtraProperties
 data class UserProfile(
     val fullName: String = "",
     val age: Int = 18,
@@ -176,14 +181,20 @@ enum class PetPreference {
     NOT_SPECIFIED
 }
 
+@IgnoreExtraProperties
 data class UserPreferences(
-    val ageRange: IntRange = 18..99,
+    val minAge: Int = 18,
+    val maxAge: Int = 99,
     val maxDistance: Int = 50, // em km
     val genderPreference: List<Gender> = emptyList(),
     val intentionPreference: List<Intention> = emptyList(),
     val showMe: Boolean = true,
     val onlyVerified: Boolean = false
-)
+) {
+    @get:Exclude
+    val ageRange: IntRange
+        get() = minAge..maxAge
+}
 
 enum class SubscriptionStatus {
     FREE,
@@ -230,14 +241,21 @@ object AiCreditLimits {
 
 // Extensões úteis
 fun User.isProfileComplete(): Boolean {
-    return profile.fullName.isNotBlank() &&
-            profile.age >= 18 &&
-            profile.bio.isNotBlank() &&
-            profile.photos.isNotEmpty() &&
-            profile.location.city.isNotBlank() &&
-            profile.gender != Gender.NOT_SPECIFIED &&
-            profile.orientation != Orientation.NOT_SPECIFIED &&
-            profile.intention != Intention.NOT_SPECIFIED
+    return profile.isProfileComplete || profile.hasRequiredProfileFields()
+}
+
+fun UserProfile.hasRequiredProfileFields(): Boolean {
+    return fullName.isNotBlank() &&
+            age >= 18 &&
+            bio.isNotBlank() &&
+            location.city.isNotBlank() &&
+            gender != Gender.NOT_SPECIFIED &&
+            orientation != Orientation.NOT_SPECIFIED &&
+            intention != Intention.NOT_SPECIFIED
+}
+
+fun UserProfile.withCompletionStatus(): UserProfile {
+    return copy(isProfileComplete = hasRequiredProfileFields())
 }
 
 fun Gender.getDisplayName(): String {

@@ -2,6 +2,7 @@
 
 import com.ideiassertiva.FypMatch.data.repository.QuestionnaireRepository
 import com.ideiassertiva.FypMatch.data.repository.UserQuestionnaire
+import java.text.Normalizer
 import java.util.Date
 
 data class CompatibilityScore(
@@ -106,14 +107,20 @@ class CompatibilityMLEngine {
         val f4 = ageScore(currentUser, targetUser)
         val f5 = valuesScore(currentUser, targetUser)
         val f6 = activityBonus(targetUser)
+        val f7 = complementaryProfileScore(currentUser, targetUser)
 
         val weighted = f1.score * 0.30f + f2.score * 0.25f + f3.score * 0.20f +
                        f4.score * 0.10f + f5.score * 0.10f + f6.score * 0.05f
-        val overall = (weighted / 100f).coerceIn(0f, 1f)
+        val baseOverall = (weighted / 100f).coerceIn(0f, 1f)
+        val overall = if (f7 != null) {
+            (baseOverall * 0.90f + (f7.score / 100f) * 0.10f).coerceIn(0f, 1f)
+        } else {
+            baseOverall
+        }
 
         return CompatibilityScore(
             overall = overall,
-            factors = listOf(f1, f2, f3, f4, f5, f6),
+            factors = listOfNotNull(f1, f2, f3, f4, f5, f6, f7),
             personalityMatch = f1.score / 100f,
             communicationMatch = f2.score / 100f
         )
@@ -263,6 +270,134 @@ class CompatibilityMLEngine {
 
         val desc = if (isOnline) "Online agora — ótimo momento para curtir!" else "Visto recentemente"
         return CompatibilityFactor("Atividade", score, desc)
+    }
+
+    private fun complementaryProfileScore(a: User, b: User): CompatibilityFactor? {
+        val profileA = a.complementaryProfile
+        val profileB = b.complementaryProfile
+        if (!profileA.isPresent() && !profileB.isPresent()) return null
+
+        val aDesired = profileA.desiredCompatibilityTokens()
+        val bDesired = profileB.desiredCompatibilityTokens()
+        val aSelf = a.profile.profileTokens() + profileA.selfCompatibilityTokens()
+        val bSelf = b.profile.profileTokens() + profileB.selfCompatibilityTokens()
+
+        val positiveEvidence = listOf(
+            overlapRatio(aDesired, bSelf),
+            overlapRatio(bDesired, aSelf),
+            overlapRatio(profileA.selfCompatibilityTokens(), profileB.selfCompatibilityTokens())
+        ).filter { it > 0f }
+
+        val positiveScore = if (positiveEvidence.isEmpty()) {
+            55f
+        } else {
+            positiveEvidence.average().toFloat() * 100f
+        }
+
+        val redPenalty = (
+            overlapRatio(profileA.incompatiblePartnerTraits.tokenizeAll(), bSelf) +
+                overlapRatio(profileB.incompatiblePartnerTraits.tokenizeAll(), aSelf)
+            ) * 35f
+
+        val score = (positiveScore - redPenalty).coerceIn(20f, 100f)
+        val desc = when {
+            score >= 75f -> "Perfil complementar reforça sinais de compatibilidade"
+            score >= 55f -> "Perfil complementar sugere compatibilidade neutra a positiva"
+            else -> "Perfil complementar aponta possíveis desalinhamentos"
+        }
+        return CompatibilityFactor("Perfil complementar IA", score, desc)
+    }
+
+    private fun ComplementaryProfile.selfCompatibilityTokens(): Set<String> {
+        return (
+            coreValues +
+                importantValues +
+                desiredValues +
+                lifestyleTags +
+                culturalPreferences +
+                hobbiesAndInterests +
+                algorithmicTags +
+                observedTraits.map { it.trait } +
+                inferredTraits.map { it.trait } +
+                listOf(
+                    relationshipStyle.affectionExpression,
+                    relationshipStyle.affectionPreference,
+                    relationshipStyle.communicationNeed,
+                    relationshipStyle.emotionalSecurityNeed,
+                    relationshipStyle.personalSpaceNeed,
+                    relationshipStyle.conflictStyle,
+                    relationshipStyle.reciprocitySensitivity,
+                    relationshipStyle.ambiguityTolerance
+                )
+            ).tokenizeAll()
+    }
+
+    private fun ComplementaryProfile.desiredCompatibilityTokens(): Set<String> {
+        return (
+            preferredPartnerTraits +
+                greenFlags +
+                coreValues +
+                importantValues +
+                desiredValues +
+                listOf(idealPartnerSummary)
+            ).tokenizeAll()
+    }
+
+    private fun UserProfile.profileTokens(): Set<String> {
+        return (
+            interests +
+                hobbies +
+                favoriteGenres +
+                favoriteBooks +
+                favoriteMusic +
+                sports +
+                languages +
+                listOf(
+                    bio,
+                    aboutMe,
+                    education,
+                    profession,
+                    favoriteTeam,
+                    enneagramType,
+                    personalityArchetype,
+                    loveLanguage,
+                    intention.name,
+                    hasChildren.name,
+                    wantsChildren.name,
+                    smokingStatus.name,
+                    drinkingStatus.name,
+                    petPreference.name
+                )
+            ).tokenizeAll()
+    }
+
+    private fun List<String>.tokenizeAll(): Set<String> {
+        return flatMap { it.toCompatibilityTokens() }
+            .filter { it.length >= 3 }
+            .toSet()
+    }
+
+    private fun String.toCompatibilityTokens(): Set<String> {
+        val normalized = Normalizer.normalize(lowercase(), Normalizer.Form.NFD)
+            .replace(Regex("\\p{Mn}+"), "")
+        return normalized
+            .split(Regex("[^a-z0-9]+"))
+            .filter { it.length >= 3 && it !in COMPATIBILITY_STOPWORDS }
+            .toSet()
+    }
+
+    private fun overlapRatio(expected: Set<String>, actual: Set<String>): Float {
+        if (expected.isEmpty() || actual.isEmpty()) return 0f
+        return expected.intersect(actual).size.toFloat() / expected.size.toFloat()
+    }
+
+    companion object {
+        private val COMPATIBILITY_STOPWORDS = setOf(
+            "com", "para", "por", "que", "uma", "uns", "das", "dos", "nas", "nos",
+            "ser", "ter", "sem", "mais", "menos", "muito", "muita", "pessoa", "pessoas",
+            "relacao", "relacionamento", "parceiro", "parceira", "perfil", "valor",
+            "alta", "media", "baixo", "baixa", "nao", "sim"
+        )
     }
 }
 

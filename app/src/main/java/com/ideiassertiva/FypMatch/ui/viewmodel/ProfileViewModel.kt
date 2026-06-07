@@ -8,8 +8,8 @@ import com.ideiassertiva.FypMatch.model.Gender
 import com.ideiassertiva.FypMatch.model.Intention
 import com.ideiassertiva.FypMatch.model.Location
 import com.ideiassertiva.FypMatch.model.Orientation
-import com.ideiassertiva.FypMatch.model.User
 import com.ideiassertiva.FypMatch.model.UserProfile
+import com.ideiassertiva.FypMatch.model.withCompletionStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -50,12 +50,8 @@ class ProfileViewModel @Inject constructor(
                     gender = gender,
                     orientation = orientation,
                     intention = intention
-                )
-                val user = User(
-                    id = userId,
-                    profile = profile
-                )
-                val result = userRepository.saveUserProfile(user)
+                ).withCompletionStatus()
+                val result = userRepository.saveProfile(userId, profile)
                 result.fold(
                     onSuccess = {
                         _uiState.value = _uiState.value.copy(isLoading = false, savedSuccessfully = true)

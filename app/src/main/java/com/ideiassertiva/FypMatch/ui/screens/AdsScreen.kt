@@ -1,7 +1,5 @@
 package com.ideiassertiva.FypMatch.ui.screens
 
-import android.content.Context
-import android.content.SharedPreferences
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,46 +16,33 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
-
-private const val MAX_ADS_PER_DAY = 3
-private const val CREDITS_PER_AD = 3
-
-private fun todayKey(): String = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-private fun adsWatchedKey(userId: String) = "ads_watched_${userId}_${todayKey()}"
+import com.ideiassertiva.FypMatch.ui.viewmodel.AdsViewModel
+import com.ideiassertiva.FypMatch.model.AiCreditLimits
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdsScreen(
     onNavigateBack: () -> Unit,
     userId: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: AdsViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val prefs: SharedPreferences = remember {
-        context.getSharedPreferences("fypmatch_ads", Context.MODE_PRIVATE)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val maxAdsPerDay = uiState.maxAdsPerDay.coerceAtLeast(1)
+    val canWatch = uiState.canWatchMore
+
+    LaunchedEffect(userId) {
+        viewModel.load(userId)
     }
-
-    var adsWatched by remember { mutableIntStateOf(prefs.getInt(adsWatchedKey(userId), 0)) }
-    var isWatching by remember { mutableStateOf(false) }
-    var showSuccess by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-
-    val canWatch = adsWatched < MAX_ADS_PER_DAY
 
     Scaffold(
         topBar = {
@@ -94,7 +79,7 @@ fun AdsScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Assista a um anúncio curto e ganhe $CREDITS_PER_AD créditos\npara usar com seu conselheiro IA",
+                "Assista a um anuncio curto e ganhe ${AiCreditLimits.AD_REWARD} creditos\npara usar com seu conselheiro IA",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center
@@ -117,13 +102,13 @@ fun AdsScreen(
                         Text("Anúncios hoje",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                        Text("$adsWatched/$MAX_ADS_PER_DAY",
+                        Text("${uiState.adsWatchedToday}/$maxAdsPerDay",
                             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                             color = FypColors.Primary)
                     }
                     Spacer(Modifier.height(10.dp))
                     LinearProgressIndicator(
-                        progress = { adsWatched.toFloat() / MAX_ADS_PER_DAY.toFloat() },
+                        progress = { uiState.adsWatchedToday.toFloat() / maxAdsPerDay.toFloat() },
                         modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
                         color = FypColors.Primary,
                         trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
@@ -133,7 +118,7 @@ fun AdsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("🧠 ", fontSize = MaterialTheme.typography.bodyMedium.fontSize)
                         Text(
-                            "${adsWatched * CREDITS_PER_AD} créditos ganhos hoje",
+                            "${uiState.creditsEarnedToday} creditos ganhos hoje • ${uiState.credits.current} disponiveis",
                             style = MaterialTheme.typography.bodySmall,
                             color = FypColors.Secondary
                         )
@@ -145,27 +130,18 @@ fun AdsScreen(
 
             // Estado: assistindo / sucesso / botão
             when {
-                isWatching -> WatchingAdIndicator()
-                showSuccess -> SuccessCreditsCard(credits = CREDITS_PER_AD) { showSuccess = false }
+                uiState.isWatchingAd -> WatchingAdIndicator()
+                uiState.showSuccess -> SuccessCreditsCard(credits = uiState.lastEarnedCredits) {
+                    viewModel.dismissSuccess()
+                }
                 else -> {
                     FypGradientButton(
-                        text = if (canWatch) "Assistir Anúncio (+$CREDITS_PER_AD créditos)"
-                               else "Limite diário atingido ✓",
+                        text = if (canWatch) "Assistir Anuncio (+${AiCreditLimits.AD_REWARD} creditos)"
+                               else "Limite diario atingido",
                         enabled = canWatch,
                         onClick = {
                             if (canWatch) {
-                                isWatching = true
-                                errorMessage = null
-                                // Simula anúncio (5 segundos)
-                                scope.launch {
-                                    delay(5000L)
-                                    val key = adsWatchedKey(userId)
-                                    val newCount = adsWatched + 1
-                                    prefs.edit().putInt(key, newCount).apply()
-                                    adsWatched = newCount
-                                    isWatching = false
-                                    showSuccess = true
-                                }
+                                viewModel.watchAd(userId)
                             }
                         }
                     )
@@ -182,7 +158,7 @@ fun AdsScreen(
                 }
             }
 
-            errorMessage?.let { msg ->
+            uiState.error?.let { msg ->
                 Spacer(Modifier.height(12.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),

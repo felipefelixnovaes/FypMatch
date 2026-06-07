@@ -12,7 +12,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -47,9 +49,9 @@ class AuthRepository @Inject constructor(@ApplicationContext private val context
         }
     }
     
-    // TODO: Configure o Web Client ID no Firebase Console e substitua abaixo
-    // Acesse: Firebase Console -> Authentication -> Sign-in method -> Google -> Web SDK configuration
-    private val GOOGLE_WEB_CLIENT_ID = "SEU_WEB_CLIENT_ID_AQUI"
+    // Web Client ID (OAuth client_type 3) do projeto Firebase fypmatch-8ac3c.
+    // Origem: google-services.json (Firebase Console -> fypmatch-8ac3c).
+    private val GOOGLE_WEB_CLIENT_ID = "98859676437-chnsb65d35smaed10idl756aunqmsap2.apps.googleusercontent.com"
 
     fun getGoogleSignInClient(): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -63,19 +65,26 @@ class AuthRepository @Inject constructor(@ApplicationContext private val context
     suspend fun signInWithGoogle(account: GoogleSignInAccount): Result<User> {
         return try {
             _isLoading.value = true
+            FirebaseCrashlytics.getInstance().log("signInWithGoogle:start")
             
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
             val authResult = auth.signInWithCredential(credential).await()
             val firebaseUser = authResult.user
             
             if (firebaseUser != null) {
+                FirebaseCrashlytics.getInstance().setUserId(firebaseUser.uid)
+                firebaseUser.email?.let {
+                    FirebaseCrashlytics.getInstance().setCustomKey("auth_email", it)
+                }
                 val user = createOrUpdateUser(firebaseUser)
                 _currentUser.value = user
+                FirebaseCrashlytics.getInstance().log("signInWithGoogle:success")
                 Result.success(user)
             } else {
                 Result.failure(Exception("Falha na autenticação"))
             }
         } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
             Result.failure(e)
         } finally {
             _isLoading.value = false
@@ -84,38 +93,54 @@ class AuthRepository @Inject constructor(@ApplicationContext private val context
     
     private suspend fun createOrUpdateUser(firebaseUser: FirebaseUser): User {
         val userDoc = firestore.collection("users").document(firebaseUser.uid)
-        val userSnapshot = userDoc.get().await()
-        
-        return if (userSnapshot.exists()) {
-            // Usuário já existe, atualizar última atividade
-            val existingUser = userSnapshot.toObject(User::class.java) ?: User()
-            val updatedUser = existingUser.copy(
-                lastActive = Date(),
-                email = firebaseUser.email ?: existingUser.email,
-                displayName = firebaseUser.displayName ?: existingUser.displayName,
-                photoUrl = firebaseUser.photoUrl?.toString() ?: existingUser.photoUrl
-            )
-            
-            userDoc.set(updatedUser).await()
-            updatedUser
-        } else {
-            // Novo usuário - verificar acesso especial baseado no email
-            val email = firebaseUser.email ?: ""
-            val (accessLevel, betaFlags) = accessControlRepository.getSpecialAccessConfig(email)
-            
-            val newUser = User(
+
+        val email = firebaseUser.email ?: ""
+        val displayName = firebaseUser.displayName ?: ""
+        val photoUrl = firebaseUser.photoUrl?.toString() ?: ""
+        val now = Date()
+        val (accessLevel, betaFlags) = accessControlRepository.getSpecialAccessConfig(email)
+
+        val authFields = mapOf(
+            "id" to firebaseUser.uid,
+            "email" to email,
+            "displayName" to displayName,
+            "photoUrl" to photoUrl,
+            "lastActive" to now,
+            "accessLevel" to accessLevel,
+            "betaFlags" to betaFlags
+        )
+
+        // Primeiro grava/mescla dados mínimos do Auth. Assim o login não depende
+        // de uma leitura prévia do documento, que é justamente onde rules antigas
+        // costumam retornar PERMISSION_DENIED.
+        userDoc.set(authFields, SetOptions.merge()).await()
+
+        return try {
+            val userSnapshot = userDoc.get().await()
+            userSnapshot.toFypUserOrNull(firebaseUser.uid) ?: User(
                 id = firebaseUser.uid,
                 email = email,
-                displayName = firebaseUser.displayName ?: "",
-                photoUrl = firebaseUser.photoUrl?.toString() ?: "",
+                displayName = displayName,
+                photoUrl = photoUrl,
                 accessLevel = accessLevel,
                 betaFlags = betaFlags,
-                createdAt = Date(),
-                lastActive = Date()
+                createdAt = now,
+                lastActive = now
             )
-            
-            userDoc.set(newUser).await()
-            newUser
+        } catch (e: Exception) {
+            FirebaseCrashlytics.getInstance().recordException(e)
+            // Se a rule publicada ainda bloqueia leitura mas permitiu o merge,
+            // mantemos o usuário autenticado com o estado mínimo local.
+            User(
+                id = firebaseUser.uid,
+                email = email,
+                displayName = displayName,
+                photoUrl = photoUrl,
+                accessLevel = accessLevel,
+                betaFlags = betaFlags,
+                createdAt = now,
+                lastActive = now
+            )
         }
     }
     
@@ -123,11 +148,23 @@ class AuthRepository @Inject constructor(@ApplicationContext private val context
         firestore.collection("users").document(firebaseUser.uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
+                    FirebaseCrashlytics.getInstance().recordException(error)
                     return@addSnapshotListener
                 }
                 
                 if (snapshot != null && snapshot.exists()) {
-                    val user = snapshot.toObject(User::class.java)
+                    val user = snapshot.toFypUserOrNull(firebaseUser.uid) ?: User(
+                        id = firebaseUser.uid,
+                        email = firebaseUser.email ?: "",
+                        displayName = firebaseUser.displayName ?: "",
+                        photoUrl = firebaseUser.photoUrl?.toString() ?: ""
+                    )
+                    user.let {
+                        FirebaseCrashlytics.getInstance().setUserId(it.id.ifBlank { firebaseUser.uid })
+                        if (it.email.isNotBlank()) {
+                            FirebaseCrashlytics.getInstance().setCustomKey("auth_email", it.email)
+                        }
+                    }
                     _currentUser.value = user
                 }
             }
@@ -137,6 +174,7 @@ class AuthRepository @Inject constructor(@ApplicationContext private val context
         return try {
             auth.signOut()
             GoogleSignIn.getClient(context, GoogleSignInOptions.DEFAULT_SIGN_IN).signOut().await()
+            FirebaseCrashlytics.getInstance().setUserId("")
             _currentUser.value = null
             Result.success(Unit)
         } catch (e: Exception) {

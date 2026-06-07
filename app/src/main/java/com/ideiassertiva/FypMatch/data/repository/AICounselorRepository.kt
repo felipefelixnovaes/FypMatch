@@ -8,9 +8,9 @@ import kotlinx.coroutines.delay
 import java.util.Date
 import java.util.UUID
 
-class AICounselorRepository {
-    
-    private val adsRepository = AdsRepository()
+class AICounselorRepository(
+    private val adsRepository: AdsRepository
+) {
     
     // Estado das sessões ativas
     private val _activeSessions = MutableStateFlow<Map<String, CounselorSession>>(emptyMap())
@@ -65,14 +65,17 @@ class AICounselorRepository {
     suspend fun startSession(
         userId: String,
         sessionType: SessionType = SessionType.GENERAL,
-        initialMood: UserMood? = null
+        initialMood: UserMood? = null,
+        complementaryProfile: ComplementaryProfile? = null
     ): Result<CounselorSession> {
         return try {
+            val hasComplementaryProfile = complementaryProfile?.isPresent() == true
             val session = CounselorSession(
                 userId = userId,
                 sessionType = sessionType,
                 mood = initialMood,
-                messages = listOf(generateWelcomeMessage(sessionType))
+                messages = listOf(generateWelcomeMessage(sessionType, hasComplementaryProfile)),
+                complementaryProfileContext = complementaryProfile?.toCounselorContext().orEmpty()
             )
             
             _activeSessions.value = _activeSessions.value + (userId to session)
@@ -182,11 +185,16 @@ class AICounselorRepository {
         return _userStats.value[userId] ?: CounselorStats()
     }
     
-    private fun generateWelcomeMessage(sessionType: SessionType): CounselorMessage {
-        val text = when (sessionType) {
+    private fun generateWelcomeMessage(sessionType: SessionType, hasComplementaryProfile: Boolean): CounselorMessage {
+        val baseText = when (sessionType) {
             SessionType.GENERAL -> "Olá! 😊 Sou seu conselheiro de relacionamentos. Como posso te ajudar hoje?"
             SessionType.DATING_ANXIETY -> "Oi! 💙 Vamos trabalhar juntos para diminuir sua ansiedade em encontros."
             else -> "Olá! Estou aqui para te apoiar. Como posso ajudar?"
+        }
+        val text = if (hasComplementaryProfile) {
+            "$baseText\n\nSeu Perfil Complementar está ativo; vou considerar esses sinais com cuidado e sem tratar nada como diagnóstico."
+        } else {
+            baseText
         }
         
         return CounselorMessage(
@@ -208,9 +216,23 @@ class AICounselorRepository {
                 "Ansiedade em relacionamentos é normal. Vamos trabalhar algumas técnicas " +
                 "de respiração e preparação mental para encontros."
             }
+            session.complementaryProfileContext.isNotBlank() && message.hasCompatibilityIntent() -> {
+                val contextSnippet = session.complementaryProfileContext
+                    .lineSequence()
+                    .filter { it.isNotBlank() }
+                    .take(6)
+                    .joinToString("\n")
+
+                "Vou considerar seu Perfil Complementar como uma camada de contexto, sem substituir seus questionários. " +
+                "Pelo que ele indica, vale priorizar pessoas com sinais consistentes de reciprocidade, clareza e maturidade emocional.\n\n" +
+                contextSnippet
+            }
             else -> {
+                val contextNote = if (session.complementaryProfileContext.isNotBlank()) {
+                    " Também vou levar em conta seu Perfil Complementar nas sugestões."
+                } else ""
                 "Entendo sua situação. Relacionamentos são complexos. " +
-                "Vamos focar no que você pode controlar - suas ações e reações."
+                "Vamos focar no que você pode controlar - suas ações e reações.$contextNote"
             }
         }
         
@@ -219,6 +241,13 @@ class AICounselorRepository {
             sender = MessageSender.AI_COUNSELOR,
             containsWarning = needsHelp
         )
+    }
+
+    private fun String.hasCompatibilityIntent(): Boolean {
+        val normalized = lowercase()
+        return listOf("compat", "match", "combina", "perfil", "parceir", "relacionamento").any {
+            normalized.contains(it)
+        }
     }
     
     // Atualizar estatísticas do usuário

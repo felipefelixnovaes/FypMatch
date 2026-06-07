@@ -46,7 +46,17 @@ class AICounselorViewModel @Inject constructor(
             // Inicializar créditos do usuário
             counselorRepository.initializeCredits(userId, realSubscription)
 
-            val result = counselorRepository.startSession(userId, sessionType, mood)
+            val complementaryProfile = (
+                userRepository.currentUser.value
+                    ?: userRepository.getUserById(userId)
+            )?.complementaryProfile
+
+            val result = counselorRepository.startSession(
+                userId = userId,
+                sessionType = sessionType,
+                initialMood = mood,
+                complementaryProfile = complementaryProfile
+            )
 
             result.fold(
                 onSuccess = { session ->

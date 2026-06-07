@@ -47,6 +47,7 @@ fun SettingsScreen(
     onNavigateToAffiliate: () -> Unit = {},
     onNavigateToAds: () -> Unit = {},
     onNavigateToNeuroProfile: () -> Unit = {},
+    onNavigateToComplementaryProfile: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
@@ -330,6 +331,15 @@ fun SettingsScreen(
                     subtitle = "Personalize sua experiência",
                     tint = FypColors.Secondary,
                     onClick = onNavigateToNeuroProfile
+                )
+            }
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.AutoAwesome,
+                    title = "Perfil complementar IA",
+                    subtitle = "Importe contexto da sua IA pessoal para compatibilidade",
+                    tint = FypColors.Secondary,
+                    onClick = onNavigateToComplementaryProfile
                 )
             }
 

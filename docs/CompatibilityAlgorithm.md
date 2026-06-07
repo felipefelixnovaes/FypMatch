@@ -4,6 +4,8 @@
 
 O score de compatibilidade do FypMatch é calculado a partir de **6 dimensões ponderadas**, retornando um inteiro de 0 a 100. O objetivo é priorizar matches com mais chance de conexão real — não apenas aparência.
 
+Quando o usuário importa um **Perfil Complementar FypMatch** gerado por sua IA pessoal, o Android aplica uma camada auxiliar opcional: o score base de 6 dimensões continua valendo 90% do resultado e os sinais complementares respondem por até 10%. Essa camada usa apenas tags, valores, sinais verdes/vermelhos e preferências estruturadas importadas pelo usuário.
+
 ---
 
 ## Dimensões e Pesos
@@ -18,6 +20,8 @@ O score de compatibilidade do FypMatch é calculado a partir de **6 dimensões p
 | 6 | Bônus de atividade   | 5%   | Online agora, perfil verificado, fotos completas |
 
 **Score final** = `Σ (score_dimensão × peso)`, arredondado para inteiro.
+
+**Com perfil complementar importado** = `(score_base × 90%) + (score_perfil_complementar × 10%)`.
 
 ---
 
@@ -64,6 +68,13 @@ score     = (langScore × 0.6 + relScore × 0.4) × 100
 | Online agora (< 5 min) | 60 |
 | Perfil verificado / completo | 20 |
 | Fotos verificadas / ≥3 fotos | 20 |
+
+### Camada auxiliar: Perfil Complementar IA (até 10% do resultado final)
+Usa dados estruturados do campo `complementaryProfile`, importados voluntariamente pelo usuário:
+- `preferredPartnerTraits`, `greenFlags`, `coreValues`, `importantValues` e `desiredValues` são comparados com sinais do perfil alvo.
+- `algorithmicTags`, `lifestyleTags`, `culturalPreferences` e `hobbiesAndInterests` ajudam a encontrar sobreposição positiva.
+- `incompatiblePartnerTraits` reduz a pontuação quando há sobreposição com sinais do outro perfil.
+- Se nenhum usuário tiver perfil complementar preenchido, essa camada não altera o score.
 
 ---
 
@@ -122,6 +133,8 @@ score     = (langScore × 0.6 + relScore × 0.4) × 100
 | Android | `model/CompatibilityML.kt` | `analyzeCompatibility(currentUser:targetUser:) -> CompatibilityScore` |
 
 **Nota**: iOS retorna score como `Int` (0-100). Android retorna como `Float` (0.0-1.0) por compatibilidade com código legado.
+
+**Nota Android**: a camada `Perfil complementar IA` está implementada no Android; iOS ainda precisa receber paridade.
 
 ---
 

@@ -44,7 +44,8 @@ class LoginViewModel @Inject constructor(
                 onSuccess = { user ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        isSignedIn = true
+                        isSignedIn = true,
+                        signedInUser = user
                     )
                 },
                 onFailure = { error ->
@@ -63,7 +64,11 @@ class LoginViewModel @Inject constructor(
             val result = authRepository.signInMock()
             result.fold(
                 onSuccess = { 
-                    _uiState.value = _uiState.value.copy(isLoading = false, isSignedIn = true)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isSignedIn = true,
+                        signedInUser = it
+                    )
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = error.message)
@@ -94,5 +99,6 @@ class LoginViewModel @Inject constructor(
 data class LoginUiState(
     val isLoading: Boolean = false,
     val isSignedIn: Boolean = false,
+    val signedInUser: User? = null,
     val errorMessage: String? = null
 )

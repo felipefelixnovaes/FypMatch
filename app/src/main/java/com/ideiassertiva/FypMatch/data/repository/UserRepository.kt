@@ -2,7 +2,11 @@ package com.ideiassertiva.FypMatch.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.ideiassertiva.FypMatch.model.ComplementaryProfile
 import com.ideiassertiva.FypMatch.model.User
+import com.ideiassertiva.FypMatch.model.UserProfile
+import com.ideiassertiva.FypMatch.model.withCompletionStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -11,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,8 +48,12 @@ class UserRepository @Inject constructor(
         try {
             val doc = usersCollection.document(firebaseUser.uid).get().await()
             if (doc.exists()) {
-                val user = doc.toObject(User::class.java)
-                _currentUser.value = user?.copy(id = doc.id)
+                val user = doc.toFypUserOrNull(doc.id) ?: User(
+                    id = firebaseUser.uid,
+                    email = firebaseUser.email ?: "",
+                    displayName = firebaseUser.displayName ?: ""
+                )
+                _currentUser.value = user
             } else {
                 // Usuário novo — criar entrada básica com dados do Firebase Auth
                 val newUser = User(
@@ -67,8 +76,41 @@ class UserRepository @Inject constructor(
 
     suspend fun saveUserProfile(user: User): Result<Unit> {
         return try {
-            usersCollection.document(user.id).set(user).await()
-            _currentUser.value = user
+            if (user.id.isBlank()) return Result.failure(Exception("userId vazio"))
+            val updatedUser = user.copy(
+                profile = user.profile.withCompletionStatus(),
+                lastActive = Date()
+            )
+            usersCollection.document(updatedUser.id)
+                .set(updatedUser, SetOptions.merge())
+                .await()
+            _currentUser.value = updatedUser
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun saveProfile(userId: String, profile: UserProfile): Result<Unit> {
+        return try {
+            if (userId.isBlank()) return Result.failure(Exception("userId vazio"))
+            val now = Date()
+            val completedProfile = profile.withCompletionStatus()
+            usersCollection.document(userId)
+                .set(
+                    mapOf(
+                        "profile" to completedProfile,
+                        "lastActive" to now
+                    ),
+                    SetOptions.merge()
+                )
+                .await()
+
+            _currentUser.value = (_currentUser.value ?: User(id = userId)).copy(
+                id = userId,
+                profile = completedProfile,
+                lastActive = now
+            )
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -80,7 +122,7 @@ class UserRepository @Inject constructor(
         com.ideiassertiva.FypMatch.data.MockProfiles.profiles.find { it.id == userId }?.let { return it }
         return try {
             val doc = usersCollection.document(userId).get().await()
-            if (doc.exists()) doc.toObject(User::class.java)?.copy(id = doc.id) else null
+            if (doc.exists()) doc.toFypUserOrNull(doc.id) else null
         } catch (e: Exception) {
             null
         }
@@ -95,6 +137,25 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun saveComplementaryProfile(userId: String, profile: ComplementaryProfile): Result<Unit> {
+        return try {
+            if (userId.isBlank()) return Result.failure(Exception("userId vazio"))
+            usersCollection.document(userId)
+                .set(mapOf("complementaryProfile" to profile), SetOptions.merge())
+                .await()
+
+            _currentUser.value = _currentUser.value?.copy(complementaryProfile = profile)
+            loadCurrentUser()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun clearComplementaryProfile(userId: String): Result<Unit> {
+        return saveComplementaryProfile(userId, ComplementaryProfile())
     }
 
     fun getCurrentUserId(): String? = auth.currentUser?.uid

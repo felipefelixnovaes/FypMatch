@@ -17,6 +17,8 @@ import javax.inject.Singleton
 @Singleton
 class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFirestore) {
 
+    private val compatibilityEngine = CompatibilityMLEngine()
+
     private val _discoveryCards = MutableStateFlow<List<DiscoveryCard>>(emptyList())
     val discoveryCards: Flow<List<DiscoveryCard>> = _discoveryCards.asStateFlow()
 
@@ -53,10 +55,20 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
                 .documents
                 .mapNotNull { doc ->
                     if (doc.id == currentUserId) null
-                    else doc.toObject(User::class.java)?.copy(id = doc.id)
+                    else doc.toFypUserOrNull(doc.id)
                 }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    private suspend fun loadCurrentUserFromFirestore(currentUserId: String): User? {
+        if (currentUserId.isBlank()) return null
+        return try {
+            val doc = firestore.collection("users").document(currentUserId).get().await()
+            if (doc.exists()) doc.toFypUserOrNull(doc.id) else null
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -65,17 +77,31 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
     suspend fun loadDiscoveryCards(currentUserId: String) {
         val firestoreUsers = loadUsersFromFirestore(currentUserId)
         val users = firestoreUsers.ifEmpty { MockProfiles.profiles }
+        val currentUser = loadCurrentUserFromFirestore(currentUserId)
+            ?: MockProfiles.profiles.firstOrNull { it.id == currentUserId }
         val cards = users.map { user ->
+            val compatibilityScore = currentUser?.let {
+                compatibilityEngine.analyzeCompatibility(it, user).overall
+            } ?: ((60..98).random() / 100f)
             DiscoveryCard(
                 user = user,
                 distance = (1..25).random(),
-                compatibilityScore = (60..98).random() / 100f,
-                commonInterests = user.profile.interests.take(2),
+                compatibilityScore = compatibilityScore,
+                commonInterests = sharedInterests(currentUser, user).ifEmpty { user.profile.interests.take(2) },
                 photos = user.profile.photos,
                 isVerified = user.subscription != SubscriptionStatus.FREE
             )
-        }
+        }.sortedByDescending { it.compatibilityScore }
         _discoveryCards.value = cards
+    }
+
+    private fun sharedInterests(currentUser: User?, targetUser: User): List<String> {
+        if (currentUser == null) return emptyList()
+        val currentTags = (currentUser.profile.interests + currentUser.profile.hobbies).toSet()
+        return (targetUser.profile.interests + targetUser.profile.hobbies)
+            .filter { it in currentTags }
+            .distinct()
+            .take(3)
     }
 
     // Registra like no Firestore e verifica match mútuo

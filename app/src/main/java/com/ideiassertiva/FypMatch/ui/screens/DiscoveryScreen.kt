@@ -33,12 +33,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.components.SkeletonLoading
+import com.ideiassertiva.FypMatch.ui.components.FypHeartMark
+import com.ideiassertiva.FypMatch.ui.components.FypMatchWordmark
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryViewModel
@@ -216,80 +219,63 @@ private fun DiscoveryTopBar(
             }
         }
 
-        // Título e botão do conselheiro
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Wordmark de texto (a imagem R.drawable.logo renderizava quebrada)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "FypMatch",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
+        // Marca FypMatch — coração + wordmark two-tone (centro)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            FypHeartMark(size = 26.dp)
+            Spacer(modifier = Modifier.width(6.dp))
+            FypMatchWordmark(fontSize = 22.sp)
+        }
 
-            // Único acesso destacado: Conselheiro IA (feature premium)
-            OutlinedButton(
+        // Ações à direita: Conselheiro IA (anel gradiente) + Curtidas/Matches
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Conselheiro IA — botão circular com anel gradiente da marca
+            IconButton(
                 onClick = onAICounselorClick,
-                modifier = Modifier.height(32.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                modifier = Modifier
+                    .size(40.dp)
+                    .border(1.5.dp, FypColors.BrandGradientDiagonal, CircleShape)
             ) {
                 Icon(
                     imageVector = Icons.Default.AutoAwesome,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Conselheiro IA",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium
+                    contentDescription = "Conselheiro IA",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
                 )
             }
-        }
-        
-        // Botão de matches
-        Box {
-            IconButton(
-                onClick = onMatchesClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        CircleShape
-                    )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Matches",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            
-            // Badge de novidades — curtidas recebidas + matches novos
-            if (newLikesCount > 0) {
-                Badge(
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Curtidas / Matches — com badge de novidades
+            Box {
+                IconButton(
+                    onClick = onMatchesClick,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-2).dp, y = 2.dp),
-                    containerColor = FypColors.Primary
+                        .size(40.dp)
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            CircleShape
+                        )
                 ) {
-                    Text(
-                        text = if (newLikesCount > 9) "9+" else newLikesCount.toString(),
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = "Matches",
+                        tint = MaterialTheme.colorScheme.primary
                     )
+                }
+
+                if (newLikesCount > 0) {
+                    Badge(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = (-2).dp, y = 2.dp),
+                        containerColor = FypColors.Primary
+                    ) {
+                        Text(
+                            text = if (newLikesCount > 9) "9+" else newLikesCount.toString(),
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
                 }
             }
         }

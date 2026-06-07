@@ -56,6 +56,8 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     /** Questionário de perfil de neurodiversidade */
     object NeuroProfile : Screen("neuro_profile")
+    /** Perfil complementar importado de uma IA externa do usuário */
+    object ComplementaryProfile : Screen("complementary_profile")
     /** Hub de suporte para usuários neurodivergentes */
     object NeuroSupport : Screen("neuro_support")
     /** Questionário de compatibilidade — Modo Rápido */
@@ -103,6 +105,9 @@ fun FypMatchNavigation(
                 onNavigateToLogin = {
                     navController.navigate(Screen.Login.route)
                 },
+                onNavigateToRegister = {
+                    navController.navigate(Screen.Register.route)
+                },
                 onNavigateToAccessCode = {
                     navController.navigate(Screen.AccessCode.route)
                 }
@@ -115,6 +120,9 @@ fun FypMatchNavigation(
 
         composable(Screen.Login.route) {
             LoginScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
                 onNavigateToProfile = {
                     navController.navigate(Screen.Profile.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
@@ -131,6 +139,9 @@ fun FypMatchNavigation(
         // ─── Cadastro com email/senha ─────────────────────────────────────
         composable(Screen.Register.route) {
             RegisterScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
                 onNavigateToDiscovery = {
                     navController.navigate(Screen.Discovery.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
@@ -273,7 +284,10 @@ fun FypMatchNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                userId = userId
+                userId = userId,
+                onNavigateToComplementaryProfile = {
+                    navController.navigate(Screen.ComplementaryProfile.route)
+                }
             )
         }
 
@@ -367,6 +381,9 @@ fun FypMatchNavigation(
                 },
                 onNavigateToNeuroProfile = {
                     navController.navigate(Screen.NeuroProfile.route)
+                },
+                onNavigateToComplementaryProfile = {
+                    navController.navigate(Screen.ComplementaryProfile.route)
                 }
             )
         }
@@ -383,6 +400,12 @@ fun FypMatchNavigation(
             NeuroProfileScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onComplete = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ComplementaryProfile.route) {
+            ComplementaryProfileScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

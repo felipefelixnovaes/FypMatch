@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
@@ -25,9 +26,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ideiassertiva.FypMatch.model.isProfileComplete
+import com.ideiassertiva.FypMatch.ui.components.FypHeartMark
+import com.ideiassertiva.FypMatch.ui.components.FypMatchWordmark
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.LoginViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -38,6 +42,7 @@ import com.google.android.gms.common.api.ApiException
 fun LoginScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToDiscovery: () -> Unit,
+    onNavigateBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
@@ -61,11 +66,8 @@ fun LoginScreen(
     
     // Navegar automaticamente se usuário já estiver logado
     LaunchedEffect(currentUser, uiState.isSignedIn) {
-        if (uiState.isSignedIn) {
-            onNavigateToDiscovery()
-            return@LaunchedEffect
-        }
-        currentUser?.let { user ->
+        val signedUser = currentUser ?: uiState.signedInUser
+        signedUser?.let { user ->
             if (user.isProfileComplete()) {
                 onNavigateToDiscovery()
             } else {
@@ -74,8 +76,9 @@ fun LoginScreen(
         }
     }
     
+    Box(modifier = modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .padding(24.dp)
             .verticalScroll(rememberScrollState()),
@@ -83,32 +86,17 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center
     ) {
         // Logo e título (Clickable for Mock Login in Emulator)
-        Icon(
-            imageVector = Icons.Default.Favorite,
-            contentDescription = null,
-            modifier = Modifier
-                .size(80.dp)
-                .clickable { viewModel.signInMock() },
-            tint = MaterialTheme.colorScheme.primary
+        FypHeartMark(
+            size = 92.dp,
+            modifier = Modifier.clickable { viewModel.signInMock() }
         )
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = null,
-                modifier = Modifier.size(36.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "FypMatch",
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+        FypMatchWordmark(
+            twoTone = true,
+            fontSize = 42.sp
+        )
         
         Spacer(modifier = Modifier.height(8.dp))
         
@@ -209,6 +197,20 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
+        }
+        }
+        IconButton(
+            onClick = onNavigateBack,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Voltar",
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

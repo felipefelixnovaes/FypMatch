@@ -28,6 +28,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.ConnectionStatusHeader
+import com.ideiassertiva.FypMatch.ui.components.DilemmaBottomSheet
 import com.ideiassertiva.FypMatch.ui.components.EmptyState
 import com.ideiassertiva.FypMatch.ui.components.ErrorState
 import com.ideiassertiva.FypMatch.ui.viewmodel.ChatViewModel
@@ -74,7 +76,11 @@ fun ChatScreen(
         ChatHeader(
             otherUser = chatData?.otherUser,
             isOnline = chatData?.conversation?.isOtherUserOnline(currentUserId) ?: false,
-            lastSeen = viewModel.getLastSeenText(),
+            lastSeen = viewModel.getLastSeenConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(),
             onBackClick = onBackClick
         )
 
@@ -132,7 +138,11 @@ fun ChatScreen(
                 currentMessage = chatData.currentMessage,
                 conversationContext = chatData.messages.takeLast(5),
                 onSuggestionSelect = { suggestion ->
-                    viewModel.updateMessageText(suggestion)
+                    viewModel.updateMessageConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(suggestion)
                     showAISuggestions = false
                 },
                 onDismiss = { showAISuggestions = false }
@@ -209,11 +219,19 @@ fun ChatHeader(
                 Spacer(modifier = Modifier.width(12.dp))
                 
                 Column {
+                    ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
                     Text(
                         text = otherUser?.profile?.fullName ?: "Usuário",
                         fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
+                    )
+                    ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
                     )
                     Text(
                         text = if (isOnline) "Online" else lastSeen,
@@ -225,7 +243,17 @@ fun ChatHeader(
         },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                Icon(
+                if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                     Icons.Filled.ArrowBack, 
                     contentDescription = "Voltar",
                     tint = MaterialTheme.colorScheme.onSurface
@@ -298,7 +326,11 @@ fun MessageItem(
                         // Conteúdo da mensagem baseado no tipo
                         when (message.type) {
                             MessageType.TEXT -> {
-                                Text(
+                                ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                                     text = message.content,
                                     color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = MaterialTheme.typography.bodyMedium.fontSize
@@ -306,12 +338,26 @@ fun MessageItem(
                             }
                             MessageType.LOCATION -> {
                                 Column {
-                                    Icon(
+                                    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                                         Icons.Filled.LocationOn,
                                         contentDescription = "Localização",
                                         tint = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
-                                    Text(
+                                    ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                                         text = message.content,
                                         color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = MaterialTheme.typography.bodySmall.fontSize
@@ -320,21 +366,50 @@ fun MessageItem(
                             }
                             MessageType.GIF -> {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
+                                    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                                         Icons.Filled.Add,
                                         contentDescription = "GIF",
                                         tint = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = "GIF",
+                                    ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
+                                        text = "Missão"
+                            onClick = {
+                                showDilemmas = true
+                                showAttachments = false
+                            }
+                        )
+                    }
+                    
+                    item {
+                        AttachmentOption(
+                            icon = Icons.Filled.Add,
+                            text = "GIF",
                                         color = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = MaterialTheme.typography.bodySmall.fontSize
                                     )
                                 }
                             }
                             else -> {
-                                Text(
+                                ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                                     text = message.content,
                                     color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = MaterialTheme.typography.bodyMedium.fontSize
@@ -348,7 +423,11 @@ fun MessageItem(
                             horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
+                            ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                                 text = message.timestamp.format(DateTimeFormatter.ofPattern("HH:mm")),
                                 fontSize = MaterialTheme.typography.labelSmall.fontSize,
                                 color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) 
@@ -356,8 +435,22 @@ fun MessageItem(
                             )
                             if (isOwnMessage) {
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = getStatusIcon(message.status),
+                                ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
+                                    text = getStatusif (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(message.status),
                                     fontSize = MaterialTheme.typography.labelSmall.fontSize,
                                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                                 )
@@ -372,14 +465,28 @@ fun MessageItem(
                         onClick = { onAIAnalysisClick(message.id) },
                         modifier = Modifier.padding(top = 4.dp)
                     ) {
-                        Icon(
+                        if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                             Icons.Filled.Star,
                             contentDescription = "Análise de IA",
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(
+                        ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                             "IA",
                             fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.primary
@@ -423,7 +530,11 @@ fun MessageItem(
                                 shadowElevation = 2.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text(text = emoji, fontSize = MaterialTheme.typography.bodyLarge.fontSize)
+                                    ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(text = emoji, fontSize = MaterialTheme.typography.bodyLarge.fontSize)
                                 }
                             }
                         }
@@ -472,12 +583,26 @@ fun AISuggestionsCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
+                    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                         Icons.Filled.Star,
                         contentDescription = "IA",
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
+                    ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
                     Text(
                         "Sugestões de IA",
                         fontWeight = FontWeight.Bold,
@@ -485,7 +610,17 @@ fun AISuggestionsCard(
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(
+                    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                         Icons.Filled.Close,
                         contentDescription = "Fechar",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -506,13 +641,21 @@ fun AISuggestionsCard(
                     )
                 ) {
                     Column {
-                        Text(
+                        ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                             suggestion.text,
                             fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                             textAlign = TextAlign.Start,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Text(
+                        ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                             suggestion.reason,
                             fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
@@ -539,24 +682,46 @@ fun AIAnalysisModal(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
+                if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                     Icons.Filled.Star,
                     contentDescription = "IA",
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Análise de IA")
+                ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text("Análise de IA")
             }
         },
         text = {
             LazyColumn {
                 item {
+                    ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
                     Text(
                         "Mensagem:",
                         fontWeight = FontWeight.Bold,
                         fontSize = MaterialTheme.typography.bodyMedium.fontSize
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
                     Text(
                         message.content,
                         fontSize = MaterialTheme.typography.bodyMedium.fontSize,
@@ -581,14 +746,22 @@ fun AIAnalysisModal(
                         )
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
+                            ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                                 item.category,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = MaterialTheme.typography.bodySmall.fontSize,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
+                            ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                                 item.analysis,
                                 fontSize = MaterialTheme.typography.bodyMedium.fontSize
                             )
@@ -599,7 +772,11 @@ fun AIAnalysisModal(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Fechar")
+                ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text("Fechar")
             }
         }
     )
@@ -621,10 +798,18 @@ fun ReactionChip(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = emoji, fontSize = MaterialTheme.typography.bodySmall.fontSize)
+            ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(text = emoji, fontSize = MaterialTheme.typography.bodySmall.fontSize)
             if (count > 1) {
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(
+                ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
                     text = count.toString(),
                     fontSize = MaterialTheme.typography.labelSmall.fontSize,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -690,6 +875,7 @@ fun ChatInput(
     onAISuggestionsClick: () -> Unit
 ) {
     var showAttachments by remember { mutableStateOf(false) }
+    var showDilemmas by remember { mutableStateOf(false) }
     
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -717,6 +903,17 @@ fun ChatInput(
                     item {
                         AttachmentOption(
                             icon = Icons.Filled.Add,
+                            text = "Missão"
+                            onClick = {
+                                showDilemmas = true
+                                showAttachments = false
+                            }
+                        )
+                    }
+                    
+                    item {
+                        AttachmentOption(
+                            icon = Icons.Filled.Add,
                             text = "GIF",
                             onClick = {
                                 onSendGif("https://example.com/gif")
@@ -735,7 +932,17 @@ fun ChatInput(
                 verticalAlignment = Alignment.Bottom
             ) {
                 IconButton(onClick = { showAttachments = !showAttachments }) {
-                    Icon(
+                    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                         if (showAttachments) Icons.Filled.Close else Icons.Filled.Add,
                         contentDescription = "Anexos"
                     )
@@ -745,7 +952,11 @@ fun ChatInput(
                     value = currentMessage,
                     onValueChange = onMessageChange,
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Digite uma mensagem...") },
+                    placeholder = { ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text("Digite uma mensagem...") },
                     maxLines = 4,
                     shape = RoundedCornerShape(24.dp)
                 )
@@ -761,7 +972,17 @@ fun ChatInput(
                             CircleShape
                         )
                 ) {
-                    Icon(
+                    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                         Icons.Filled.Star,
                         contentDescription = "Sugestões de IA",
                         tint = MaterialTheme.colorScheme.primary
@@ -775,7 +996,17 @@ fun ChatInput(
                     modifier = Modifier.size(48.dp),
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    Icon(
+                    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                         Icons.Filled.Send, 
                         contentDescription = "Enviar", 
                         tint = MaterialTheme.colorScheme.onPrimary
@@ -808,7 +1039,17 @@ private fun AttachmentOption(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
-                Icon(
+                if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { dilemma -> 
+                onMessageChange(dilemma)
+                onSendMessage()
+            }
+        )
+    }
+
+    Icon(
                     imageVector = icon,
                     contentDescription = text,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -818,7 +1059,11 @@ private fun AttachmentOption(
         
         Spacer(modifier = Modifier.height(4.dp))
         
-        Text(
+        ConnectionStatusHeader(
+                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
+                        onClick = { /* TODO: Abrir UI-03 */ }
+                    )
+                    Text(
             text = text,
             fontSize = MaterialTheme.typography.bodySmall.fontSize,
             color = MaterialTheme.colorScheme.onSurface

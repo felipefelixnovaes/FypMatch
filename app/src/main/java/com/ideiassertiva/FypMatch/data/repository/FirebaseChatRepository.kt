@@ -15,6 +15,8 @@ import javax.inject.Singleton
 
 @Singleton
 class FirebaseChatRepository @Inject constructor(
+    private val liveConnectionRepository: LiveConnectionRepository,
+    private val liveConnectionEngine: com.ideiassertiva.FypMatch.domain.LiveConnectionEngine,
     private val firestore: FirebaseFirestore
 ) : ChatRepositoryInterface {
 
@@ -159,6 +161,13 @@ class FirebaseChatRepository @Inject constructor(
         )
 
         messagesCollection.document(messageId).set(messageData).await()
+n        // Disparar evento para Conexão Viva
+        try {
+            val connection = liveConnectionRepository.getOrCreateLiveConnection(matchId = "TODO_GET_MATCH_ID_FROM_CONV", user1Id = senderId, user2Id = receiverId)
+            val eventType = if (type == MessageType.IMAGE || type == MessageType.VIDEO) com.ideiassertiva.FypMatch.model.ConnectionEventType.MEDIA_SHARED else if (type == MessageType.AUDIO) com.ideiassertiva.FypMatch.model.ConnectionEventType.VOICE_NOTE_SENT else com.ideiassertiva.FypMatch.model.ConnectionEventType.MESSAGE_SENT
+            val event = com.ideiassertiva.FypMatch.model.ConnectionEvent(initiatorUserId = senderId, type = eventType)
+            liveConnectionEngine.processNewEvent(connection.id, event)
+        } catch (e: Exception) { /* Silently fail so chat is not interrupted */ }
 
         updateMessageStatus(conversationId, messageId, MessageStatus.SENT)
 
@@ -179,6 +188,12 @@ class FirebaseChatRepository @Inject constructor(
         messagesCollection.document(messageId)
             .update("status", status.name)
             .await()
+        // Disparar evento de reação para Conexão Viva
+        try {
+            val connection = liveConnectionRepository.getOrCreateLiveConnection(matchId = "TODO_MATCH_ID", user1Id = userId, user2Id = "TODO_OTHER_ID")
+            val event = com.ideiassertiva.FypMatch.model.ConnectionEvent(initiatorUserId = userId, type = com.ideiassertiva.FypMatch.model.ConnectionEventType.REACTION_ADDED)
+            liveConnectionEngine.processNewEvent(connection.id, event)
+        } catch (e: Exception) {}
     }
 
     suspend fun setTypingIndicator(conversationId: String, userId: String, isTyping: Boolean) {
@@ -203,6 +218,12 @@ class FirebaseChatRepository @Inject constructor(
         messagesCollection.document(messageId)
             .update("reactions", com.google.firebase.firestore.FieldValue.arrayUnion(reactionData))
             .await()
+        // Disparar evento de reação para Conexão Viva
+        try {
+            val connection = liveConnectionRepository.getOrCreateLiveConnection(matchId = "TODO_MATCH_ID", user1Id = userId, user2Id = "TODO_OTHER_ID")
+            val event = com.ideiassertiva.FypMatch.model.ConnectionEvent(initiatorUserId = userId, type = com.ideiassertiva.FypMatch.model.ConnectionEventType.REACTION_ADDED)
+            liveConnectionEngine.processNewEvent(connection.id, event)
+        } catch (e: Exception) {}
     }
 
     override suspend fun getConversationById(conversationId: String): Conversation? {

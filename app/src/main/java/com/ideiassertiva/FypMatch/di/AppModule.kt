@@ -42,8 +42,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAdsRepository(): AdsRepository {
-        return AdsRepository()
+    fun provideAdsRepository(userRepository: UserRepository): AdsRepository {
+        return AdsRepository(userRepository)
     }
 
     @Provides

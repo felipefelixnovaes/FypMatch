@@ -32,7 +32,7 @@ class AICounselorRepository(
     val userStats: Flow<Map<String, CounselorStats>> = _userStats.asStateFlow()
     
     // Inicializar créditos do usuário
-    fun initializeCredits(userId: String, subscription: SubscriptionStatus) {
+    suspend fun initializeCredits(userId: String, subscription: SubscriptionStatus) {
         adsRepository.initializeUserCredits(userId, subscription)
     }
     

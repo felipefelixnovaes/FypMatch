@@ -61,6 +61,9 @@ class DiscoveryViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     private var currentUserId = ""
+    val currentUserIdFlow: StateFlow<String>
+        get() = _currentUserId.asStateFlow()
+    private val _currentUserId = MutableStateFlow("")
     private val currentUserSubscription = SubscriptionStatus.FREE
 
     /** Stack dos últimos cards swipados para rewind */
@@ -68,6 +71,7 @@ class DiscoveryViewModel @Inject constructor(
 
     init {
         currentUserId = authRepository.getCurrentFirebaseUser()?.uid ?: ""
+        _currentUserId.value = currentUserId
         loadInitialCards()
     }
 

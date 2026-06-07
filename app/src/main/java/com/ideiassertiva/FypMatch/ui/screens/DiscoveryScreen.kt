@@ -70,6 +70,7 @@ fun DiscoveryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentCard by viewModel.currentCard.collectAsStateWithLifecycle()
     val newLikesCount by viewModel.newLikesCount.collectAsStateWithLifecycle()
+    val currentUserId by viewModel.currentUserIdFlow.collectAsStateWithLifecycle()
 
     // Modal de match
     val matchModal = uiState as? DiscoveryUiState.MatchModal
@@ -103,8 +104,8 @@ fun DiscoveryScreen(
         DiscoveryTopBar(
             onSettingsClick = onNavigateToSettings,
             onMatchesClick = onNavigateToMatches,
-            onAICounselorClick = { onNavigateToAICounselor("current_user_id") },
-            onPhase4AIClick = { onNavigateToPhase4AI("current_user_id") },
+            onAICounselorClick = { onNavigateToAICounselor(currentUserId) },
+            onPhase4AIClick = { onNavigateToPhase4AI(currentUserId) },
             onProfileClick = onNavigateToProfile,
             onPhase3DemoClick = onNavigateToPhase3Demo,
             newLikesCount = newLikesCount

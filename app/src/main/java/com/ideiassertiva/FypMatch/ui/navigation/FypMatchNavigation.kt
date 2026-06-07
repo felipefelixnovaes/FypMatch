@@ -11,9 +11,9 @@ import androidx.navigation.navArgument
 import com.ideiassertiva.FypMatch.model.SwipeType
 import com.ideiassertiva.FypMatch.ui.screens.*
 import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryViewModel
+import com.google.firebase.auth.FirebaseAuth
 
-/** Placeholder de userId — substituir por auth state real (FirebaseAuth.currentUser.uid) */
-private const val PLACEHOLDER_USER_ID = "placeholder_user"
+private fun getCurrentUserId(): String = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
 sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
@@ -218,7 +218,7 @@ fun FypMatchNavigation(
 
         composable(Screen.Conversations.route) {
             ConversationsScreen(
-                currentUserId = PLACEHOLDER_USER_ID, // Em um app real, viria da autenticação
+                currentUserId = getCurrentUserId(),
                 onConversationClick = { conversationId ->
                     navController.navigate(Screen.EnhancedChat.createRoute(conversationId, true))
                 },
@@ -232,7 +232,7 @@ fun FypMatchNavigation(
             val conversationId = backStackEntry.arguments?.getString("conversationId") ?: ""
             ChatScreen(
                 conversationId = conversationId,
-                currentUserId = PLACEHOLDER_USER_ID, // Em um app real, viria da autenticação
+                currentUserId = getCurrentUserId(),
                 onBackClick = {
                     navController.popBackStack()
                 }
@@ -244,7 +244,7 @@ fun FypMatchNavigation(
             val useFirebase = backStackEntry.arguments?.getString("useFirebase")?.toBooleanStrictOrNull() ?: true
             EnhancedChatScreen(
                 conversationId = conversationId,
-                currentUserId = PLACEHOLDER_USER_ID, // Em um app real, viria da autenticação
+                currentUserId = getCurrentUserId(),
                 useFirebase = useFirebase,
                 onBackClick = {
                     navController.popBackStack()
@@ -354,7 +354,7 @@ fun FypMatchNavigation(
 
         // ─── Configurações de conta ───────────────────────────────────────
         composable(Screen.Settings.route) {
-            val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: PLACEHOLDER_USER_ID
+            val uid = getCurrentUserId()
             SettingsScreen(
                 onNavigateToPremium = {
                     navController.navigate(Screen.Premium.route)

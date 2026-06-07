@@ -1,14 +1,25 @@
 package com.ideiassertiva.FypMatch.data.repository
 
 import com.ideiassertiva.FypMatch.model.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AdsRepository {
+@Singleton
+class AdsRepository @Inject constructor(
+    private val userRepository: UserRepository
+) {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // Estado dos anúncios
     private val _isAdLoading = MutableStateFlow(false)
@@ -27,8 +38,8 @@ class AdsRepository {
     // Data do último reset de anúncios por usuário
     private val _lastAdResetDate = MutableStateFlow<Map<String, Date>>(emptyMap())
 
-    // Inicializar créditos do usuário baseado na assinatura
-    fun initializeUserCredits(userId: String, subscription: SubscriptionStatus): AiCredits {
+    // Inicializar créditos do usuário baseado na assinatura + Firestore
+    suspend fun initializeUserCredits(userId: String, subscription: SubscriptionStatus): AiCredits {
         val dailyLimit = when (subscription) {
             SubscriptionStatus.FREE -> AiCreditLimits.FREE_DAILY
             SubscriptionStatus.PREMIUM -> AiCreditLimits.PREMIUM_DAILY
@@ -38,26 +49,54 @@ class AdsRepository {
         val existingCredits = _userCredits.value[userId]
         val today = Date()
 
-        // Se é um novo dia, resetar créditos diários
-        val credits = if (existingCredits != null && !isSameDay(existingCredits.lastResetDate, today)) {
-            existingCredits.copy(
-                current = dailyLimit,
-                usedToday = 0,
-                lastResetDate = today,
-                dailyLimit = dailyLimit
-            )
-        } else if (existingCredits != null) {
-            existingCredits.copy(dailyLimit = dailyLimit)
-        } else {
-            AiCredits(
-                current = dailyLimit,
-                dailyLimit = dailyLimit,
-                lastResetDate = today
-            )
+        // Tentar carregar créditos salvos no Firestore
+        val firestoreCredits = try {
+            userRepository.getUserById(userId)?.aiCredits
+        } catch (_: Exception) { null }
+
+        val credits = when {
+            // Créditos no Firestore com totalEarned > 0 usa os do Firestore
+            firestoreCredits != null && firestoreCredits.totalEarned > 0 -> {
+                if (!isSameDay(firestoreCredits.lastResetDate, today)) {
+                    firestoreCredits.copy(
+                        current = firestoreCredits.current.coerceAtLeast(dailyLimit),
+                        dailyLimit = dailyLimit,
+                        usedToday = 0,
+                        lastResetDate = today
+                    )
+                } else {
+                    firestoreCredits.copy(dailyLimit = dailyLimit)
+                }
+            }
+            // Reset diário se necessário
+            existingCredits != null && !isSameDay(existingCredits.lastResetDate, today) ->
+                existingCredits.copy(
+                    current = dailyLimit,
+                    usedToday = 0,
+                    lastResetDate = today,
+                    dailyLimit = dailyLimit
+                )
+            existingCredits != null ->
+                existingCredits.copy(dailyLimit = dailyLimit)
+            else ->
+                AiCredits(
+                    current = dailyLimit,
+                    dailyLimit = dailyLimit,
+                    lastResetDate = today
+                )
         }
 
         _userCredits.value = _userCredits.value + (userId to credits)
+        persistCredits(userId, credits)
         return credits
+    }
+
+    private fun persistCredits(userId: String, credits: AiCredits) {
+        scope.launch {
+            try {
+                userRepository.updateUser(userId, mapOf("aiCredits" to credits))
+            } catch (_: Exception) { }
+        }
     }
 
     // Obter créditos atuais do usuário
@@ -87,6 +126,7 @@ class AdsRepository {
             )
 
             _userCredits.value = _userCredits.value + (userId to updatedCredits)
+            persistCredits(userId, updatedCredits)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -155,6 +195,7 @@ class AdsRepository {
         )
 
         _userCredits.value = _userCredits.value + (userId to updatedCredits)
+        persistCredits(userId, updatedCredits)
         return amount
     }
 

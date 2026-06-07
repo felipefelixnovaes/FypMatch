@@ -56,14 +56,24 @@ class ProfileEditViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                val completedUser = user.copy(profile = user.profile.withCompletionStatus())
-                val result = userRepository.saveUserProfile(completedUser)
+                val userId = user.id.ifBlank { authRepository.getCurrentUserId() ?: "" }
+                val uploadedPhotos = if (userId.isNotBlank()) {
+                    userRepository.uploadPhotos(userId, user.profile.photos)
+                } else {
+                    user.profile.photos
+                }
+                val userWithPhotos = user.copy(
+                    profile = user.profile.copy(
+                        photos = uploadedPhotos
+                    ).withCompletionStatus()
+                )
+                val result = userRepository.saveUserProfile(userWithPhotos)
                 result.fold(
                     onSuccess = {
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             savedSuccessfully = true,
-                            user = completedUser
+                            user = userWithPhotos
                         )
                     },
                     onFailure = { e ->

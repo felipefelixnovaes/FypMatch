@@ -1,12 +1,17 @@
 package com.ideiassertiva.FypMatch.data.repository
 
+import android.content.Context
+import android.net.Uri
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import com.ideiassertiva.FypMatch.model.ComplementaryProfile
 import com.ideiassertiva.FypMatch.model.User
 import com.ideiassertiva.FypMatch.model.UserProfile
 import com.ideiassertiva.FypMatch.model.withCompletionStatus
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -16,13 +21,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class UserRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    @ApplicationContext private val context: Context
 ) {
 
     private val _currentUser = MutableStateFlow<User?>(null)
@@ -115,6 +122,35 @@ class UserRepository @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    suspend fun uploadPhotos(userId: String, photos: List<String>): List<String> {
+        if (userId.isBlank()) return photos
+        val storage = Firebase.storage
+        val uploadedUrls = mutableListOf<String>()
+
+        for (photo in photos) {
+            if (photo.startsWith("https://") || photo.startsWith("gs://")) {
+                uploadedUrls.add(photo)
+                continue
+            }
+
+            try {
+                val uri = Uri.parse(photo)
+                val inputStream = context.contentResolver.openInputStream(uri)
+                    ?: continue
+                val bytes = inputStream.use { it.readBytes() }
+                val filename = "users/$userId/photos/${UUID.randomUUID()}.jpg"
+                val storageRef = storage.reference.child(filename)
+                storageRef.putBytes(bytes).await()
+                val downloadUrl = storageRef.downloadUrl.await().toString()
+                uploadedUrls.add(downloadUrl)
+            } catch (e: Exception) {
+                uploadedUrls.add(photo)
+            }
+        }
+
+        return uploadedUrls
     }
 
     suspend fun getUserById(userId: String): User? {

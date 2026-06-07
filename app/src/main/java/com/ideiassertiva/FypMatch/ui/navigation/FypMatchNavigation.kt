@@ -340,11 +340,14 @@ fun FypMatchNavigation(
         composable(Screen.ProfileEdit.route) {
             ProfileEditScreen(
                 onNavigateBack = {
-                    navController.popBackStack()
+                    navController.navigate(Screen.Discovery.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = false }
+                    }
                 },
                 onSave = { user ->
-                    // Salva e volta para a tela anterior
-                    navController.popBackStack()
+                    navController.navigate(Screen.Discovery.route) {
+                        popUpTo(Screen.Welcome.route) { inclusive = false }
+                    }
                 }
             )
         }

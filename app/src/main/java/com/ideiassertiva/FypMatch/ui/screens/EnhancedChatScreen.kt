@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.DilemmaBottomSheet
 import com.ideiassertiva.FypMatch.ui.components.EmptyState
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.EnhancedChatViewModel
@@ -238,6 +239,9 @@ fun EnhancedChatScreen(
             },
             onSendGif = { gifUrl ->
                 viewModel.sendGif(gifUrl)
+            },
+            onSendMission = { mission ->
+                viewModel.sendConnectionMission(mission)
             },
             isTyping = uiState.isTyping,
             connectionState = uiState.connectionState
@@ -484,10 +488,21 @@ fun EnhancedMessageInput(
     onSendMessage: () -> Unit,
     onSendLocation: (Double, Double, String?) -> Unit,
     onSendGif: (String) -> Unit,
+    onSendMission: (String) -> Unit,
     isTyping: Boolean,
     connectionState: ConnectionState
 ) {
     var showAttachments by remember { mutableStateOf(false) }
+    var showDilemmas by remember { mutableStateOf(false) }
+
+    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { mission ->
+                onSendMission(mission)
+            }
+        )
+    }
     
     Column {
         // Connection status bar
@@ -533,6 +548,17 @@ fun EnhancedMessageInput(
                         text = "Localização",
                         onClick = {
                             onSendLocation(-23.5505, -46.6333, "São Paulo, SP")
+                            showAttachments = false
+                        }
+                    )
+                }
+
+                item {
+                    AttachmentOption(
+                        icon = Icons.Filled.Star,
+                        text = "Missão",
+                        onClick = {
+                            showDilemmas = true
                             showAttachments = false
                         }
                     )
@@ -594,7 +620,7 @@ fun EnhancedMessageInput(
             Spacer(modifier = Modifier.width(8.dp))
             
             FloatingActionButton(
-                onClick = onSendMessage,
+                onClick = { if (currentMessage.isNotBlank() && connectionState == ConnectionState.CONNECTED) onSendMessage() },
                 modifier = Modifier.size(48.dp),
                 containerColor = if (connectionState == ConnectionState.CONNECTED && currentMessage.isNotBlank()) {
                     MaterialTheme.colorScheme.primary

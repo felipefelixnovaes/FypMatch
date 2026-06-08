@@ -45,6 +45,14 @@ fun MatchesScreen(
     viewModel: MatchesViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val chatNavigation by viewModel.chatNavigation.collectAsStateWithLifecycle()
+
+    LaunchedEffect(chatNavigation) {
+        chatNavigation?.let { conversationId ->
+            onNavigateToChat(conversationId)
+            viewModel.clearChatNavigation()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -98,7 +106,7 @@ fun MatchesScreen(
                     items(state.matches) { match ->
                         MatchCard(
                             match = match,
-                            onClick = { onNavigateToChat(match.id) }
+                            onClick = { viewModel.openMatchChat(match) }
                         )
                     }
                 }

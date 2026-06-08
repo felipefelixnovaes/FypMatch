@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
 import com.ideiassertiva.FypMatch.data.repository.*
+import com.ideiassertiva.FypMatch.domain.LiveConnectionEngine
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -66,8 +67,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFirebaseChatRepository(firestore: FirebaseFirestore): FirebaseChatRepository {
-        return FirebaseChatRepository(firestore)
+    fun provideLiveConnectionDataSource(repository: LiveConnectionRepository): LiveConnectionDataSource {
+        return repository
     }
 
     @Provides

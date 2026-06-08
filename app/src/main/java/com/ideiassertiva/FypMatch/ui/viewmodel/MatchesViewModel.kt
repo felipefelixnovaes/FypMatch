@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.data.repository.DiscoveryRepository
+import com.ideiassertiva.FypMatch.data.repository.FirebaseChatRepository
 import com.ideiassertiva.FypMatch.model.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,11 +30,15 @@ sealed class MatchesUiState {
 @HiltViewModel
 class MatchesViewModel @Inject constructor(
     private val discoveryRepository: DiscoveryRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val chatRepository: FirebaseChatRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<MatchesUiState>(MatchesUiState.Loading)
     val uiState: StateFlow<MatchesUiState> = _uiState.asStateFlow()
+
+    private val _chatNavigation = MutableStateFlow<String?>(null)
+    val chatNavigation: StateFlow<String?> = _chatNavigation.asStateFlow()
 
     private var currentUserId = ""
 
@@ -63,5 +68,28 @@ class MatchesViewModel @Inject constructor(
 
     fun refreshMatches() {
         loadMatches()
+    }
+
+    fun openMatchChat(match: Match) {
+        viewModelScope.launch {
+            try {
+                if (currentUserId.isBlank()) {
+                    _uiState.value = MatchesUiState.Error("Usuário não autenticado")
+                    return@launch
+                }
+                _chatNavigation.value = chatRepository.getOrCreateConversationForMatch(
+                    match = match,
+                    currentUserId = currentUserId
+                )
+            } catch (e: Exception) {
+                _uiState.value = MatchesUiState.Error(
+                    message = e.message ?: "Erro ao abrir conversa"
+                )
+            }
+        }
+    }
+
+    fun clearChatNavigation() {
+        _chatNavigation.value = null
     }
 }

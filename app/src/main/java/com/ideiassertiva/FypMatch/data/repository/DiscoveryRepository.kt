@@ -2,6 +2,7 @@
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.SetOptions
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -71,9 +72,23 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
         }
     }
 
+    // IDs com quem o usuário já interagiu (curtiu/super/passou) — não devem reaparecer no deck
+    private suspend fun loadActedUserIds(currentUserId: String): Set<String> {
+        if (currentUserId.isBlank()) return emptySet()
+        return try {
+            val doc = firestore.collection("likes").document(currentUserId).get().await()
+            val liked = (doc.get("liked") as? List<*>)?.filterIsInstance<String>().orEmpty()
+            val passed = (doc.get("passed") as? List<*>)?.filterIsInstance<String>().orEmpty()
+            (liked + passed).toSet()
+        } catch (e: Exception) {
+            emptySet()
+        }
+    }
+
     // Carrega os cards de discovery para um usuário específico — apenas perfis reais do Firestore.
     suspend fun loadDiscoveryCards(currentUserId: String) {
-        val users = loadUsersFromFirestore(currentUserId)
+        val acted = loadActedUserIds(currentUserId)
+        val users = loadUsersFromFirestore(currentUserId).filter { it.id !in acted }
         val currentUser = loadCurrentUserFromFirestore(currentUserId)
         val cards = users.map { user ->
             val compatibilityScore = currentUser?.let {
@@ -103,12 +118,16 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
     // Registra like no Firestore e verifica match mútuo
     private suspend fun registerLikeAndCheckMatch(currentUserId: String, likedUserId: String): Boolean {
         return try {
-            // Registra que currentUser deu like em likedUser
+            val likeData = mapOf(
+                "liked" to FieldValue.arrayUnion(likedUserId),
+                "updatedAt" to Date()
+            )
+
             firestore.collection("likes")
                 .document(currentUserId)
-                .update("liked", FieldValue.arrayUnion(likedUserId))
+                .set(likeData, SetOptions.merge())
                 .await()
-            // Verifica se likedUser também deu like em currentUser
+
             val doc = firestore.collection("likes").document(likedUserId).get().await()
             val likedByUser = doc.get("liked") as? List<*> ?: emptyList<String>()
             likedByUser.contains(currentUserId)
@@ -116,7 +135,21 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
             false
         }
     }
-    
+
+    // Registra "passar" no Firestore (para excluir do deck nas próximas cargas)
+    private suspend fun registerPass(currentUserId: String, passedUserId: String) {
+        try {
+            firestore.collection("likes")
+                .document(currentUserId)
+                .set(
+                    mapOf("passed" to FieldValue.arrayUnion(passedUserId), "updatedAt" to Date()),
+                    SetOptions.merge()
+                )
+                .await()
+        } catch (_: Exception) {
+        }
+    }
+
     // Executar ação de swipe
     suspend fun performSwipe(
         fromUserId: String,
@@ -137,10 +170,13 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
                 it.fromUserId == toUserId && it.toUserId == fromUserId && it.action != SwipeType.PASS 
             }
             
-            // Registra like no Firestore e verifica match mútuo
+            // Persiste a ação no Firestore (like em "liked", pass em "passed") p/ não reaparecer no deck
             val mutualMatch = if (swipeType != SwipeType.PASS) {
                 registerLikeAndCheckMatch(fromUserId, toUserId)
-            } else false
+            } else {
+                registerPass(fromUserId, toUserId)
+                false
+            }
             val isMatch = existingSwipe != null || mutualMatch
             
             val updatedSwipe = swipeAction.copy(isMatch = isMatch)
@@ -155,6 +191,7 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
                     createdAt = Date()
                 )
                 _matches.value = _matches.value + newMatch
+                saveMatchToFirestore(newMatch)
                 _newLikesCount.value += 1 // novo match → incrementa o badge
                 newMatch
             } else null
@@ -167,10 +204,27 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
             Result.failure(e)
         }
     }
+
+    private suspend fun saveMatchToFirestore(match: Match) {
+        try {
+            firestore.collection("matches")
+                .document(match.id)
+                .set(match)
+                .await()
+        } catch (_: Exception) {
+            // The local match modal should still appear if the remote write is temporarily unavailable.
+        }
+    }
     
     // Obter cards para discovery
     fun getDiscoveryCards(): List<DiscoveryCard> {
         return _discoveryCards.value
+    }
+
+    fun getCachedUserById(userId: String): User? {
+        return _discoveryCards.value
+            .firstOrNull { it.user.id == userId }
+            ?.user
     }
     
     // Obter matches do usuário
@@ -188,8 +242,14 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
             .distinct()
 
     // IDs dos usuários com quem deu match — para a tela de Curtidas
-    fun getMatchUserIds(): List<String> =
-        _matches.value.map { it.user2Id }.distinct()
+    fun getMatchUserIds(userId: String): List<String> =
+        _matches.value.mapNotNull { match ->
+            when (userId) {
+                match.user1Id -> match.user2Id
+                match.user2Id -> match.user1Id
+                else -> null
+            }
+        }.distinct()
     
     // Verificar limites de likes (para monetização)
     fun checkLikeLimit(userId: String, subscription: SubscriptionStatus): Boolean {

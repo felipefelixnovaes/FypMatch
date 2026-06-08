@@ -2,7 +2,19 @@ package com.ideiassertiva.FypMatch.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -10,30 +22,63 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.contentColorFor
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.model.ConnectionDimensions
+import com.ideiassertiva.FypMatch.model.ConnectionStatus
+import com.ideiassertiva.FypMatch.model.LiveConnection
+import com.ideiassertiva.FypMatch.model.Message
+import com.ideiassertiva.FypMatch.model.MessageStatus
+import com.ideiassertiva.FypMatch.model.MessageType
+import com.ideiassertiva.FypMatch.model.User
 import com.ideiassertiva.FypMatch.ui.components.ConnectionStatusHeader
 import com.ideiassertiva.FypMatch.ui.components.DilemmaBottomSheet
-import com.ideiassertiva.FypMatch.ui.components.EmptyState
 import com.ideiassertiva.FypMatch.ui.components.ErrorState
-import com.ideiassertiva.FypMatch.ui.viewmodel.ChatViewModel
 import com.ideiassertiva.FypMatch.ui.viewmodel.ChatUiState
+import com.ideiassertiva.FypMatch.ui.viewmodel.ChatViewModel
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
@@ -49,21 +94,21 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     var showAISuggestions by remember { mutableStateOf(false) }
+    var showConnectionRadar by remember { mutableStateOf(false) }
     var selectedMessageForAnalysis by remember { mutableStateOf<String?>(null) }
 
-    // Extrai dados da conversa com smart cast
     val chatData = uiState as? ChatUiState.Success
     val chatError = uiState as? ChatUiState.Error
 
-    LaunchedEffect(conversationId) {
+    LaunchedEffect(conversationId, currentUserId) {
         viewModel.loadConversation(conversationId, currentUserId)
     }
 
     LaunchedEffect(chatData?.messages?.size) {
-        val msgs = chatData?.messages ?: return@LaunchedEffect
-        if (msgs.isNotEmpty()) {
+        val messages = chatData?.messages ?: return@LaunchedEffect
+        if (messages.isNotEmpty()) {
             coroutineScope.launch {
-                listState.animateScrollToItem(msgs.size - 1)
+                listState.animateScrollToItem(messages.lastIndex)
             }
         }
     }
@@ -76,11 +121,9 @@ fun ChatScreen(
         ChatHeader(
             otherUser = chatData?.otherUser,
             isOnline = chatData?.conversation?.isOtherUserOnline(currentUserId) ?: false,
-            lastSeen = viewModel.getLastSeenConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(),
+            lastSeen = viewModel.getLastSeenText(),
+            connectionStatus = chatData?.liveConnection?.status,
+            onConnectionClick = { showConnectionRadar = true },
             onBackClick = onBackClick
         )
 
@@ -96,7 +139,7 @@ fun ChatScreen(
                     ErrorState(
                         icon = Icons.Default.Error,
                         title = "Erro ao carregar",
-                        description = chatError?.message ?: "",
+                        description = chatError?.message.orEmpty(),
                         onRetry = { viewModel.loadConversation(conversationId, currentUserId) }
                     )
                 }
@@ -108,11 +151,11 @@ fun ChatScreen(
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(chatData!!.messages) { message ->
+                        items(chatData?.messages.orEmpty()) { message ->
                             MessageItem(
                                 message = message,
                                 isOwnMessage = message.senderId == currentUserId,
-                                otherUser = chatData.otherUser,
+                                otherUser = chatData?.otherUser,
                                 onReactionClick = { messageId, emoji ->
                                     viewModel.addReaction(messageId, emoji)
                                 },
@@ -125,7 +168,7 @@ fun ChatScreen(
 
                         if (viewModel.isOtherUserTyping()) {
                             item {
-                                TypingIndicator(otherUser = chatData.otherUser)
+                                TypingIndicator(otherUser = chatData?.otherUser)
                             }
                         }
                     }
@@ -138,11 +181,7 @@ fun ChatScreen(
                 currentMessage = chatData.currentMessage,
                 conversationContext = chatData.messages.takeLast(5),
                 onSuggestionSelect = { suggestion ->
-                    viewModel.updateMessageConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(suggestion)
+                    viewModel.updateMessageText(suggestion)
                     showAISuggestions = false
                 },
                 onDismiss = { showAISuggestions = false }
@@ -150,14 +189,20 @@ fun ChatScreen(
         }
 
         ChatInput(
-            currentMessage = chatData?.currentMessage ?: "",
+            currentMessage = chatData?.currentMessage.orEmpty(),
             onMessageChange = viewModel::updateMessageText,
             onSendMessage = viewModel::sendMessage,
-            onSendLocation = { lat, lng, address ->
-                viewModel.sendLocation(lat, lng, address)
-            },
+            onSendLocation = viewModel::sendLocation,
             onSendGif = viewModel::sendGif,
+            onSendMission = viewModel::sendConnectionMission,
             onAISuggestionsClick = { showAISuggestions = !showAISuggestions }
+        )
+    }
+
+    if (showConnectionRadar) {
+        ConnectionRadarSheet(
+            connection = chatData?.liveConnection,
+            onDismiss = { showConnectionRadar = false }
         )
     }
 
@@ -173,7 +218,6 @@ fun ChatScreen(
         }
     }
 
-    // Snackbar para erros
     if (chatError != null) {
         LaunchedEffect(chatError.message) {
             viewModel.clearError()
@@ -187,6 +231,8 @@ fun ChatHeader(
     otherUser: User?,
     isOnline: Boolean,
     lastSeen: String,
+    connectionStatus: ConnectionStatus?,
+    onConnectionClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     TopAppBar(
@@ -204,7 +250,7 @@ fun ChatHeader(
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
-                    
+
                     if (isOnline) {
                         Box(
                             modifier = Modifier
@@ -215,46 +261,37 @@ fun ChatHeader(
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
-                
+
                 Column {
-                    ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
                     Text(
                         text = otherUser?.profile?.fullName ?: "Usuário",
                         fontSize = MaterialTheme.typography.bodyLarge.fontSize,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
-                        text = if (isOnline) "Online" else lastSeen,
-                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = if (isOnline) "Online" else lastSeen,
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        if (connectionStatus != null) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            ConnectionStatusHeader(
+                                status = connectionStatus,
+                                onClick = onConnectionClick
+                            )
+                        }
+                    }
                 }
             }
         },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
-                if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
-                    Icons.Filled.ArrowBack, 
+                Icon(
+                    Icons.Filled.ArrowBack,
                     contentDescription = "Voltar",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
@@ -276,17 +313,26 @@ fun MessageItem(
     getStatusIcon: (MessageStatus) -> String
 ) {
     var showReactions by remember { mutableStateOf(false) }
-    
+    val isSystemMessage = message.type == MessageType.SYSTEM_INFO
+
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isOwnMessage) Alignment.End else Alignment.Start
+        horizontalAlignment = when {
+            isSystemMessage -> Alignment.CenterHorizontally
+            isOwnMessage -> Alignment.End
+            else -> Alignment.Start
+        }
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = if (isOwnMessage) Arrangement.End else Arrangement.Start,
+            horizontalArrangement = when {
+                isSystemMessage -> Arrangement.Center
+                isOwnMessage -> Arrangement.End
+                else -> Arrangement.Start
+            },
             verticalAlignment = Alignment.Bottom
         ) {
-            if (!isOwnMessage && message.type != MessageType.SYSTEM_INFO) {
+            if (!isOwnMessage && !isSystemMessage) {
                 AsyncImage(
                     model = otherUser?.profile?.photos?.firstOrNull(),
                     contentDescription = "Foto",
@@ -297,204 +343,78 @@ fun MessageItem(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
-            
-            Column(
-                horizontalAlignment = if (isOwnMessage) Alignment.End else Alignment.Start
-            ) {
-                // Bolha da mensagem
+
+            Column(horizontalAlignment = if (isOwnMessage) Alignment.End else Alignment.Start) {
+                val bubbleColor = when {
+                    isSystemMessage -> MaterialTheme.colorScheme.secondaryContainer
+                    isOwnMessage -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.surfaceVariant
+                }
+                val contentColor = contentColorFor(bubbleColor)
+
                 Surface(
                     modifier = Modifier
-                        .clickable { 
-                            if (message.type == MessageType.TEXT) {
-                                showReactions = !showReactions 
-                            }
+                        .clickable(enabled = message.type == MessageType.TEXT) {
+                            showReactions = !showReactions
                         }
                         .widthIn(max = 280.dp),
                     shape = RoundedCornerShape(
                         topStart = 16.dp,
                         topEnd = 16.dp,
-                        bottomStart = if (isOwnMessage) 16.dp else 4.dp,
-                        bottomEnd = if (isOwnMessage) 4.dp else 16.dp
+                        bottomStart = if (isOwnMessage || isSystemMessage) 16.dp else 4.dp,
+                        bottomEnd = if (isOwnMessage && !isSystemMessage) 4.dp else 16.dp
                     ),
-                    color = if (isOwnMessage) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    }
+                    color = bubbleColor
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        // Conteúdo da mensagem baseado no tipo
-                        when (message.type) {
-                            MessageType.TEXT -> {
-                                ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
-                                    text = message.content,
-                                    color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
-                                )
-                            }
-                            MessageType.LOCATION -> {
-                                Column {
-                                    if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
-                                        Icons.Filled.LocationOn,
-                                        contentDescription = "Localização",
-                                        tint = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
-                                        text = message.content,
-                                        color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = MaterialTheme.typography.bodySmall.fontSize
-                                    )
-                                }
-                            }
-                            MessageType.GIF -> {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
-                                        Icons.Filled.Add,
-                                        contentDescription = "GIF",
-                                        tint = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
-                                        text = "Missão"
-                            onClick = {
-                                showDilemmas = true
-                                showAttachments = false
-                            }
+                        MessageContent(
+                            message = message,
+                            isOwnMessage = isOwnMessage,
+                            contentColor = contentColor
                         )
-                    }
-                    
-                    item {
-                        AttachmentOption(
-                            icon = Icons.Filled.Add,
-                            text = "GIF",
-                                        color = if (isOwnMessage) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = MaterialTheme.typography.bodySmall.fontSize
-                                    )
-                                }
-                            }
-                            else -> {
-                                ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
-                                    text = message.content,
-                                    color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = MaterialTheme.typography.bodyMedium.fontSize
-                                )
-                            }
-                        }
-                        
-                        // Timestamp e status
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
+                            Text(
                                 text = message.timestamp.format(DateTimeFormatter.ofPattern("HH:mm")),
                                 fontSize = MaterialTheme.typography.labelSmall.fontSize,
-                                color = if (isOwnMessage) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f) 
-                                       else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                color = contentColor.copy(alpha = 0.7f)
                             )
-                            if (isOwnMessage) {
+                            if (isOwnMessage && !isSystemMessage) {
                                 Spacer(modifier = Modifier.width(4.dp))
-                                ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
-                                    text = getStatusif (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(message.status),
+                                Text(
+                                    text = getStatusIcon(message.status),
                                     fontSize = MaterialTheme.typography.labelSmall.fontSize,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                                    color = contentColor.copy(alpha = 0.7f)
                                 )
                             }
                         }
                     }
                 }
-                
-                // Botão de análise de IA
-                if (message.type == MessageType.TEXT) {
+
+                if (message.type == MessageType.TEXT && !isSystemMessage) {
                     TextButton(
                         onClick = { onAIAnalysisClick(message.id) },
                         modifier = Modifier.padding(top = 4.dp)
                     ) {
-                        if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
+                        Icon(
                             Icons.Filled.Star,
                             contentDescription = "Análise de IA",
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
+                        Text(
                             "IA",
                             fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-                
-                // Reações (específicas para esta mensagem)
+
                 if (message.reactions.isNotEmpty()) {
                     val groupedReactions = message.reactions.groupBy { it.emoji }
                     LazyRow(
@@ -510,17 +430,16 @@ fun MessageItem(
                         }
                     }
                 }
-                
-                // Painel de reações (específico para esta mensagem)
+
                 if (showReactions) {
                     LazyRow(
                         modifier = Modifier.padding(top = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(listOf("❤️", "😂", "😮", "😢", "😡", "👍")) { emoji ->
+                        items(listOf("❤️", "😂", "😮", "😢", "👍")) { emoji ->
                             Surface(
                                 modifier = Modifier
-                                    .clickable { 
+                                    .clickable {
                                         onReactionClick(message.id, emoji)
                                         showReactions = false
                                     }
@@ -530,19 +449,15 @@ fun MessageItem(
                                 shadowElevation = 2.dp
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(text = emoji, fontSize = MaterialTheme.typography.bodyLarge.fontSize)
+                                    Text(text = emoji, fontSize = MaterialTheme.typography.bodyLarge.fontSize)
                                 }
                             }
                         }
                     }
                 }
             }
-            
-            if (isOwnMessage && message.type != MessageType.SYSTEM_INFO) {
+
+            if (isOwnMessage && !isSystemMessage) {
                 Spacer(modifier = Modifier.width(8.dp))
                 AsyncImage(
                     model = "https://picsum.photos/400/600?random=current_user",
@@ -558,6 +473,64 @@ fun MessageItem(
 }
 
 @Composable
+private fun MessageContent(
+    message: Message,
+    isOwnMessage: Boolean,
+    contentColor: Color
+) {
+    when (message.type) {
+        MessageType.LOCATION -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.LocationOn,
+                    contentDescription = "Localização",
+                    tint = contentColor
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = message.content,
+                    color = contentColor,
+                    fontSize = MaterialTheme.typography.bodySmall.fontSize
+                )
+            }
+        }
+
+        MessageType.GIF,
+        MessageType.IMAGE,
+        MessageType.AUDIO,
+        MessageType.VIDEO,
+        MessageType.STICKER -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Star,
+                    contentDescription = message.getDisplayContent(),
+                    tint = contentColor
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = if (message.content.isNotBlank()) message.content else message.getDisplayContent(),
+                    color = contentColor,
+                    fontSize = MaterialTheme.typography.bodySmall.fontSize
+                )
+            }
+        }
+
+        MessageType.TEXT,
+        MessageType.SYSTEM_INFO -> {
+            Text(
+                text = message.content,
+                color = contentColor,
+                fontSize = if (isOwnMessage) {
+                    MaterialTheme.typography.bodyMedium.fontSize
+                } else {
+                    MaterialTheme.typography.bodySmall.fontSize
+                }
+            )
+        }
+    }
+}
+
+@Composable
 fun AISuggestionsCard(
     currentMessage: String,
     conversationContext: List<Message>,
@@ -565,7 +538,7 @@ fun AISuggestionsCard(
     onDismiss: () -> Unit
 ) {
     val suggestions = generateAISuggestions(currentMessage, conversationContext)
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -574,35 +547,19 @@ fun AISuggestionsCard(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
+                    Icon(
                         Icons.Filled.Star,
                         contentDescription = "IA",
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
                     Text(
                         "Sugestões de IA",
                         fontWeight = FontWeight.Bold,
@@ -610,26 +567,16 @@ fun AISuggestionsCard(
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
+                    Icon(
                         Icons.Filled.Close,
                         contentDescription = "Fechar",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             suggestions.forEach { suggestion ->
                 OutlinedButton(
                     onClick = { onSuggestionSelect(suggestion.text) },
@@ -641,21 +588,13 @@ fun AISuggestionsCard(
                     )
                 ) {
                     Column {
-                        ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
+                        Text(
                             suggestion.text,
                             fontSize = MaterialTheme.typography.bodyMedium.fontSize,
                             textAlign = TextAlign.Start,
                             modifier = Modifier.fillMaxWidth()
                         )
-                        ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
+                        Text(
                             suggestion.reason,
                             fontSize = MaterialTheme.typography.bodySmall.fontSize,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
@@ -677,51 +616,29 @@ fun AIAnalysisModal(
     onDismiss: () -> Unit
 ) {
     val analysis = generateMessageAnalysis(message, isOwnMessage, conversationContext)
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
+                Icon(
                     Icons.Filled.Star,
                     contentDescription = "IA",
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text("Análise de IA")
+                Text("Análise de IA")
             }
         },
         text = {
             LazyColumn {
                 item {
-                    ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
                     Text(
                         "Mensagem:",
                         fontWeight = FontWeight.Bold,
                         fontSize = MaterialTheme.typography.bodyMedium.fontSize
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
                     Text(
                         message.content,
                         fontSize = MaterialTheme.typography.bodyMedium.fontSize,
@@ -735,7 +652,7 @@ fun AIAnalysisModal(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                
+
                 items(analysis) { item ->
                     Card(
                         modifier = Modifier
@@ -746,22 +663,14 @@ fun AIAnalysisModal(
                         )
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
+                            Text(
                                 item.category,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = MaterialTheme.typography.bodySmall.fontSize,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
-                            ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
+                            Text(
                                 item.analysis,
                                 fontSize = MaterialTheme.typography.bodyMedium.fontSize
                             )
@@ -772,11 +681,7 @@ fun AIAnalysisModal(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text("Fechar")
+                Text("Fechar")
             }
         }
     )
@@ -798,18 +703,10 @@ fun ReactionChip(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(text = emoji, fontSize = MaterialTheme.typography.bodySmall.fontSize)
+            Text(text = emoji, fontSize = MaterialTheme.typography.bodySmall.fontSize)
             if (count > 1) {
                 Spacer(modifier = Modifier.width(4.dp))
-                ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
+                Text(
                     text = count.toString(),
                     fontSize = MaterialTheme.typography.labelSmall.fontSize,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -833,9 +730,9 @@ fun TypingIndicator(otherUser: User?) {
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
         )
-        
+
         Spacer(modifier = Modifier.width(8.dp))
-        
+
         Surface(
             color = MaterialTheme.colorScheme.surfaceVariant,
             shape = RoundedCornerShape(16.dp)
@@ -872,11 +769,21 @@ fun ChatInput(
     onSendMessage: () -> Unit,
     onSendLocation: (Double, Double, String?) -> Unit,
     onSendGif: (String) -> Unit,
+    onSendMission: (String) -> Unit,
     onAISuggestionsClick: () -> Unit
 ) {
     var showAttachments by remember { mutableStateOf(false) }
     var showDilemmas by remember { mutableStateOf(false) }
-    
+
+    if (showDilemmas) {
+        DilemmaBottomSheet(
+            onDismiss = { showDilemmas = false },
+            onDilemmaSelected = { mission ->
+                onSendMission(mission)
+            }
+        )
+    }
+
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp
@@ -899,18 +806,18 @@ fun ChatInput(
                             }
                         )
                     }
-                    
+
                     item {
                         AttachmentOption(
-                            icon = Icons.Filled.Add,
-                            text = "Missão"
+                            icon = Icons.Filled.Star,
+                            text = "Missão",
                             onClick = {
                                 showDilemmas = true
                                 showAttachments = false
                             }
                         )
                     }
-                    
+
                     item {
                         AttachmentOption(
                             icon = Icons.Filled.Add,
@@ -923,99 +830,59 @@ fun ChatInput(
                     }
                 }
             }
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 24.dp) // Padding maior para evitar sobreposição
-                    .padding(bottom = 32.dp), // Padding extra ainda maior
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
                 IconButton(onClick = { showAttachments = !showAttachments }) {
-                    if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
+                    Icon(
                         if (showAttachments) Icons.Filled.Close else Icons.Filled.Add,
                         contentDescription = "Anexos"
                     )
                 }
-                
+
                 OutlinedTextField(
                     value = currentMessage,
                     onValueChange = onMessageChange,
                     modifier = Modifier.weight(1f),
-                    placeholder = { ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text("Digite uma mensagem...") },
+                    placeholder = { Text("Digite uma mensagem...") },
                     maxLines = 4,
                     shape = RoundedCornerShape(24.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
-                // Botão de IA
+
                 IconButton(
                     onClick = onAISuggestionsClick,
-                    modifier = Modifier
-                        .background(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            CircleShape
-                        )
+                    modifier = Modifier.background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        CircleShape
+                    )
                 ) {
-                    if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
+                    Icon(
                         Icons.Filled.Star,
                         contentDescription = "Sugestões de IA",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.width(8.dp))
-                
+
                 FloatingActionButton(
                     onClick = onSendMessage,
                     modifier = Modifier.size(48.dp),
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
-                    if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
-                        Icons.Filled.Send, 
-                        contentDescription = "Enviar", 
+                    Icon(
+                        Icons.Filled.Send,
+                        contentDescription = "Enviar",
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
             }
-            
-            // Spacer final para garantir espaço extra
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -1039,31 +906,17 @@ private fun AttachmentOption(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
-                if (showDilemmas) {
-        DilemmaBottomSheet(
-            onDismiss = { showDilemmas = false },
-            onDilemmaSelected = { dilemma -> 
-                onMessageChange(dilemma)
-                onSendMessage()
-            }
-        )
-    }
-
-    Icon(
+                Icon(
                     imageVector = icon,
                     contentDescription = text,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
-        
-        ConnectionStatusHeader(
-                        status = ConnectionStatus.WARMING_UP, // TODO: Obter do Match
-                        onClick = { /* TODO: Abrir UI-03 */ }
-                    )
-                    Text(
+
+        Text(
             text = text,
             fontSize = MaterialTheme.typography.bodySmall.fontSize,
             color = MaterialTheme.colorScheme.onSurface
@@ -1071,7 +924,103 @@ private fun AttachmentOption(
     }
 }
 
-// Modelos de dados para IA
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ConnectionRadarSheet(
+    connection: LiveConnection?,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Text(
+                text = "Radar da Conexão",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = statusDescription(connection?.status),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val dimensions = connection?.dimensions ?: ConnectionDimensions()
+            val dimensionRows = listOf(
+                "Reciprocidade" to dimensions.reciprocity,
+                "Continuidade" to dimensions.continuity,
+                "Afinidade" to dimensions.affinity,
+                "Leveza" to dimensions.lightness,
+                "Profundidade" to dimensions.depth,
+                "Iniciativa" to dimensions.initiative
+            )
+
+            dimensionRows.forEach { (label, value) ->
+                DimensionRow(label = label, value = value)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun DimensionRow(label: String, value: Float) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = qualitativeLabel(value),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { (value / 100f).coerceIn(0f, 1f) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp)),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    }
+}
+
+private fun statusDescription(status: ConnectionStatus?): String {
+    return when (status) {
+        ConnectionStatus.ON_FIRE -> "A conversa está com bastante energia e sinais de sintonia."
+        ConnectionStatus.ACTIVE -> "A conexão está ganhando ritmo de forma saudável."
+        ConnectionStatus.WARMING_UP -> "Vocês estão começando a construir presença e afinidade."
+        ConnectionStatus.COOLING_DOWN -> "Há espaço para retomar a conversa com leveza."
+        ConnectionStatus.ICE_COLD -> "A conexão ainda tem poucos sinais para interpretar."
+        null -> "A conexão começa a aparecer conforme vocês conversam."
+    }
+}
+
+private fun qualitativeLabel(value: Float): String {
+    return when {
+        value >= 70f -> "Muito presente"
+        value >= 45f -> "Em crescimento"
+        value >= 15f -> "Começando"
+        else -> "Poucos sinais"
+    }
+}
+
 data class AISuggestion(
     val text: String,
     val reason: String
@@ -1082,38 +1031,43 @@ data class AIAnalysisItem(
     val analysis: String
 )
 
-// Funções de IA para análise e sugestões
 fun generateAISuggestions(currentMessage: String, context: List<Message>): List<AISuggestion> {
     val lastMessage = context.lastOrNull()
     val suggestions = mutableListOf<AISuggestion>()
-    
+
     when {
         currentMessage.isEmpty() -> {
             when {
                 lastMessage?.content?.contains("como vai", ignoreCase = true) == true -> {
-                    suggestions.addAll(listOf(
-                        AISuggestion("Tudo bem! E você, como está?", "Resposta calorosa e demonstra interesse"),
-                        AISuggestion("Oi! Estou bem, obrigado(a) por perguntar 😊", "Tom amigável com emoji"),
-                        AISuggestion("Bem demais! Como foi seu dia?", "Positiva e muda o foco para a pessoa")
-                    ))
+                    suggestions.addAll(
+                        listOf(
+                            AISuggestion("Tudo bem! E você, como está?", "Resposta calorosa e demonstra interesse"),
+                            AISuggestion("Oi! Estou bem, obrigado(a) por perguntar 😊", "Tom amigável com emoji"),
+                            AISuggestion("Bem demais! Como foi seu dia?", "Positiva e muda o foco para a pessoa")
+                        )
+                    )
                 }
                 lastMessage?.content?.contains("que faz", ignoreCase = true) == true -> {
-                    suggestions.addAll(listOf(
-                        AISuggestion("Trabalho com [área], adoro o que faço! E você?", "Profissional mas pessoal"),
-                        AISuggestion("Sou [profissão], e nas horas vagas gosto de [hobby]. E você, o que curte fazer?", "Completa e demonstra interesse"),
-                        AISuggestion("Trabalho na área de [área]. Mas me fala de você!", "Breve e direciona para a pessoa")
-                    ))
+                    suggestions.addAll(
+                        listOf(
+                            AISuggestion("Trabalho com [área], adoro o que faço! E você?", "Profissional mas pessoal"),
+                            AISuggestion("Sou [profissão], e nas horas vagas gosto de [hobby]. E você, o que curte fazer?", "Completa e demonstra interesse"),
+                            AISuggestion("Trabalho na área de [área]. Mas me fala de você!", "Breve e direciona para a pessoa")
+                        )
+                    )
                 }
                 else -> {
-                    suggestions.addAll(listOf(
-                        AISuggestion("Oi! Como está seu dia?", "Cumprimento caloroso e interessado"),
-                        AISuggestion("Que bom que deu match! Como você está?", "Reconhece o match e demonstra interesse"),
-                        AISuggestion("Olá! Vi que curte [interesse]. Eu também!", "Personalizada baseada no perfil")
-                    ))
+                    suggestions.addAll(
+                        listOf(
+                            AISuggestion("Oi! Como está seu dia?", "Cumprimento caloroso e interessado"),
+                            AISuggestion("Que bom que deu match! Como você está?", "Reconhece o match e demonstra interesse"),
+                            AISuggestion("Olá! Vi que curte [interesse]. Eu também!", "Personalizada baseada no perfil")
+                        )
+                    )
                 }
             }
         }
-        
+
         currentMessage.length > 100 -> {
             suggestions.add(
                 AISuggestion(
@@ -1122,7 +1076,7 @@ fun generateAISuggestions(currentMessage: String, context: List<Message>): List<
                 )
             )
         }
-        
+
         currentMessage.contains("?") -> {
             suggestions.add(
                 AISuggestion(
@@ -1131,24 +1085,25 @@ fun generateAISuggestions(currentMessage: String, context: List<Message>): List<
                 )
             )
         }
-        
+
         !currentMessage.contains(".") && !currentMessage.contains("!") && !currentMessage.contains("?") -> {
-            suggestions.addAll(listOf(
-                AISuggestion("$currentMessage!", "Tom mais animado"),
-                AISuggestion("$currentMessage 😊", "Adiciona emoji amigável"),
-                AISuggestion("$currentMessage.", "Tom mais formal")
-            ))
+            suggestions.addAll(
+                listOf(
+                    AISuggestion("$currentMessage!", "Tom mais animado"),
+                    AISuggestion("$currentMessage 😊", "Adiciona emoji amigável"),
+                    AISuggestion("$currentMessage.", "Tom mais formal")
+                )
+            )
         }
     }
-    
+
     return suggestions.take(3)
 }
 
 fun generateMessageAnalysis(message: Message, isOwnMessage: Boolean, context: List<Message>): List<AIAnalysisItem> {
     val analysis = mutableListOf<AIAnalysisItem>()
     val content = message.content.lowercase()
-    
-    // Análise de tom
+
     val tone = when {
         content.contains("haha") || content.contains("kkk") || content.contains("😂") -> "Bem-humorado"
         content.contains("desculpa") || content.contains("me perdoa") -> "Apologético"
@@ -1158,27 +1113,28 @@ fun generateMessageAnalysis(message: Message, isOwnMessage: Boolean, context: Li
         content.contains("ok") || content.contains("tá") -> "Neutro"
         else -> "Amigável"
     }
-    
+
     analysis.add(
         AIAnalysisItem(
             "Tom da mensagem",
-            if (isOwnMessage) 
+            if (isOwnMessage) {
                 "Seu tom foi: $tone. ${getToneAdvice(tone, true)}"
-            else 
+            } else {
                 "O tom da pessoa foi: $tone. ${getToneAdvice(tone, false)}"
+            }
         )
     )
-    
-    // Análise de comprimento
+
     when {
         message.content.length < 10 -> {
             analysis.add(
                 AIAnalysisItem(
                     "Comprimento",
-                    if (isOwnMessage)
+                    if (isOwnMessage) {
                         "Mensagem muito curta. Pode parecer desinteresse. Tente elaborar mais."
-                    else
+                    } else {
                         "Resposta curta pode indicar pressa ou timidez."
+                    }
                 )
             )
         }
@@ -1186,38 +1142,38 @@ fun generateMessageAnalysis(message: Message, isOwnMessage: Boolean, context: Li
             analysis.add(
                 AIAnalysisItem(
                     "Comprimento",
-                    if (isOwnMessage)
+                    if (isOwnMessage) {
                         "Mensagem longa. Pode ser intimidante no início. Considere dividir em partes."
-                    else
+                    } else {
                         "Pessoa está muito envolvida na conversa - sinal positivo!"
+                    }
                 )
             )
         }
     }
-    
-    // Análise contextual
+
     val previousMessages = context.takeLast(3)
     if (previousMessages.size > 1) {
-        val responseTime = "rápida" // Simulado
+        val responseTime = "rápida"
         analysis.add(
             AIAnalysisItem(
                 "Contexto da conversa",
-                if (isOwnMessage)
+                if (isOwnMessage) {
                     "Você respondeu de forma $responseTime. Isso demonstra ${getResponseTimeAdvice(responseTime)}."
-                else
+                } else {
                     "A pessoa respondeu de forma $responseTime, indicando ${getResponseTimeAdvice(responseTime)}."
+                }
             )
         )
     }
-    
-    // Sugestões de melhoria
+
     if (isOwnMessage) {
         analysis.add(
             AIAnalysisItem(
                 "Sugestão",
                 when {
                     !content.contains("?") -> "Considere fazer uma pergunta para manter a conversa fluindo."
-                    content.contains("eu") > content.contains("você") -> "Tente focar mais na pessoa e menos em si mesmo."
+                    content.contains("eu") && !content.contains("você") -> "Tente focar mais na pessoa e menos em si mesmo."
                     else -> "Boa mensagem! Continue assim."
                 }
             )
@@ -1235,7 +1191,7 @@ fun generateMessageAnalysis(message: Message, isOwnMessage: Boolean, context: Li
             )
         )
     }
-    
+
     return analysis
 }
 
@@ -1256,4 +1212,4 @@ private fun getResponseTimeAdvice(responseTime: String): String {
         "lenta" -> "pessoa ocupada ou mais reservada"
         else -> "padrão normal de resposta"
     }
-} 
+}

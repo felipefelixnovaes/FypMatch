@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.data.repository.DiscoveryRepository
-import com.ideiassertiva.FypMatch.data.repository.ChatRepository
+import com.ideiassertiva.FypMatch.data.repository.FirebaseChatRepository
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +43,7 @@ sealed class DiscoveryUiState {
 @HiltViewModel
 class DiscoveryViewModel @Inject constructor(
     private val discoveryRepository: DiscoveryRepository,
-    private val chatRepository: ChatRepository,
+    private val chatRepository: FirebaseChatRepository,
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
@@ -129,14 +129,16 @@ class DiscoveryViewModel @Inject constructor(
                     swipeType = swipeType
                 )
 
-                result.onSuccess { swipeResult ->
+                if (result.isSuccess) {
+                    val swipeResult = result.getOrThrow()
                     if (swipeResult.isMatch) {
-                        val conversationId = chatRepository.createConversationFromMatch(
-                            match = swipeResult.match!!,
+                        val match = swipeResult.match!!
+                        val conversationId = chatRepository.getOrCreateConversationForMatch(
+                            match = match,
                             currentUserId = currentUserId
                         )
                         _uiState.value = DiscoveryUiState.MatchModal(
-                            match = swipeResult.match,
+                            match = match,
                             conversationId = conversationId
                         )
                     } else {
@@ -145,11 +147,10 @@ class DiscoveryViewModel @Inject constructor(
                             cardsEmpty = _currentCard.value == null
                         )
                     }
-                }
-
-                result.onFailure { exception ->
+                } else {
+                    val exception = result.exceptionOrNull()
                     _uiState.value = DiscoveryUiState.Error(
-                        message = exception.message ?: "Erro desconhecido"
+                        message = exception?.message ?: "Erro desconhecido"
                     )
                 }
             } catch (e: Exception) {

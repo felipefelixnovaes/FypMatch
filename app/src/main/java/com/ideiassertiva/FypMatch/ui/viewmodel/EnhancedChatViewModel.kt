@@ -25,7 +25,8 @@ data class EnhancedChatUiState(
     val isOtherUserTyping: Boolean = false,
     val isOtherUserOnline: Boolean = false,
     val connectionState: ConnectionState = ConnectionState.DISCONNECTED,
-    val conversation: Conversation? = null
+    val conversation: Conversation? = null,
+    val isSending: Boolean = false
 )
 
 enum class ConnectionState { CONNECTED, CONNECTING, DISCONNECTED, ERROR }
@@ -81,7 +82,10 @@ class EnhancedChatViewModel @Inject constructor(
 
     fun sendMessage() {
         val content = _uiState.value.currentMessage.trim()
-        if (content.isBlank() || currentConversationId.isBlank()) return
+        if (content.isBlank() || currentConversationId.isBlank() || _uiState.value.isSending) return
+
+        // Limpa o input e marca "enviando" imediatamente — evita duplicar ao tocar o botão de novo
+        _uiState.value = _uiState.value.copy(currentMessage = "", isSending = true)
 
         viewModelScope.launch {
             try {
@@ -91,9 +95,14 @@ class EnhancedChatViewModel @Inject constructor(
                     content = content,
                     type = MessageType.TEXT
                 )
-                _uiState.value = _uiState.value.copy(currentMessage = "")
+                _uiState.value = _uiState.value.copy(isSending = false)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(error = e.message)
+                // Falhou: restaura o texto para o usuário tentar novamente
+                _uiState.value = _uiState.value.copy(
+                    isSending = false,
+                    currentMessage = content,
+                    error = e.message
+                )
             }
         }
     }
@@ -123,6 +132,21 @@ class EnhancedChatViewModel @Inject constructor(
                     senderId = currentUserId,
                     content = url,
                     type = MessageType.GIF
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
+        }
+    }
+
+    fun sendConnectionMission(missionText: String) {
+        if (missionText.isBlank() || currentConversationId.isBlank()) return
+        viewModelScope.launch {
+            try {
+                chatRepository.sendConnectionMission(
+                    conversationId = currentConversationId,
+                    senderId = currentUserId,
+                    content = missionText
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(error = e.message)

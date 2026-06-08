@@ -1,5 +1,6 @@
 package com.ideiassertiva.FypMatch.ui.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -49,7 +50,7 @@ sealed class Screen(val route: String) {
     }
     object AccessCode : Screen("access_code")
     object UserDetails : Screen("user_details/{userId}") {
-        fun createRoute(userId: String) = "user_details/$userId"
+        fun createRoute(userId: String) = "user_details/${Uri.encode(userId)}"
     }
     object ProfileEdit : Screen("profile_edit")
     /** Tela de configurações de conta — nova Sprint 1 */
@@ -93,9 +94,12 @@ fun FypMatchNavigation(
     // DiscoveryViewModel compartilhado — conecta ações de swipe de UserDetails ao estado de Discovery
     val discoveryViewModel: DiscoveryViewModel = hiltViewModel()
 
+    // Mantém o login: se já existe sessão Firebase, inicia direto na Discovery (pula Welcome/Login)
+    val startDestination = if (getCurrentUserId().isNotBlank()) Screen.Discovery.route else Screen.Welcome.route
+
     NavHost(
         navController = navController,
-        startDestination = Screen.Welcome.route
+        startDestination = startDestination
     ) {
         composable(Screen.Welcome.route) {
             WelcomeScreen(
@@ -201,7 +205,7 @@ fun FypMatchNavigation(
                     navController.popBackStack()
                 },
                 onNavigateToChat = { matchId ->
-                    navController.navigate(Screen.Chat.createRoute(matchId))
+                    navController.navigate(Screen.EnhancedChat.createRoute(matchId, true))
                 }
             )
         }
@@ -212,6 +216,9 @@ fun FypMatchNavigation(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToUserDetails = { userId ->
                     navController.navigate(Screen.UserDetails.createRoute(userId))
+                },
+                onNavigateToChat = { conversationId ->
+                    navController.navigate(Screen.EnhancedChat.createRoute(conversationId, true))
                 }
             )
         }

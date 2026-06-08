@@ -6,9 +6,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
+import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.min
 
 @Singleton
 class ChatRepository @Inject constructor() {
@@ -18,6 +20,9 @@ class ChatRepository @Inject constructor() {
     
     private val _messages = MutableStateFlow<Map<String, List<Message>>>(emptyMap())
     val messages: Flow<Map<String, List<Message>>> = _messages.asStateFlow()
+
+    private val _liveConnections = MutableStateFlow<Map<String, LiveConnection>>(emptyMap())
+    val liveConnections: Flow<Map<String, LiveConnection>> = _liveConnections.asStateFlow()
     
     fun createConversationFromMatch(match: Match, currentUserId: String): String {
         val conversationId = UUID.randomUUID().toString()
@@ -59,6 +64,8 @@ class ChatRepository @Inject constructor() {
         currentMessages[conversationId] = listOf(systemMessage)
         _messages.value = currentMessages
 
+        ensureLiveConnection(conversation, currentUserId, otherUserId)
+
         return conversationId
     }
     
@@ -88,7 +95,23 @@ class ChatRepository @Inject constructor() {
         _messages.value = currentMessages
 
         updateConversationLastMessage(conversationId, message)
+        recordConnectionEvent(conversationId, senderId, eventTypeForMessage(type))
 
+        return message
+    }
+
+    suspend fun sendConnectionMission(
+        conversationId: String,
+        senderId: String,
+        content: String
+    ): Message {
+        val message = sendMessage(
+            conversationId = conversationId,
+            senderId = senderId,
+            content = content,
+            type = MessageType.TEXT
+        )
+        recordConnectionEvent(conversationId, senderId, ConnectionEventType.GAME_PLAYED)
         return message
     }
 
@@ -151,12 +174,19 @@ class ChatRepository @Inject constructor() {
             conversationMessages[messageIndex] = message.copy(reactions = reactions)
             currentMessages[conversationId] = conversationMessages
             _messages.value = currentMessages
+            recordConnectionEvent(conversationId, userId, ConnectionEventType.REACTION_ADDED)
         }
     }
     
     fun getConversationMessages(conversationId: String): Flow<List<Message>> {
         return messages.map { messagesMap ->
             messagesMap[conversationId] ?: emptyList()
+        }
+    }
+
+    fun getLiveConnection(conversationId: String): Flow<LiveConnection?> {
+        return liveConnections.map { connections ->
+            connections[conversationId]
         }
     }
     
@@ -167,5 +197,135 @@ class ChatRepository @Inject constructor() {
     
     fun getConversationById(conversationId: String): Conversation? {
         return _conversations.value.find { it.id == conversationId }
+    }
+
+    private fun ensureLiveConnection(
+        conversation: Conversation,
+        user1Id: String,
+        user2Id: String
+    ): LiveConnection {
+        val current = _liveConnections.value[conversation.id]
+        if (current != null) return current
+
+        val seededDimensions = ConnectionDimensions(
+            reciprocity = 12f,
+            continuity = 18f,
+            affinity = 12f,
+            lightness = 16f,
+            depth = 8f,
+            initiative = 12f
+        )
+        val seededConnection = LiveConnection(
+            id = conversation.id,
+            matchId = conversation.matchId,
+            conversationId = conversation.id,
+            user1Id = user1Id,
+            user2Id = user2Id,
+            overallScore = seededDimensions.averageScore(),
+            status = ConnectionStatus.WARMING_UP,
+            dimensions = seededDimensions,
+            lastInteractionAt = Date(),
+            updatedAt = Date()
+        )
+
+        val currentConnections = _liveConnections.value.toMutableMap()
+        currentConnections[conversation.id] = seededConnection
+        _liveConnections.value = currentConnections
+        return seededConnection
+    }
+
+    private fun recordConnectionEvent(
+        conversationId: String,
+        senderId: String,
+        type: ConnectionEventType
+    ) {
+        val conversation = getConversationById(conversationId) ?: return
+        val otherUserId = getOtherParticipantId(conversationId, senderId) ?: return
+        val currentConnection = ensureLiveConnection(conversation, senderId, otherUserId)
+        val updatedConnection = currentConnection.applyEvent(type)
+
+        val currentConnections = _liveConnections.value.toMutableMap()
+        currentConnections[conversationId] = updatedConnection
+        _liveConnections.value = currentConnections
+    }
+
+    private fun eventTypeForMessage(type: MessageType): ConnectionEventType {
+        return when (type) {
+            MessageType.IMAGE,
+            MessageType.VIDEO,
+            MessageType.GIF,
+            MessageType.STICKER -> ConnectionEventType.MEDIA_SHARED
+            MessageType.AUDIO -> ConnectionEventType.VOICE_NOTE_SENT
+            else -> ConnectionEventType.MESSAGE_SENT
+        }
+    }
+
+    private fun LiveConnection.applyEvent(type: ConnectionEventType): LiveConnection {
+        var reciprocity = dimensions.reciprocity
+        var continuity = dimensions.continuity
+        var affinity = dimensions.affinity
+        var lightness = dimensions.lightness
+        var depth = dimensions.depth
+        var initiative = dimensions.initiative
+
+        when (type) {
+            ConnectionEventType.MESSAGE_SENT -> {
+                continuity = min(100f, continuity + 1.5f)
+                initiative = min(100f, initiative + 1f)
+            }
+            ConnectionEventType.MEDIA_SHARED -> lightness = min(100f, lightness + 2f)
+            ConnectionEventType.REACTION_ADDED -> {
+                reciprocity = min(100f, reciprocity + 1f)
+                lightness = min(100f, lightness + 1f)
+            }
+            ConnectionEventType.GAME_PLAYED -> {
+                affinity = min(100f, affinity + 5f)
+                lightness = min(100f, lightness + 2f)
+                depth = min(100f, depth + 1f)
+            }
+            ConnectionEventType.VOICE_NOTE_SENT -> {
+                continuity = min(100f, continuity + 1f)
+                depth = min(100f, depth + 2f)
+            }
+            ConnectionEventType.CONVERSATION_INITIATED -> continuity = min(100f, continuity + 5f)
+        }
+
+        val updatedDimensions = dimensions.copy(
+            reciprocity = reciprocity,
+            continuity = continuity,
+            affinity = affinity,
+            lightness = lightness,
+            depth = depth,
+            initiative = initiative
+        )
+        val score = updatedDimensions.averageScore()
+
+        return copy(
+            overallScore = score,
+            status = score.toConnectionStatus(),
+            dimensions = updatedDimensions,
+            lastInteractionAt = Date(),
+            updatedAt = Date()
+        )
+    }
+
+    private fun ConnectionDimensions.averageScore(): Float {
+        return listOf(
+            reciprocity,
+            continuity,
+            affinity,
+            lightness,
+            depth,
+            initiative
+        ).average().toFloat()
+    }
+
+    private fun Float.toConnectionStatus(): ConnectionStatus {
+        return when {
+            this > 80f -> ConnectionStatus.ON_FIRE
+            this > 50f -> ConnectionStatus.ACTIVE
+            this > 15f -> ConnectionStatus.WARMING_UP
+            else -> ConnectionStatus.ICE_COLD
+        }
     }
 } 

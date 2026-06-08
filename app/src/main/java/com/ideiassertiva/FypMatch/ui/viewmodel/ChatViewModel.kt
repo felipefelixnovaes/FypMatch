@@ -20,6 +20,7 @@ sealed class ChatUiState {
         val conversation: Conversation?,
         val messages: List<Message>,
         val otherUser: User?,
+        val liveConnection: LiveConnection? = null,
         val currentMessage: String = "",
         val isTyping: Boolean = false
     ) : ChatUiState()
@@ -40,12 +41,14 @@ class ChatViewModel @Inject constructor(
     private var conversationId: String = ""
     private var currentUserId: String = ""
     private var messagesJob: Job? = null
+    private var liveConnectionJob: Job? = null
 
     fun loadConversation(conversationId: String, currentUserId: String) {
         this.conversationId = conversationId
         this.currentUserId = currentUserId
 
         messagesJob?.cancel()
+        liveConnectionJob?.cancel()
         _uiState.value = ChatUiState.Loading
 
         viewModelScope.launch {
@@ -68,6 +71,16 @@ class ChatViewModel @Inject constructor(
                                 _uiState.value = current.copy(
                                     messages = messages.sortedBy { it.timestamp }
                                 )
+                            }
+                        }
+                }
+
+                liveConnectionJob = viewModelScope.launch {
+                    chatRepository.getLiveConnection(conversationId)
+                        .collect { liveConnection ->
+                            val current = _uiState.value
+                            if (current is ChatUiState.Success) {
+                                _uiState.value = current.copy(liveConnection = liveConnection)
                             }
                         }
                 }
@@ -144,6 +157,22 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun sendConnectionMission(missionText: String) {
+        viewModelScope.launch {
+            try {
+                chatRepository.sendConnectionMission(
+                    conversationId = conversationId,
+                    senderId = currentUserId,
+                    content = missionText
+                )
+            } catch (e: Exception) {
+                _uiState.value = ChatUiState.Error(
+                    message = e.message ?: "Erro ao enviar missão"
+                )
+            }
+        }
+    }
+
     fun addReaction(messageId: String, emoji: String) {
         viewModelScope.launch {
             try {
@@ -164,6 +193,7 @@ class ChatViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         messagesJob?.cancel()
+        liveConnectionJob?.cancel()
     }
 
     fun clearError() {

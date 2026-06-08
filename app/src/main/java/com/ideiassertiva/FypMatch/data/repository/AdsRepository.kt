@@ -16,8 +16,9 @@ import javax.inject.Singleton
 
 @Singleton
 class AdsRepository @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository?
 ) {
+    constructor() : this(null)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -51,7 +52,7 @@ class AdsRepository @Inject constructor(
 
         // Tentar carregar créditos salvos no Firestore
         val firestoreCredits = try {
-            userRepository.getUserById(userId)?.aiCredits
+            userRepository?.getUserById(userId)?.aiCredits
         } catch (_: Exception) { null }
 
         val credits = when {
@@ -94,7 +95,7 @@ class AdsRepository @Inject constructor(
     private fun persistCredits(userId: String, credits: AiCredits) {
         scope.launch {
             try {
-                userRepository.updateUser(userId, mapOf("aiCredits" to credits))
+                userRepository?.updateUser(userId, mapOf("aiCredits" to credits))
             } catch (_: Exception) { }
         }
     }

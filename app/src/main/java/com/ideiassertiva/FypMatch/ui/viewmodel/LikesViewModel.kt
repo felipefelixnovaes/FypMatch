@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.data.repository.DiscoveryRepository
+import com.ideiassertiva.FypMatch.data.repository.FirebaseChatRepository
 import com.ideiassertiva.FypMatch.data.repository.UserRepository
 import com.ideiassertiva.FypMatch.model.User
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,8 @@ import javax.inject.Inject
 class LikesViewModel @Inject constructor(
     private val discoveryRepository: DiscoveryRepository,
     private val userRepository: UserRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val chatRepository: FirebaseChatRepository
 ) : ViewModel() {
 
     private val _received = MutableStateFlow<List<User>>(emptyList())
@@ -31,6 +33,12 @@ class LikesViewModel @Inject constructor(
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _chatNavigation = MutableStateFlow<String?>(null)
+    val chatNavigation: StateFlow<String?> = _chatNavigation.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     init {
         load()
@@ -52,10 +60,37 @@ class LikesViewModel @Inject constructor(
                 .mapNotNull { userRepository.getUserById(it) }
 
             // MATCHES — resolve os IDs dos matches para User
-            _matches.value = discoveryRepository.getMatchUserIds()
+            val currentUserId = authRepository.getCurrentFirebaseUser()?.uid.orEmpty()
+            _matches.value = discoveryRepository.getMatchUserIds(currentUserId)
                 .mapNotNull { userRepository.getUserById(it) }
 
             _isLoading.value = false
         }
+    }
+
+    fun openMatchChat(otherUserId: String) {
+        viewModelScope.launch {
+            try {
+                val currentUserId = authRepository.getCurrentFirebaseUser()?.uid.orEmpty()
+                if (currentUserId.isBlank()) {
+                    _error.value = "Usuário não autenticado"
+                    return@launch
+                }
+                _chatNavigation.value = chatRepository.getOrCreateConversationBetween(
+                    currentUserId = currentUserId,
+                    otherUserId = otherUserId
+                )
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Erro ao abrir conversa"
+            }
+        }
+    }
+
+    fun clearChatNavigation() {
+        _chatNavigation.value = null
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 }

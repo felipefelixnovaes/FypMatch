@@ -2,6 +2,7 @@ package com.ideiassertiva.FypMatch.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ideiassertiva.FypMatch.data.repository.DiscoveryRepository
 import com.ideiassertiva.FypMatch.data.repository.UserRepository
 import com.ideiassertiva.FypMatch.model.User
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class UserDetailsViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val discoveryRepository: DiscoveryRepository
 ) : ViewModel() {
 
     private val _user = MutableStateFlow<User?>(null)
@@ -26,7 +28,13 @@ class UserDetailsViewModel @Inject constructor(
         if (userId.isBlank()) return
         viewModelScope.launch {
             _isLoading.value = true
-            _user.value = userRepository.getUserById(userId)
+            val cachedUser = discoveryRepository.getCachedUserById(userId)
+            if (cachedUser != null) {
+                _user.value = cachedUser
+            }
+
+            val remoteUser = userRepository.getUserById(userId)
+            _user.value = remoteUser ?: cachedUser
             _isLoading.value = false
         }
     }

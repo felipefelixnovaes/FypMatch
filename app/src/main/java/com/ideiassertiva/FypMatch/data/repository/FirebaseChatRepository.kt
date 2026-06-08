@@ -1,7 +1,10 @@
 package com.ideiassertiva.FypMatch.data.repository
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
+import com.ideiassertiva.FypMatch.domain.LiveConnectionEngine
+import com.ideiassertiva.FypMatch.model.ConnectionEvent
+import com.ideiassertiva.FypMatch.model.ConnectionEventType
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -16,8 +19,9 @@ import javax.inject.Singleton
 @Singleton
 class FirebaseChatRepository @Inject constructor(
     private val liveConnectionRepository: LiveConnectionRepository,
-    private val liveConnectionEngine: com.ideiassertiva.FypMatch.domain.LiveConnectionEngine,
-    private val firestore: FirebaseFirestore
+    private val liveConnectionEngine: LiveConnectionEngine,
+    private val firestore: FirebaseFirestore,
+    private val auth: FirebaseAuth
 ) : ChatRepositoryInterface {
 
     // Firestore collections
@@ -46,6 +50,7 @@ class FirebaseChatRepository @Inject constructor(
         val conversation = mapOf(
             "id" to conversationId,
             "matchId" to match.id,
+            "participantIds" to listOf(currentUserId, otherUserId),
             "participants" to listOf(
                 mapOf(
                     "userId" to currentUserId,
@@ -72,8 +77,9 @@ class FirebaseChatRepository @Inject constructor(
         val systemMessage = mapOf(
             "id" to systemMessageId,
             "conversationId" to conversationId,
+            "participantIds" to listOf(currentUserId, otherUserId),
             "senderId" to "system",
-            "receiverId" to "",
+            "receiverId" to otherUserId,
             "content" to "Vocês deram match! 🎉",
             "type" to "SYSTEM_INFO",
             "status" to "DELIVERED",
@@ -87,9 +93,49 @@ class FirebaseChatRepository @Inject constructor(
         return conversationId
     }
 
+    suspend fun getOrCreateConversationForMatch(match: Match, currentUserId: String): String {
+        val otherUserId = if (match.user1Id == currentUserId) match.user2Id else match.user1Id
+        return getOrCreateConversationBetween(currentUserId, otherUserId, match.id)
+    }
+
+    suspend fun getOrCreateConversationBetween(
+        currentUserId: String,
+        otherUserId: String,
+        matchId: String = UUID.randomUUID().toString()
+    ): String {
+        val existingConversation = conversationsCollection
+            .whereArrayContains("participantIds", currentUserId)
+            .get()
+            .await()
+            .documents
+            .firstOrNull { doc ->
+                val participantIds = doc.get("participantIds") as? List<*>
+                participantIds?.contains(otherUserId) == true
+            }
+
+        if (existingConversation != null) {
+            return existingConversation.id
+        }
+
+        val match = Match(
+            id = matchId,
+            user1Id = currentUserId,
+            user2Id = otherUserId,
+            createdAt = Date()
+        )
+        return createConversationFromMatch(match, currentUserId)
+    }
+
     override fun getConversations(): Flow<List<Conversation>> = callbackFlow {
+        val currentUserId = auth.currentUser?.uid.orEmpty()
+        if (currentUserId.isBlank()) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+
         val listenerRegistration = conversationsCollection
-            .orderBy("lastMessageAt", Query.Direction.DESCENDING)
+            .whereArrayContains("participantIds", currentUserId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -104,7 +150,7 @@ class FirebaseChatRepository @Inject constructor(
                         } catch (e: Exception) {
                             null
                         }
-                    }
+                    }.sortedByDescending { it.lastMessageAt ?: it.createdAt }
                     trySend(conversations)
                 }
             }
@@ -113,9 +159,15 @@ class FirebaseChatRepository @Inject constructor(
     }
 
     override fun getConversationMessages(conversationId: String): Flow<List<Message>> = callbackFlow {
+        val currentUserId = auth.currentUser?.uid.orEmpty()
+        if (currentUserId.isBlank()) {
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
+
         val listenerRegistration = messagesCollection
             .whereEqualTo("conversationId", conversationId)
-            .orderBy("timestamp", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -130,7 +182,7 @@ class FirebaseChatRepository @Inject constructor(
                         } catch (e: Exception) {
                             null
                         }
-                    }
+                    }.sortedBy { it.timestamp }
                     trySend(messages)
                 }
             }
@@ -145,11 +197,19 @@ class FirebaseChatRepository @Inject constructor(
         type: MessageType
     ): Message {
         val messageId = UUID.randomUUID().toString()
-        val receiverId = getOtherParticipantId(conversationId, senderId) ?: ""
+        val conversation = getConversationById(conversationId)
+        val receiverId = conversation?.getOtherParticipant(senderId)?.userId ?: ""
+        val participantIds = conversation?.participants
+            ?.map { it.userId }
+            ?.filter { it.isNotBlank() }
+            ?.distinct()
+            ?.ifEmpty { null }
+            ?: listOf(senderId, receiverId).filter { it.isNotBlank() }.distinct()
 
         val messageData = mapOf(
             "id" to messageId,
             "conversationId" to conversationId,
+            "participantIds" to participantIds,
             "senderId" to senderId,
             "receiverId" to receiverId,
             "content" to content,
@@ -161,13 +221,7 @@ class FirebaseChatRepository @Inject constructor(
         )
 
         messagesCollection.document(messageId).set(messageData).await()
-n        // Disparar evento para Conexão Viva
-        try {
-            val connection = liveConnectionRepository.getOrCreateLiveConnection(matchId = "TODO_GET_MATCH_ID_FROM_CONV", user1Id = senderId, user2Id = receiverId)
-            val eventType = if (type == MessageType.IMAGE || type == MessageType.VIDEO) com.ideiassertiva.FypMatch.model.ConnectionEventType.MEDIA_SHARED else if (type == MessageType.AUDIO) com.ideiassertiva.FypMatch.model.ConnectionEventType.VOICE_NOTE_SENT else com.ideiassertiva.FypMatch.model.ConnectionEventType.MESSAGE_SENT
-            val event = com.ideiassertiva.FypMatch.model.ConnectionEvent(initiatorUserId = senderId, type = eventType)
-            liveConnectionEngine.processNewEvent(connection.id, event)
-        } catch (e: Exception) { /* Silently fail so chat is not interrupted */ }
+        processConnectionEvent(conversationId, senderId, eventTypeForMessage(type))
 
         updateMessageStatus(conversationId, messageId, MessageStatus.SENT)
 
@@ -184,16 +238,25 @@ n        // Disparar evento para Conexão Viva
         )
     }
 
+    suspend fun sendConnectionMission(
+        conversationId: String,
+        senderId: String,
+        content: String
+    ): Message {
+        val message = sendMessage(
+            conversationId = conversationId,
+            senderId = senderId,
+            content = content,
+            type = MessageType.TEXT
+        )
+        processConnectionEvent(conversationId, senderId, ConnectionEventType.GAME_PLAYED)
+        return message
+    }
+
     suspend fun updateMessageStatus(conversationId: String, messageId: String, status: MessageStatus) {
         messagesCollection.document(messageId)
             .update("status", status.name)
             .await()
-        // Disparar evento de reação para Conexão Viva
-        try {
-            val connection = liveConnectionRepository.getOrCreateLiveConnection(matchId = "TODO_MATCH_ID", user1Id = userId, user2Id = "TODO_OTHER_ID")
-            val event = com.ideiassertiva.FypMatch.model.ConnectionEvent(initiatorUserId = userId, type = com.ideiassertiva.FypMatch.model.ConnectionEventType.REACTION_ADDED)
-            liveConnectionEngine.processNewEvent(connection.id, event)
-        } catch (e: Exception) {}
     }
 
     suspend fun setTypingIndicator(conversationId: String, userId: String, isTyping: Boolean) {
@@ -218,12 +281,7 @@ n        // Disparar evento para Conexão Viva
         messagesCollection.document(messageId)
             .update("reactions", com.google.firebase.firestore.FieldValue.arrayUnion(reactionData))
             .await()
-        // Disparar evento de reação para Conexão Viva
-        try {
-            val connection = liveConnectionRepository.getOrCreateLiveConnection(matchId = "TODO_MATCH_ID", user1Id = userId, user2Id = "TODO_OTHER_ID")
-            val event = com.ideiassertiva.FypMatch.model.ConnectionEvent(initiatorUserId = userId, type = com.ideiassertiva.FypMatch.model.ConnectionEventType.REACTION_ADDED)
-            liveConnectionEngine.processNewEvent(connection.id, event)
-        } catch (e: Exception) {}
+        processConnectionEvent(conversationId, userId, ConnectionEventType.REACTION_ADDED)
     }
 
     override suspend fun getConversationById(conversationId: String): Conversation? {
@@ -258,13 +316,47 @@ n        // Disparar evento para Conexão Viva
         )
 
         conversationsCollection.document(conversationId)
-            .update(updateData)
+            .set(updateData, com.google.firebase.firestore.SetOptions.merge())
             .await()
     }
 
     private suspend fun getOtherParticipantId(conversationId: String, currentUserId: String): String? {
         val conversation = getConversationById(conversationId)
         return conversation?.participants?.find { it.userId != currentUserId }?.userId
+    }
+
+    private fun eventTypeForMessage(type: MessageType): ConnectionEventType {
+        return when (type) {
+            MessageType.IMAGE,
+            MessageType.VIDEO,
+            MessageType.GIF,
+            MessageType.STICKER -> ConnectionEventType.MEDIA_SHARED
+            MessageType.AUDIO -> ConnectionEventType.VOICE_NOTE_SENT
+            else -> ConnectionEventType.MESSAGE_SENT
+        }
+    }
+
+    private suspend fun processConnectionEvent(
+        conversationId: String,
+        senderId: String,
+        eventType: ConnectionEventType
+    ) {
+        try {
+            val conversation = getConversationById(conversationId) ?: return
+            val receiverId = conversation.getOtherParticipant(senderId)?.userId ?: return
+            val connection = liveConnectionRepository.getOrCreateLiveConnection(
+                matchId = conversation.matchId,
+                user1Id = senderId,
+                user2Id = receiverId
+            )
+            val event = ConnectionEvent(
+                initiatorUserId = senderId,
+                type = eventType
+            )
+            liveConnectionEngine.processNewEvent(connection.id, event)
+        } catch (_: Exception) {
+            // Chat delivery must not fail because the connection radar could not be updated.
+        }
     }
 
     private fun parseConversation(data: Map<String, Any>): Conversation? {

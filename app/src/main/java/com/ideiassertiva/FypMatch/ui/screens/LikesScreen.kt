@@ -42,16 +42,35 @@ private enum class LikesTab(val title: String) {
 fun LikesScreen(
     onNavigateBack: () -> Unit,
     onNavigateToUserDetails: (String) -> Unit = {},
+    onNavigateToChat: (String) -> Unit = {},
     viewModel: LikesViewModel = hiltViewModel()
 ) {
     val received by viewModel.received.collectAsStateWithLifecycle()
     val sent by viewModel.sent.collectAsStateWithLifecycle()
     val matches by viewModel.matches.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val chatNavigation by viewModel.chatNavigation.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     var selectedTab by remember { mutableStateOf(LikesTab.RECEIVED) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(chatNavigation) {
+        chatNavigation?.let { conversationId ->
+            onNavigateToChat(conversationId)
+            viewModel.clearChatNavigation()
+        }
+    }
+
+    LaunchedEffect(error) {
+        error?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Curtidas & Matches", fontWeight = FontWeight.SemiBold) },
@@ -109,7 +128,13 @@ fun LikesScreen(
                             ProfileGridCard(
                                 user = user,
                                 isMatch = selectedTab == LikesTab.MATCHES,
-                                onClick = { onNavigateToUserDetails(user.id) }
+                                onClick = {
+                                    if (selectedTab == LikesTab.MATCHES) {
+                                        viewModel.openMatchChat(user.id)
+                                    } else {
+                                        onNavigateToUserDetails(user.id)
+                                    }
+                                }
                             )
                         }
                     }

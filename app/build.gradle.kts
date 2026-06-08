@@ -27,8 +27,8 @@ android {
         applicationId = "com.ideiassertiva.FypMatch"
         minSdk = 24
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.0.12"
+        versionCode = 18
+        versionName = "1.0.13"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }

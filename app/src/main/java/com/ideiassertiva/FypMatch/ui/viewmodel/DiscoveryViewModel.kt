@@ -72,6 +72,10 @@ class DiscoveryViewModel @Inject constructor(
     init {
         currentUserId = authRepository.getCurrentFirebaseUser()?.uid ?: ""
         _currentUserId.value = currentUserId
+        if (currentUserId.isNotBlank()) {
+            // Notificacao de match em tempo real (badge do coracao sobe ao vivo)
+            discoveryRepository.startMatchesListener(currentUserId)
+        }
         loadInitialCards()
     }
 

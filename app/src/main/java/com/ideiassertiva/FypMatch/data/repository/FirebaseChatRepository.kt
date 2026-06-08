@@ -166,8 +166,11 @@ class FirebaseChatRepository @Inject constructor(
             return@callbackFlow
         }
 
+        // Filtra por participantIds (array-contains) para satisfazer as regras de
+        // seguranca — a query so por conversationId era rejeitada (PERMISSION_DENIED).
+        // O filtro por conversationId e feito no cliente, evitando indice composto.
         val listenerRegistration = messagesCollection
-            .whereEqualTo("conversationId", conversationId)
+            .whereArrayContains("participantIds", currentUserId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -178,6 +181,7 @@ class FirebaseChatRepository @Inject constructor(
                     val messages = snapshot.documents.mapNotNull { doc ->
                         try {
                             val data = doc.data ?: return@mapNotNull null
+                            if (data["conversationId"] != conversationId) return@mapNotNull null
                             parseMessage(data)
                         } catch (e: Exception) {
                             null

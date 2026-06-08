@@ -3,6 +3,7 @@
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.ListenerRegistration
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -231,6 +232,56 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
     fun getUserMatches(userId: String): List<Match> {
         return _matches.value.filter {
             (it.user1Id == userId || it.user2Id == userId) && it.isActive
+        }
+    }
+
+    // Carrega matches reais do Firestore (ambos os lados: user1Id e user2Id).
+    // Necessario para o OUTRO lado enxergar o match e para persistir entre sessoes
+    // (antes os matches viviam so em memoria, populados apenas no swipe da sessao).
+    suspend fun loadUserMatches(userId: String) {
+        if (userId.isBlank()) return
+        try {
+            val asUser1 = firestore.collection("matches")
+                .whereEqualTo("user1Id", userId).get().await().documents
+            val asUser2 = firestore.collection("matches")
+                .whereEqualTo("user2Id", userId).get().await().documents
+            val loaded = (asUser1 + asUser2).mapNotNull { it.toObject(Match::class.java) }
+            _matches.value = (_matches.value + loaded).distinctBy { it.id }
+        } catch (_: Exception) {
+        }
+    }
+
+    // ── Match em tempo real ──────────────────────────────────────────────────
+    private var matchesListenerStarted = false
+    private val matchListeners = mutableListOf<ListenerRegistration>()
+
+    /**
+     * Liga listeners em tempo real na colecao matches (dois lados: user1Id/user2Id).
+     * Quando um match NOVO chega (ex.: o outro lado deu o like agora), atualiza
+     * _matches e incrementa o badge do coracao na hora — notificacao in-app ao vivo.
+     * Idempotente (so liga uma vez); a carga inicial nao notifica (sao matches antigos).
+     */
+    fun startMatchesListener(userId: String) {
+        if (userId.isBlank() || matchesListenerStarted) return
+        matchesListenerStarted = true
+        listOf("user1Id", "user2Id").forEach { field ->
+            var initialLoad = true
+            val registration = firestore.collection("matches")
+                .whereEqualTo(field, userId)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null || snapshot == null) return@addSnapshotListener
+                    val loaded = snapshot.documents.mapNotNull { it.toObject(Match::class.java) }
+                    val existingIds = _matches.value.map { it.id }.toSet()
+                    val newOnes = loaded.filter { it.id !in existingIds }
+                    if (newOnes.isNotEmpty()) {
+                        _matches.value = (_matches.value + newOnes).distinctBy { it.id }
+                        if (!initialLoad) {
+                            _newLikesCount.value += newOnes.size
+                        }
+                    }
+                    initialLoad = false
+                }
+            matchListeners.add(registration)
         }
     }
 

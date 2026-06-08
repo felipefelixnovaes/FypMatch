@@ -52,6 +52,7 @@ class MatchesViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                discoveryRepository.loadUserMatches(currentUserId)
                 val userMatches = discoveryRepository.getUserMatches(currentUserId)
                 _uiState.value = if (userMatches.isEmpty()) {
                     MatchesUiState.Empty

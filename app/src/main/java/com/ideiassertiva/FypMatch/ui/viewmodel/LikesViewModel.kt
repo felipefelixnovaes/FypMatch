@@ -59,8 +59,9 @@ class LikesViewModel @Inject constructor(
             _sent.value = discoveryRepository.getSentLikeIds()
                 .mapNotNull { userRepository.getUserById(it) }
 
-            // MATCHES — resolve os IDs dos matches para User
+            // MATCHES — carrega do Firestore (ambos os lados) e resolve os IDs para User
             val currentUserId = authRepository.getCurrentFirebaseUser()?.uid.orEmpty()
+            discoveryRepository.loadUserMatches(currentUserId)
             _matches.value = discoveryRepository.getMatchUserIds(currentUserId)
                 .mapNotNull { userRepository.getUserById(it) }
 

@@ -9,7 +9,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import com.ideiassertiva.FypMatch.model.SwipeType
 import com.ideiassertiva.FypMatch.ui.screens.*
 import com.ideiassertiva.FypMatch.ui.viewmodel.DiscoveryViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -329,17 +328,14 @@ fun FypMatchNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onLike = {
-                    discoveryViewModel.performSwipe(SwipeType.LIKE)
+                onActionComplete = {
+                    discoveryViewModel.refreshCards()
                     navController.popBackStack()
                 },
-                onPass = {
-                    discoveryViewModel.performSwipe(SwipeType.PASS)
+                onNavigateToChat = { conversationId ->
                     navController.popBackStack()
-                },
-                onSuperLike = {
-                    discoveryViewModel.performSwipe(SwipeType.SUPER_LIKE)
-                    navController.popBackStack()
+                    discoveryViewModel.refreshCards()
+                    navController.navigate(Screen.EnhancedChat.createRoute(conversationId, true))
                 }
             )
         }

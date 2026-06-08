@@ -18,6 +18,15 @@ if (hasKeystore) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val admobApplicationId =
+    (findProperty("FYPMATCH_ADMOB_APP_ID") as? String)
+        ?.takeIf { it.isNotBlank() }
+        ?: "ca-app-pub-3940256099942544~3347511713"
+val admobRewardedAdUnitId =
+    (findProperty("FYPMATCH_ADMOB_REWARDED_AD_UNIT_ID") as? String)
+        ?.takeIf { it.isNotBlank() }
+        ?: "ca-app-pub-3940256099942544/5224354917"
+
 android {
     namespace = "com.ideiassertiva.FypMatch"
     compileSdk = 35
@@ -27,10 +36,12 @@ android {
         applicationId = "com.ideiassertiva.FypMatch"
         minSdk = 24
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.0.13"
+        versionCode = 20
+        versionName = "1.0.15"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+        manifestPlaceholders["admobApplicationId"] = admobApplicationId
+        buildConfigField("String", "ADMOB_REWARDED_AD_UNIT_ID", "\"$admobRewardedAdUnitId\"")
     }
 
     signingConfigs {
@@ -65,6 +76,15 @@ android {
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    exclude(
+        "**/components_v2/**",
+        "**/navigation_v2/**",
+        "**/screens_v2/**",
+        "**/theme_v2/**"
+    )
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
@@ -93,6 +113,7 @@ dependencies {
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-messaging-ktx")
     implementation("com.google.android.gms:play-services-auth:20.6.0")
+    implementation("com.google.android.gms:play-services-ads:23.6.0")
     implementation("io.coil-kt:coil-compose:2.4.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.4")

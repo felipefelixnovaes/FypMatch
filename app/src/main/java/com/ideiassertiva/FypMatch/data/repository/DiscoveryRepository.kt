@@ -37,9 +37,32 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
         _newLikesCount.value = 0
     }
 
-    // Perfis que curtiram o usuário — apenas dados reais.
-    // TODO: consultar a coleção de likes no Firestore (toUser == currentUser). Sem mocks.
-    fun getReceivedLikeProfiles(): List<User> = emptyList()
+    // Perfis que curtiram o usuário — apenas dados reais do Firestore.
+    suspend fun getReceivedLikeProfiles(currentUserId: String): List<User> {
+        if (currentUserId.isBlank()) return emptyList()
+        return try {
+            loadUserMatches(currentUserId)
+            val actedUserIds = loadActedUserIds(currentUserId)
+            val matchedUserIds = getMatchUserIds(currentUserId).toSet()
+
+            val likerIds = firestore.collection("likes")
+                .whereArrayContains("liked", currentUserId)
+                .get()
+                .await()
+                .documents
+                .map { it.id }
+                .filter { userId ->
+                    userId != currentUserId &&
+                        userId !in actedUserIds &&
+                        userId !in matchedUserIds
+                }
+                .distinct()
+
+            likerIds.mapNotNull { loadUserById(it) }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
 
     // Zera o badge quando o usuário abre a tela de Curtidas
     fun markLikesSeen() {
@@ -65,10 +88,15 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
 
     private suspend fun loadCurrentUserFromFirestore(currentUserId: String): User? {
         if (currentUserId.isBlank()) return null
+        return loadUserById(currentUserId)
+    }
+
+    private suspend fun loadUserById(userId: String): User? {
+        if (userId.isBlank()) return null
         return try {
-            val doc = firestore.collection("users").document(currentUserId).get().await()
+            val doc = firestore.collection("users").document(userId).get().await()
             if (doc.exists()) doc.toFypUserOrNull(doc.id) else null
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -291,6 +319,20 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
             .filter { it.action != SwipeType.PASS }
             .map { it.toUserId }
             .distinct()
+
+    suspend fun getSentLikeIds(currentUserId: String): List<String> {
+        if (currentUserId.isBlank()) return emptyList()
+        return try {
+            val doc = firestore.collection("likes").document(currentUserId).get().await()
+            (doc.get("liked") as? List<*>)
+                ?.filterIsInstance<String>()
+                ?.filter { it != currentUserId }
+                ?.distinct()
+                .orEmpty()
+        } catch (_: Exception) {
+            getSentLikeIds()
+        }
+    }
 
     // IDs dos usuários com quem deu match — para a tela de Curtidas
     fun getMatchUserIds(userId: String): List<String> =

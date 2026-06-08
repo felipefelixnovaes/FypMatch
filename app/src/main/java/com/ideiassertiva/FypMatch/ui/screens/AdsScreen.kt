@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import com.ideiassertiva.FypMatch.ui.components.FypGradientButton
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.viewmodel.AdsViewModel
 import com.ideiassertiva.FypMatch.model.AiCreditLimits
+import com.ideiassertiva.FypMatch.ui.util.findActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +41,7 @@ fun AdsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val maxAdsPerDay = uiState.maxAdsPerDay.coerceAtLeast(1)
     val canWatch = uiState.canWatchMore
+    val activity = LocalContext.current.findActivity()
 
     LaunchedEffect(userId) {
         viewModel.load(userId)
@@ -141,7 +144,7 @@ fun AdsScreen(
                         enabled = canWatch,
                         onClick = {
                             if (canWatch) {
-                                viewModel.watchAd(userId)
+                                viewModel.watchAd(userId, activity)
                             }
                         }
                     )

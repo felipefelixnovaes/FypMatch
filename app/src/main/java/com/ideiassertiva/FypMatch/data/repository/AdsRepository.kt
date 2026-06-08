@@ -1,5 +1,6 @@
 package com.ideiassertiva.FypMatch.data.repository
 
+import android.app.Activity
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -7,7 +8,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
@@ -16,7 +16,8 @@ import javax.inject.Singleton
 
 @Singleton
 class AdsRepository @Inject constructor(
-    private val userRepository: UserRepository?
+    private val userRepository: UserRepository?,
+    private val rewardedAdGateway: RewardedAdGateway = ImmediateRewardedAdGateway()
 ) {
     constructor() : this(null)
 
@@ -152,8 +153,8 @@ class AdsRepository @Inject constructor(
         return watchedToday < maxAdsPerDay
     }
 
-    // Simular carregamento e exibição de anúncio
-    suspend fun showRewardedAd(userId: String): Result<Int> {
+    // Exibe anúncio recompensado real; só credita após o callback de recompensa.
+    suspend fun showRewardedAd(userId: String, activity: Activity? = null): Result<Int> {
         return try {
             if (!canWatchAd(userId)) {
                 return Result.failure(Exception("Limite diário de anúncios atingido"))
@@ -161,16 +162,13 @@ class AdsRepository @Inject constructor(
 
             _isAdLoading.value = true
 
-            // Simular carregamento do anúncio (1-3 segundos)
-            delay((1000..3000).random().toLong())
-
-            if (!_isAdReady.value) {
+            val adResult = rewardedAdGateway.showRewardedAd(activity)
+            if (adResult.isFailure) {
                 _isAdLoading.value = false
-                return Result.failure(Exception("Anúncio não disponível"))
+                return Result.failure(
+                    adResult.exceptionOrNull() ?: Exception("Anúncio não disponível")
+                )
             }
-
-            // Simular exibição do anúncio (5-15 segundos)
-            delay((5000..15000).random().toLong())
 
             // Incrementar contador de anúncios hoje
             val currentCount = _adsWatchedToday.value[userId] ?: 0

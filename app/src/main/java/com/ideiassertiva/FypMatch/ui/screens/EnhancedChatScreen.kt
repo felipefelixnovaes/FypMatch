@@ -277,32 +277,37 @@ fun ErrorMessage(
             .padding(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Filled.Error,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Text(
-                text = error,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            
-            if (onRetry != null) {
-                TextButton(onClick = onRetry) {
-                    Text("TENTAR NOVAMENTE")
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Icon(
+                    Icons.Filled.Error,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = error,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    softWrap = true,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Filled.Close, contentDescription = "Fechar")
                 }
             }
-            
-            IconButton(onClick = onDismiss) {
-                Icon(Icons.Filled.Close, contentDescription = "Fechar")
+
+            if (onRetry != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                    onClick = onRetry,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Tentar novamente")
+                }
             }
         }
     }

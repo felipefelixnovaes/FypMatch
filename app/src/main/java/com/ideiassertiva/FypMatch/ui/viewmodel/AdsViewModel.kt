@@ -1,5 +1,6 @@
 package com.ideiassertiva.FypMatch.ui.viewmodel
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.AdsRepository
@@ -23,7 +24,7 @@ class AdsViewModel @Inject constructor(
         refresh(userId)
     }
 
-    fun watchAd(userId: String) {
+    fun watchAd(userId: String, activity: Activity?) {
         if (userId.isBlank() || _uiState.value.isWatchingAd) return
 
         viewModelScope.launch {
@@ -33,7 +34,7 @@ class AdsViewModel @Inject constructor(
                 error = null
             )
 
-            adsRepository.showRewardedAd(userId).fold(
+            adsRepository.showRewardedAd(userId, activity).fold(
                 onSuccess = { earnedCredits ->
                     refresh(userId)
                     _uiState.value = _uiState.value.copy(

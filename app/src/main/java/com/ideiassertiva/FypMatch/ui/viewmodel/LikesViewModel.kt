@@ -51,18 +51,20 @@ class LikesViewModel @Inject constructor(
             // Abrir a tela zera o badge de novidades no coração
             discoveryRepository.markLikesSeen()
 
-            // Curtidas RECEBIDAS — em modo demo, alguns perfis "curtiram você".
-            // Em produção, viria do Firestore (coleção likes onde toUser == currentUser).
-            _received.value = discoveryRepository.getReceivedLikeProfiles()
-
-            // Curtidas ENVIADAS — resolve os IDs registrados nos swipes para User
-            _sent.value = discoveryRepository.getSentLikeIds()
-                .mapNotNull { userRepository.getUserById(it) }
+            val currentUserId = authRepository.getCurrentFirebaseUser()?.uid.orEmpty()
 
             // MATCHES — carrega do Firestore (ambos os lados) e resolve os IDs para User
-            val currentUserId = authRepository.getCurrentFirebaseUser()?.uid.orEmpty()
             discoveryRepository.loadUserMatches(currentUserId)
-            _matches.value = discoveryRepository.getMatchUserIds(currentUserId)
+            val matchUserIds = discoveryRepository.getMatchUserIds(currentUserId).toSet()
+            _matches.value = matchUserIds
+                .mapNotNull { userRepository.getUserById(it) }
+
+            // Curtidas RECEBIDAS — perfis que deram like no usuário atual e ainda não viraram match
+            _received.value = discoveryRepository.getReceivedLikeProfiles(currentUserId)
+
+            // Curtidas ENVIADAS — likes persistidos no Firestore, sem repetir quem já está em Matches
+            _sent.value = discoveryRepository.getSentLikeIds(currentUserId)
+                .filterNot { it in matchUserIds }
                 .mapNotNull { userRepository.getUserById(it) }
 
             _isLoading.value = false

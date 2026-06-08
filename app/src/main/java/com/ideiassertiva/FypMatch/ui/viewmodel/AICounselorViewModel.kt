@@ -1,5 +1,6 @@
 package com.ideiassertiva.FypMatch.ui.viewmodel
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.AICounselorRepository
@@ -159,14 +160,14 @@ class AICounselorViewModel @Inject constructor(
     }
 
     // Assistir anúncio para ganhar créditos
-    fun watchAdForCredits() {
+    fun watchAdForCredits(activity: Activity?) {
         val userId = _uiState.value.currentUserId
         if (userId.isBlank()) return
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isWatchingAd = true, error = null)
 
-            val result = counselorRepository.watchAdForCredits(userId)
+            val result = counselorRepository.watchAdForCredits(userId, activity)
 
             result.fold(
                 onSuccess = { earnedCredits ->

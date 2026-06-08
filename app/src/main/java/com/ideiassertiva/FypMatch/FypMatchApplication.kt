@@ -1,6 +1,7 @@
 package com.ideiassertiva.FypMatch
 
 import android.app.Application
+import com.google.android.gms.ads.MobileAds
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.HiltAndroidApp
 
@@ -10,5 +11,8 @@ class FypMatchApplication : Application() {
         super.onCreate()
         FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
         FirebaseCrashlytics.getInstance().log("FypMatch app started")
+        Thread {
+            MobileAds.initialize(this) {}
+        }.start()
     }
 }

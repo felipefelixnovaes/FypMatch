@@ -2,6 +2,7 @@ package com.ideiassertiva.FypMatch.data.repository
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.Timestamp
 import com.ideiassertiva.FypMatch.domain.LiveConnectionEngine
 import com.ideiassertiva.FypMatch.model.ConnectionEvent
 import com.ideiassertiva.FypMatch.model.ConnectionEventType
@@ -43,14 +44,21 @@ class FirebaseChatRepository @Inject constructor(
         "❤️", "😘", "🥰", "😊"
     )
 
-    suspend fun createConversationFromMatch(match: Match, currentUserId: String): String {
-        val conversationId = UUID.randomUUID().toString()
+    suspend fun createConversationFromMatch(
+        match: Match,
+        currentUserId: String,
+        preferredConversationId: String? = null
+    ): String {
         val otherUserId = if (match.user1Id == currentUserId) match.user2Id else match.user1Id
+        val participantIds = listOf(currentUserId, otherUserId)
+            .filter { it.isNotBlank() }
+            .distinct()
+        val conversationId = preferredConversationId ?: UUID.randomUUID().toString()
 
         val conversation = mapOf(
             "id" to conversationId,
             "matchId" to match.id,
-            "participantIds" to listOf(currentUserId, otherUserId),
+            "participantIds" to participantIds,
             "participants" to listOf(
                 mapOf(
                     "userId" to currentUserId,
@@ -71,13 +79,15 @@ class FirebaseChatRepository @Inject constructor(
             "typingIndicators" to emptyList<Map<String, Any>>()
         )
 
-        conversationsCollection.document(conversationId).set(conversation).await()
+        conversationsCollection.document(conversationId)
+            .set(conversation, com.google.firebase.firestore.SetOptions.merge())
+            .await()
 
         val systemMessageId = UUID.randomUUID().toString()
         val systemMessage = mapOf(
             "id" to systemMessageId,
             "conversationId" to conversationId,
-            "participantIds" to listOf(currentUserId, otherUserId),
+            "participantIds" to participantIds,
             "senderId" to "system",
             "receiverId" to otherUserId,
             "content" to "Vocês deram match! 🎉",
@@ -103,6 +113,10 @@ class FirebaseChatRepository @Inject constructor(
         otherUserId: String,
         matchId: String = UUID.randomUUID().toString()
     ): String {
+        if (currentUserId.isBlank() || otherUserId.isBlank() || currentUserId == otherUserId) {
+            throw IllegalArgumentException("Participantes inválidos para conversa")
+        }
+
         val existingConversation = conversationsCollection
             .whereArrayContains("participantIds", currentUserId)
             .get()
@@ -123,7 +137,11 @@ class FirebaseChatRepository @Inject constructor(
             user2Id = otherUserId,
             createdAt = Date()
         )
-        return createConversationFromMatch(match, currentUserId)
+        return createConversationFromMatch(
+            match = match,
+            currentUserId = currentUserId,
+            preferredConversationId = stableConversationIdForParticipants(currentUserId, otherUserId)
+        )
     }
 
     override fun getConversations(): Flow<List<Conversation>> = callbackFlow {
@@ -146,7 +164,7 @@ class FirebaseChatRepository @Inject constructor(
                     val conversations = snapshot.documents.mapNotNull { doc ->
                         try {
                             val data = doc.data ?: return@mapNotNull null
-                            parseConversation(data)
+                            parseConversationDocument(data)
                         } catch (e: Exception) {
                             null
                         }
@@ -182,7 +200,7 @@ class FirebaseChatRepository @Inject constructor(
                         try {
                             val data = doc.data ?: return@mapNotNull null
                             if (data["conversationId"] != conversationId) return@mapNotNull null
-                            parseMessage(data)
+                            parseMessageDocument(data)
                         } catch (e: Exception) {
                             null
                         }
@@ -292,7 +310,7 @@ class FirebaseChatRepository @Inject constructor(
         return try {
             val doc = conversationsCollection.document(conversationId).get().await()
             val data = doc.data ?: return null
-            parseConversation(data)
+            parseConversationDocument(data)
         } catch (e: Exception) {
             null
         }
@@ -363,59 +381,97 @@ class FirebaseChatRepository @Inject constructor(
         }
     }
 
-    private fun parseConversation(data: Map<String, Any>): Conversation? {
-        return try {
-            val participants = (data["participants"] as? List<Map<String, Any>>)?.map { participantData ->
+}
+
+internal fun stableConversationIdForParticipants(userA: String, userB: String): String =
+    "conv_" + listOf(userA, userB).sorted().joinToString("_")
+
+internal fun parseConversationDocument(data: Map<String, Any>): Conversation? {
+    return try {
+        val participantIds = (data["participantIds"] as? List<*>)
+            ?.filterIsInstance<String>()
+            .orEmpty()
+        val participants = (data["participants"] as? List<*>)
+            ?.mapNotNull { it as? Map<*, *> }
+            ?.mapNotNull { participantData ->
+                val userId = participantData["userId"] as? String ?: return@mapNotNull null
                 ConversationParticipant(
-                    userId = participantData["userId"] as String,
-                    joinedAt = LocalDateTime.ofEpochSecond(participantData["joinedAt"] as Long, 0, ZoneOffset.UTC),
-                    lastSeenAt = (participantData["lastSeenAt"] as? Long)?.let {
-                        LocalDateTime.ofEpochSecond(it, 0, ZoneOffset.UTC)
-                    },
+                    userId = userId,
+                    joinedAt = localDateTimeFrom(participantData["joinedAt"]) ?: LocalDateTime.now(),
+                    lastSeenAt = localDateTimeFrom(participantData["lastSeenAt"]),
                     isOnline = participantData["isOnline"] as? Boolean ?: false
                 )
-            } ?: emptyList()
+            }
+            .orEmpty()
+            .ifEmpty {
+                participantIds.map {
+                    ConversationParticipant(userId = it, joinedAt = LocalDateTime.now())
+                }
+            }
 
-            Conversation(
-                id = data["id"] as String,
-                matchId = data["matchId"] as String,
-                participants = participants,
-                status = ConversationStatus.valueOf(data["status"] as? String ?: "ACTIVE"),
-                createdAt = LocalDateTime.ofEpochSecond(data["createdAt"] as Long, 0, ZoneOffset.UTC),
-                lastMessageAt = (data["lastMessageAt"] as? Long)?.let {
-                    LocalDateTime.ofEpochSecond(it, 0, ZoneOffset.UTC)
-                },
-                unreadCount = (data["unreadCount"] as? Map<String, Number>)?.mapValues { it.value.toInt() } ?: emptyMap()
-            )
-        } catch (e: Exception) {
-            null
-        }
+        Conversation(
+            id = data["id"] as? String ?: return null,
+            matchId = data["matchId"] as? String ?: "",
+            participants = participants,
+            status = runCatching {
+                ConversationStatus.valueOf(data["status"] as? String ?: "ACTIVE")
+            }.getOrDefault(ConversationStatus.ACTIVE),
+            createdAt = localDateTimeFrom(data["createdAt"]) ?: LocalDateTime.now(),
+            lastMessageAt = localDateTimeFrom(data["lastMessageAt"]),
+            unreadCount = (data["unreadCount"] as? Map<*, *>)
+                ?.mapNotNull { (key, value) ->
+                    val userId = key as? String ?: return@mapNotNull null
+                    val count = (value as? Number)?.toInt() ?: return@mapNotNull null
+                    userId to count
+                }
+                ?.toMap()
+                .orEmpty()
+        )
+    } catch (_: Exception) {
+        null
     }
+}
 
-    private fun parseMessage(data: Map<String, Any>): Message? {
-        return try {
-            val reactions = (data["reactions"] as? List<Map<String, Any>>)?.map { reactionData ->
+internal fun parseMessageDocument(data: Map<String, Any>): Message? {
+    return try {
+        val reactions = (data["reactions"] as? List<*>)
+            ?.mapNotNull { it as? Map<*, *> }
+            ?.mapNotNull { reactionData ->
                 MessageReaction(
-                    emoji = reactionData["emoji"] as String,
-                    userId = reactionData["userId"] as String,
-                    timestamp = LocalDateTime.ofEpochSecond(reactionData["timestamp"] as Long, 0, ZoneOffset.UTC)
+                    emoji = reactionData["emoji"] as? String ?: return@mapNotNull null,
+                    userId = reactionData["userId"] as? String ?: return@mapNotNull null,
+                    timestamp = localDateTimeFrom(reactionData["timestamp"]) ?: LocalDateTime.now()
                 )
-            } ?: emptyList()
+            }
+            .orEmpty()
 
-            Message(
-                id = data["id"] as String,
-                conversationId = data["conversationId"] as String,
-                senderId = data["senderId"] as String,
-                receiverId = data["receiverId"] as String,
-                content = data["content"] as String,
-                type = MessageType.valueOf(data["type"] as String),
-                status = MessageStatus.valueOf(data["status"] as String),
-                timestamp = LocalDateTime.ofEpochSecond(data["timestamp"] as Long, 0, ZoneOffset.UTC),
-                reactions = reactions,
-                isEdited = data["isEdited"] as? Boolean ?: false
-            )
-        } catch (e: Exception) {
-            null
-        }
+        Message(
+            id = data["id"] as? String ?: return null,
+            conversationId = data["conversationId"] as? String ?: return null,
+            senderId = data["senderId"] as? String ?: return null,
+            receiverId = data["receiverId"] as? String ?: "",
+            content = data["content"] as? String ?: "",
+            type = runCatching {
+                MessageType.valueOf(data["type"] as? String ?: MessageType.TEXT.name)
+            }.getOrDefault(MessageType.TEXT),
+            status = runCatching {
+                MessageStatus.valueOf(data["status"] as? String ?: MessageStatus.SENT.name)
+            }.getOrDefault(MessageStatus.SENT),
+            timestamp = localDateTimeFrom(data["timestamp"]) ?: LocalDateTime.now(),
+            reactions = reactions,
+            isEdited = data["isEdited"] as? Boolean ?: false
+        )
+    } catch (_: Exception) {
+        null
     }
+}
+
+private fun localDateTimeFrom(value: Any?): LocalDateTime? {
+    val epochSeconds = when (value) {
+        is Timestamp -> value.seconds
+        is Date -> value.toInstant().epochSecond
+        is Number -> value.toLong()
+        else -> return null
+    }
+    return LocalDateTime.ofEpochSecond(epochSeconds, 0, ZoneOffset.UTC)
 }

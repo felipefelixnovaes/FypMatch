@@ -1,6 +1,8 @@
 package com.ideiassertiva.FypMatch.repository
 
+import android.app.Activity
 import com.ideiassertiva.FypMatch.data.repository.AdsRepository
+import com.ideiassertiva.FypMatch.data.repository.RewardedAdGateway
 import com.ideiassertiva.FypMatch.model.AiCreditLimits
 import com.ideiassertiva.FypMatch.model.SubscriptionStatus
 import kotlinx.coroutines.test.runTest
@@ -41,5 +43,25 @@ class AdsRepositoryTest {
         assertTrue(extraAttempt.isFailure)
         assertEquals(maxAds, repository.getAdStats(userId).adsWatchedToday)
         assertEquals(AiCreditLimits.MAX_AD_CREDITS_DAILY, repository.getUserCredits(userId).current)
+    }
+
+    @Test
+    fun `rewarded ad failure does not add credits or daily watched count`() = runTest {
+        val repository = AdsRepository(
+            userRepository = null,
+            rewardedAdGateway = object : RewardedAdGateway {
+                override suspend fun showRewardedAd(activity: Activity?): Result<Unit> {
+                    return Result.failure(Exception("ad unavailable"))
+                }
+            }
+        )
+        val userId = "user-ad-failure"
+
+        repository.initializeUserCredits(userId, SubscriptionStatus.FREE)
+        val result = repository.showRewardedAd(userId)
+
+        assertTrue(result.isFailure)
+        assertEquals(0, repository.getUserCredits(userId).current)
+        assertEquals(0, repository.getAdStats(userId).adsWatchedToday)
     }
 }

@@ -1,5 +1,6 @@
 package com.ideiassertiva.FypMatch.data.repository
 
+import android.app.Activity
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,8 +48,8 @@ class AICounselorRepository(
     }
     
     // Assistir anúncio para ganhar créditos
-    suspend fun watchAdForCredits(userId: String): Result<Int> {
-        return adsRepository.showRewardedAd(userId)
+    suspend fun watchAdForCredits(userId: String, activity: Activity?): Result<Int> {
+        return adsRepository.showRewardedAd(userId, activity)
     }
     
     // Verificar se pode assistir anúncio
@@ -187,7 +188,7 @@ class AICounselorRepository(
     
     private fun generateWelcomeMessage(sessionType: SessionType, hasComplementaryProfile: Boolean): CounselorMessage {
         val baseText = when (sessionType) {
-            SessionType.GENERAL -> "Olá! 😊 Sou seu conselheiro de relacionamentos. Como posso te ajudar hoje?"
+            SessionType.GENERAL -> "Olá! 😊 Sou seu conselheiro de relacionamentos. Nesta versão beta, minhas respostas são sugestões locais enquanto validamos o fluxo. Como posso te ajudar hoje?"
             SessionType.DATING_ANXIETY -> "Oi! 💙 Vamos trabalhar juntos para diminuir sua ansiedade em encontros."
             else -> "Olá! Estou aqui para te apoiar. Como posso ajudar?"
         }

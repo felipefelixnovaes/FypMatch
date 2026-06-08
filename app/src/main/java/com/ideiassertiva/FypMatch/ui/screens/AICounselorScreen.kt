@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -32,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
+import com.ideiassertiva.FypMatch.ui.util.findActivity
 import com.ideiassertiva.FypMatch.ui.viewmodel.AICounselorViewModel
 import com.ideiassertiva.FypMatch.ui.viewmodel.AICounselorUiState
 import kotlinx.coroutines.delay
@@ -47,6 +49,7 @@ fun AICounselorScreen(
     val uiState by viewModel.uiState.collectAsState()
     val currentSession by viewModel.currentSession.collectAsState(initial = null)
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
+    val activity = LocalContext.current.findActivity()
 
     // Iniciar sessão quando a tela carrega — subscription obtida do UserRepository no ViewModel
     LaunchedEffect(userId) {
@@ -65,7 +68,7 @@ fun AICounselorScreen(
         onNavigateToComplementaryProfile = onNavigateToComplementaryProfile,
         onUpdateMessage = { viewModel.updateCurrentMessage(it) },
         onSendMessage = { viewModel.sendMessage(it) },
-        onWatchAd = { viewModel.watchAdForCredits() },
+        onWatchAd = { viewModel.watchAdForCredits(activity) },
         onDismissAdModal = { viewModel.dismissAdRewardModal() }
     )
 }

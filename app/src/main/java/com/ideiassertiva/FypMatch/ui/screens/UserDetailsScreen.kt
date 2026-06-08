@@ -35,20 +35,46 @@ import com.ideiassertiva.FypMatch.ui.viewmodel.UserDetailsViewModel
 fun UserDetailsScreen(
     userId: String,
     onNavigateBack: () -> Unit,
-    onLike: () -> Unit = {},
-    onPass: () -> Unit = {},
-    onSuperLike: () -> Unit = {},
+    onActionComplete: () -> Unit = onNavigateBack,
+    onNavigateToChat: (String) -> Unit = {},
     viewModel: UserDetailsViewModel = hiltViewModel(),
     modifier: Modifier = Modifier
 ) {
     val user by viewModel.user.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isActionLoading by viewModel.isActionLoading.collectAsStateWithLifecycle()
+    val actionCompleted by viewModel.actionCompleted.collectAsStateWithLifecycle()
+    val chatNavigation by viewModel.chatNavigation.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(userId) {
         viewModel.loadUser(userId)
     }
 
+    LaunchedEffect(actionCompleted) {
+        if (actionCompleted) {
+            viewModel.clearActionCompleted()
+            onActionComplete()
+        }
+    }
+
+    LaunchedEffect(chatNavigation) {
+        chatNavigation?.let { conversationId ->
+            viewModel.clearChatNavigation()
+            onNavigateToChat(conversationId)
+        }
+    }
+
+    LaunchedEffect(error) {
+        error?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(user?.profile?.fullName ?: "") },
@@ -64,11 +90,16 @@ fun UserDetailsScreen(
             )
         },
         bottomBar = {
-            SwipeBottomBar(onPass = onPass, onSuperLike = onSuperLike, onLike = onLike)
+            SwipeBottomBar(
+                enabled = !isActionLoading && !isLoading && user != null,
+                onPass = { viewModel.performSwipe(userId, SwipeType.PASS) },
+                onSuperLike = { viewModel.performSwipe(userId, SwipeType.SUPER_LIKE) },
+                onLike = { viewModel.performSwipe(userId, SwipeType.LIKE) }
+            )
         }
     ) { paddingValues ->
         when {
-            isLoading && user == null -> {
+            (isLoading || isActionLoading) && user == null -> {
                 Box(
                     modifier = Modifier.fillMaxSize().padding(paddingValues),
                     contentAlignment = Alignment.Center
@@ -179,7 +210,12 @@ fun UserDetailsScreen(
 }
 
 @Composable
-private fun SwipeBottomBar(onPass: () -> Unit, onSuperLike: () -> Unit, onLike: () -> Unit) {
+private fun SwipeBottomBar(
+    enabled: Boolean,
+    onPass: () -> Unit,
+    onSuperLike: () -> Unit,
+    onLike: () -> Unit
+) {
     Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface, shadowElevation = 8.dp) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -191,6 +227,7 @@ private fun SwipeBottomBar(onPass: () -> Unit, onSuperLike: () -> Unit, onLike: 
                 label = "Não",
                 color = FypColors.Pass,
                 size = 56.dp,
+                enabled = enabled,
                 onClick = onPass
             )
             BottomActionItem(
@@ -199,6 +236,7 @@ private fun SwipeBottomBar(onPass: () -> Unit, onSuperLike: () -> Unit, onLike: 
                 color = FypColors.SuperLike,
                 size = 56.dp,
                 highlighted = true,
+                enabled = enabled,
                 onClick = onSuperLike
             )
             BottomActionItem(
@@ -206,6 +244,7 @@ private fun SwipeBottomBar(onPass: () -> Unit, onSuperLike: () -> Unit, onLike: 
                 label = "Curtir",
                 color = FypColors.Primary,
                 size = 56.dp,
+                enabled = enabled,
                 onClick = onLike
             )
         }
@@ -219,14 +258,27 @@ private fun BottomActionItem(
     color: Color,
     size: androidx.compose.ui.unit.Dp,
     highlighted: Boolean = false,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         FloatingActionButton(
-            onClick = onClick,
-            containerColor = if (highlighted) color else MaterialTheme.colorScheme.surface,
-            contentColor = if (highlighted) Color.White else color,
+            onClick = { if (enabled) onClick() },
             modifier = Modifier.size(size),
+            containerColor = if (!enabled) {
+                MaterialTheme.colorScheme.surfaceVariant
+            } else if (highlighted) {
+                color
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+            contentColor = if (!enabled) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else if (highlighted) {
+                Color.White
+            } else {
+                color
+            },
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
         ) {
             Icon(icon, contentDescription = label, modifier = Modifier.size(26.dp))

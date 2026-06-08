@@ -41,6 +41,7 @@ sealed class Screen(val route: String) {
     }
     object Phase3Demo : Screen("phase3_demo")
     object Premium : Screen("premium")
+    object AdvancedFilters : Screen("advanced_filters")
     object AICounselor : Screen("ai_counselor/{userId}") {
         fun createRoute(userId: String) = "ai_counselor/$userId"
     }
@@ -184,6 +185,22 @@ fun FypMatchNavigation(
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToFilters = {
+                    navController.navigate(Screen.AdvancedFilters.route)
+                },
+                viewModel = discoveryViewModel
+            )
+        }
+
+        composable(Screen.AdvancedFilters.route) {
+            AdvancedFiltersScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onFiltersApplied = {
+                    discoveryViewModel.refreshCards()
+                    navController.popBackStack()
                 }
             )
         }

@@ -189,7 +189,18 @@ data class UserPreferences(
     val genderPreference: List<Gender> = emptyList(),
     val intentionPreference: List<Intention> = emptyList(),
     val showMe: Boolean = true,
-    val onlyVerified: Boolean = false
+    val onlyVerified: Boolean = false,
+    val recentlyActive: Boolean = false,
+    val minPhotos: Int = 0,
+    val minHeight: Int = 0,
+    val maxHeight: Int = 0,
+    val smokingStatusPreference: List<SmokingStatus> = emptyList(),
+    val drinkingStatusPreference: List<DrinkingStatus> = emptyList(),
+    val hasChildrenPreference: List<ChildrenStatus> = emptyList(),
+    val wantsChildrenPreference: List<ChildrenStatus> = emptyList(),
+    val religionPreference: List<Religion> = emptyList(),
+    val travelModeEnabled: Boolean = false,
+    val searchLocation: Location = Location()
 ) {
     @get:Exclude
     val ageRange: IntRange

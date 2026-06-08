@@ -6,7 +6,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.LocationPickerField
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.ProfileViewModel
 
@@ -33,7 +33,7 @@ fun ProfileScreen(
     var fullName by remember { mutableStateOf("") }
     var age by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
-    var city by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf(Location()) }
     var selectedGender by remember { mutableStateOf(Gender.NOT_SPECIFIED) }
     var selectedOrientation by remember { mutableStateOf(Orientation.NOT_SPECIFIED) }
     var selectedIntention by remember { mutableStateOf(Intention.NOT_SPECIFIED) }
@@ -99,13 +99,12 @@ fun ProfileScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = city,
-            onValueChange = { city = it },
-            label = { Text("Cidade") },
-            leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+        LocationPickerField(
+            location = location,
+            onLocationChange = { location = it },
+            label = "Cidade",
+            supportingText = "Digite e escolha na lista ou use sua localização atual.",
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -225,7 +224,7 @@ fun ProfileScreen(
                 viewModel.saveProfile(
                     fullName = fullName,
                     age = age,
-                    city = city,
+                    location = location,
                     bio = bio,
                     gender = selectedGender,
                     orientation = selectedOrientation,
@@ -236,7 +235,7 @@ fun ProfileScreen(
             enabled = !uiState.isLoading &&
                      fullName.isNotBlank() &&
                      age.isNotBlank() &&
-                     city.isNotBlank() &&
+                     location.city.isNotBlank() &&
                      selectedGender != Gender.NOT_SPECIFIED &&
                      selectedOrientation != Orientation.NOT_SPECIFIED &&
                      selectedIntention != Intention.NOT_SPECIFIED &&

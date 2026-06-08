@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.LocationPickerField
 import com.ideiassertiva.FypMatch.ui.theme.FypMatchTheme
 import com.ideiassertiva.FypMatch.ui.viewmodel.FiltersViewModel
 
@@ -30,14 +31,25 @@ import com.ideiassertiva.FypMatch.ui.viewmodel.FiltersViewModel
 @Composable
 fun AdvancedFiltersScreen(
     onNavigateBack: () -> Unit = {},
+    onFiltersApplied: () -> Unit = onNavigateBack,
     onUpgradeToPremium: () -> Unit = {},
     currentSubscription: SubscriptionStatus = SubscriptionStatus.FREE,
     viewModel: FiltersViewModel = hiltViewModel()
 ) {
     val filters by viewModel.filters.collectAsState()
     val appliedFiltersCount by viewModel.appliedFiltersCount.collectAsState()
-    
-    val isPremiumFeature = currentSubscription == SubscriptionStatus.FREE
+    val isLoading by viewModel.isLoading.collectAsState()
+    val savedSuccessfully by viewModel.savedSuccessfully.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    val isPremiumFeature = false
+
+    LaunchedEffect(savedSuccessfully) {
+        if (savedSuccessfully) {
+            viewModel.clearSavedFlag()
+            onFiltersApplied()
+        }
+    }
     
     Column(
         modifier = Modifier
@@ -99,6 +111,40 @@ fun AdvancedFiltersScreen(
                     )
                 }
             }
+
+            error?.let { message ->
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Error,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = message,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = { viewModel.clearError() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Fechar",
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             
             // Basic Filters (Available for everyone)
             item {
@@ -121,6 +167,26 @@ fun AdvancedFiltersScreen(
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    MultiSelectFilter(
+                        title = "Gênero",
+                        options = Gender.values().filter { it != Gender.NOT_SPECIFIED }.toTypedArray(),
+                        selectedOptions = filters.genderPreference,
+                        onSelectionChange = { viewModel.updateGenderPreference(it) },
+                        getDisplayName = { it.getDisplayName() }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    MultiSelectFilter(
+                        title = "Intenção",
+                        options = Intention.values().filter { it != Intention.NOT_SPECIFIED }.toTypedArray(),
+                        selectedOptions = filters.intentionPreference,
+                        onSelectionChange = { viewModel.updateIntentionPreference(it) },
+                        getDisplayName = { it.getDisplayName() }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
                     
                     // Show verified only
                     FilterToggle(
@@ -130,6 +196,30 @@ fun AdvancedFiltersScreen(
                         onCheckedChange = { viewModel.toggleVerifiedOnly(it) },
                         enabled = !isPremiumFeature
                     )
+                }
+            }
+
+            item {
+                FilterSection(
+                    title = "Localização",
+                    icon = Icons.Default.TravelExplore
+                ) {
+                    FilterToggle(
+                        title = "Modo viagem",
+                        description = "Buscar perfis a partir de uma cidade escolhida",
+                        checked = filters.travelModeEnabled,
+                        onCheckedChange = { viewModel.toggleTravelMode(it) }
+                    )
+
+                    if (filters.travelModeEnabled) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        LocationPickerField(
+                            location = filters.travelLocation,
+                            onLocationChange = { viewModel.updateTravelLocation(it) },
+                            label = "Destino de viagem",
+                            supportingText = "Digite a cidade, escolha na lista ou use sua localização atual."
+                        )
+                    }
                 }
             }
             
@@ -243,6 +333,23 @@ fun AdvancedFiltersScreen(
                         getDisplayName = { it.getDisplayName() },
                         enabled = !isPremiumFeature
                     )
+                }
+            }
+
+            item {
+                Button(
+                    onClick = { viewModel.applyFilters() },
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text("Aplicar filtros")
                 }
             }
         }
@@ -411,19 +518,23 @@ private fun AgeRangeFilter(
     currentRange: IntRange,
     onRangeChange: (IntRange) -> Unit
 ) {
+    val sliderRange = currentRange.first.toFloat()..currentRange.last.toFloat()
     Column {
         Text(
             text = "Idade: ${currentRange.first} - ${currentRange.last} anos",
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Medium
         )
-        
-        // Age range slider would be implemented here
-        // For now, showing static UI
-        Slider(
-            value = currentRange.first.toFloat(),
-            onValueChange = { /* Handle change */ },
+
+        RangeSlider(
+            value = sliderRange,
+            onValueChange = { range ->
+                val min = range.start.toInt().coerceIn(18, 99)
+                val max = range.endInclusive.toInt().coerceIn(min, 99)
+                onRangeChange(min..max)
+            },
             valueRange = 18f..99f,
+            steps = 80,
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -467,8 +578,8 @@ private fun MinPhotosFilter(
         Slider(
             value = currentMin.toFloat(),
             onValueChange = { onMinChange(it.toInt()) },
-            valueRange = 1f..10f,
-            steps = 8,
+            valueRange = 0f..6f,
+            steps = 5,
             enabled = enabled,
             modifier = Modifier.fillMaxWidth()
         )
@@ -511,10 +622,15 @@ private fun HeightRangeFilter(
         }
         
         if (currentRange != null && enabled) {
-            Slider(
-                value = currentRange.first.toFloat(),
-                onValueChange = { /* Handle change */ },
+            RangeSlider(
+                value = currentRange.first.toFloat()..currentRange.last.toFloat(),
+                onValueChange = { range ->
+                    val min = range.start.toInt().coerceIn(140, 220)
+                    val max = range.endInclusive.toInt().coerceIn(min, 220)
+                    onRangeChange(min..max)
+                },
                 valueRange = 140f..220f,
+                steps = 79,
                 modifier = Modifier.fillMaxWidth()
             )
         }

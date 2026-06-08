@@ -4,6 +4,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ListenerRegistration
+import com.ideiassertiva.FypMatch.data.discoveryDistanceKm
+import com.ideiassertiva.FypMatch.data.matchesDiscoveryFilters
 import com.ideiassertiva.FypMatch.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,7 +75,7 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
     private suspend fun loadUsersFromFirestore(currentUserId: String): List<User> {
         return try {
             firestore.collection("users")
-                .limit(20)
+                .limit(100)
                 .get()
                 .await()
                 .documents
@@ -117,15 +119,18 @@ class DiscoveryRepository @Inject constructor(private val firestore: FirebaseFir
     // Carrega os cards de discovery para um usuário específico — apenas perfis reais do Firestore.
     suspend fun loadDiscoveryCards(currentUserId: String) {
         val acted = loadActedUserIds(currentUserId)
-        val users = loadUsersFromFirestore(currentUserId).filter { it.id !in acted }
         val currentUser = loadCurrentUserFromFirestore(currentUserId)
+        val filters = currentUser?.preferences?.toSearchFilters() ?: SearchFilters()
+        val users = loadUsersFromFirestore(currentUserId)
+            .filter { it.id !in acted }
+            .filter { it.matchesDiscoveryFilters(filters, currentUser) }
         val cards = users.map { user ->
             val compatibilityScore = currentUser?.let {
                 compatibilityEngine.analyzeCompatibility(it, user).overall
             } ?: ((60..98).random() / 100f)
             DiscoveryCard(
                 user = user,
-                distance = (1..25).random(),
+                distance = discoveryDistanceKm(currentUser, filters, user),
                 compatibilityScore = compatibilityScore,
                 commonInterests = sharedInterests(currentUser, user).ifEmpty { user.profile.interests.take(2) },
                 photos = user.profile.photos,

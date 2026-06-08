@@ -65,6 +65,7 @@ fun DiscoveryScreen(
     onNavigateToChat: (String) -> Unit = {},
     onNavigateToPhase3Demo: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToFilters: () -> Unit = {},
     viewModel: DiscoveryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -103,6 +104,7 @@ fun DiscoveryScreen(
     ) {
         DiscoveryTopBar(
             onSettingsClick = onNavigateToSettings,
+            onFiltersClick = onNavigateToFilters,
             onMatchesClick = onNavigateToMatches,
             onAICounselorClick = { onNavigateToAICounselor(currentUserId) },
             onPhase4AIClick = { onNavigateToPhase4AI(currentUserId) },
@@ -171,6 +173,7 @@ fun DiscoveryScreen(
 @Composable
 private fun DiscoveryTopBar(
     onSettingsClick: () -> Unit,
+    onFiltersClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onAICounselorClick: () -> Unit = {},
     onPhase4AIClick: () -> Unit = {},
@@ -215,6 +218,22 @@ private fun DiscoveryTopBar(
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = "Menu e Configurações",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = onFiltersClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Tune,
+                    contentDescription = "Filtros",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

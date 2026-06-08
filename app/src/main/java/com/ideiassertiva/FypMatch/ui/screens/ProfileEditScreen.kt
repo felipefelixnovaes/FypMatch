@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
+import com.ideiassertiva.FypMatch.ui.components.LocationPickerField
 import com.ideiassertiva.FypMatch.ui.viewmodel.ProfileEditViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -441,6 +442,19 @@ private fun BasicInfoSection(
                 label = { Text("Altura (cm)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
+            )
+
+            LocationPickerField(
+                location = user.profile.location,
+                onLocationChange = { location ->
+                    onUserUpdate(
+                        user.copy(
+                            profile = user.profile.copy(location = location)
+                        )
+                    )
+                },
+                label = "Cidade",
+                supportingText = "Digite e escolha na lista ou use sua localização atual."
             )
         }
     }

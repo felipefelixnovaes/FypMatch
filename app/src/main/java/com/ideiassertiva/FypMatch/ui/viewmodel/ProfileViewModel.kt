@@ -29,7 +29,7 @@ class ProfileViewModel @Inject constructor(
     fun saveProfile(
         fullName: String,
         age: String,
-        city: String,
+        location: Location,
         bio: String,
         gender: Gender,
         orientation: Orientation,
@@ -46,7 +46,7 @@ class ProfileViewModel @Inject constructor(
                     fullName = fullName,
                     age = age.toIntOrNull() ?: 0,
                     bio = bio,
-                    location = Location(city = city),
+                    location = location,
                     gender = gender,
                     orientation = orientation,
                     intention = intention

@@ -53,11 +53,44 @@ class UserPreferencesFirestoreTest {
     @Test
     fun `ageRange is not serialized back to firestore`() {
         val plain = CustomClassMapper.convertToPlainJavaTypes(
-            UserPreferences(minAge = 21, maxAge = 35)
+            UserPreferences(
+                minAge = 21,
+                maxAge = 35,
+                travelModeEnabled = true,
+                searchLocation = Location(city = "Florianopolis", state = "SC")
+            )
         ) as Map<*, *>
 
         assertEquals(21, plain["minAge"])
         assertEquals(35, plain["maxAge"])
+        assertEquals(true, plain["travelModeEnabled"])
         assertFalse(plain.containsKey("ageRange"))
+    }
+
+    @Test
+    fun `search filters round trip through user preferences`() {
+        val filters = SearchFilters(
+            ageRange = 25..40,
+            maxDistance = 120,
+            genderPreference = listOf(Gender.FEMALE),
+            intentionPreference = listOf(Intention.DATING),
+            verifiedOnly = true,
+            recentlyActive = true,
+            minPhotos = 2,
+            heightRange = 160..190,
+            smokingStatus = listOf(SmokingStatus.NEVER),
+            travelModeEnabled = true,
+            travelLocation = Location(city = "Recife", state = "PE")
+        )
+
+        val restored = filters.toPreferences().toSearchFilters()
+
+        assertEquals(filters.ageRange, restored.ageRange)
+        assertEquals(filters.maxDistance, restored.maxDistance)
+        assertEquals(filters.genderPreference, restored.genderPreference)
+        assertEquals(filters.intentionPreference, restored.intentionPreference)
+        assertEquals(filters.heightRange, restored.heightRange)
+        assertEquals(filters.travelLocation.city, restored.travelLocation.city)
+        assertEquals(filters.countActive(), restored.countActive())
     }
 }

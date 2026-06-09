@@ -6,7 +6,7 @@ Completar duas lacunas do beta Android: filtros reais no Discovery e escolha de 
 
 ## Escopo
 
-- Expor a tela de filtros a partir do Discovery.
+- Expor a tela de filtros dentro do menu/configurações do usuário, preservando o topo do Discovery com os dois acessos da esquerda.
 - Aplicar filtros reais ao deck de cards: idade, distância, gênero, intenção, verificação, atividade recente, fotos, altura, fumo, bebida, filhos e religião.
 - Persistir filtros em `users/{userId}.preferences`.
 - Calcular distância por cidade/coordenadas em vez de usar valor aleatório.
@@ -17,10 +17,11 @@ Completar duas lacunas do beta Android: filtros reais no Discovery e escolha de 
 ## Checklist
 
 - [x] `SearchFilters` convertido para/de `UserPreferences`.
-- [x] Versão Android avançada para `1.0.16 (21)`.
+- [x] Versão Android avançada para `1.0.17 (22)`.
 - [x] `DiscoveryRepository` aplica filtros antes de montar cards.
 - [x] Distância do card usa cidade/coordenadas resolvidas.
-- [x] Tela de filtros acessível pelo Discovery.
+- [x] Tela de filtros acessível por Configurações > Filtros de descoberta.
+- [x] Discovery preserva apenas os dois botões da esquerda: editar perfil e menu/configurações.
 - [x] Sliders de idade e altura alteram mínimo e máximo.
 - [x] Filtros persistem no Firestore ao aplicar.
 - [x] Perfil permite escolher cidade por lista ou localização atual.
@@ -32,13 +33,13 @@ Completar duas lacunas do beta Android: filtros reais no Discovery e escolha de 
 - [x] `.\gradlew.bat testDebugUnitTest`
 - [x] `.\gradlew.bat lintDebug`
 - [x] `.\gradlew.bat assembleRelease`
-- [x] Firebase App Distribution `1.0.16 (21)` para testers.
+- [x] Firebase App Distribution `1.0.17 (22)` para testers.
 
-Release tester: https://appdistribution.firebase.google.com/testerapps/1:98859676437:android:b01d8961659b5f3125af1c/releases/0g59gi2ar8f30
+Release tester: https://appdistribution.firebase.google.com/testerapps/1:98859676437:android:b01d8961659b5f3125af1c/releases/6t1ups4g3dvk0
 
 ## Release notes
 
-- Adiciona botão de filtros no Discovery.
+- Move filtros para o menu/configurações do usuário, sem adicionar botão extra no Discovery.
 - Faz filtros realmente alterarem os cards exibidos.
 - Adiciona seletor de cidade com busca, lista e localização atual.
 - Adiciona modo viagem para buscar perfis em outra cidade.

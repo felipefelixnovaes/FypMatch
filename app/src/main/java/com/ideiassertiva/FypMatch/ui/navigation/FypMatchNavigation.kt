@@ -186,9 +186,6 @@ fun FypMatchNavigation(
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
                 },
-                onNavigateToFilters = {
-                    navController.navigate(Screen.AdvancedFilters.route)
-                },
                 viewModel = discoveryViewModel
             )
         }
@@ -381,6 +378,12 @@ fun FypMatchNavigation(
                 },
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Screen.ProfileEdit.route)
+                },
+                onNavigateToFilters = {
+                    navController.navigate(Screen.AdvancedFilters.route)
                 },
                 onNavigateToLogin = {
                     navController.navigate(Screen.Welcome.route) {

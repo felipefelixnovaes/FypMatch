@@ -41,6 +41,8 @@ fun SettingsScreen(
     onNavigateToPremium: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToLogin: () -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},
+    onNavigateToFilters: () -> Unit = {},
     onNavigateToSelfKnowledge: () -> Unit = {},
     onNavigateToQuickMode: () -> Unit = {},
     onNavigateToDeepMode: () -> Unit = {},
@@ -222,6 +224,7 @@ fun SettingsScreen(
             // Card do perfil do usuário
             item {
                 Card(
+                    onClick = onNavigateToProfile,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -240,13 +243,28 @@ fun SettingsScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Ver seu perfil",
+                                text = "Editar perfil e localização",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = FypColors.Primary
                             )
                         }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
+            }
+
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Tune,
+                    title = "Filtros de descoberta",
+                    subtitle = "Idade, distância, cidade, modo viagem e preferências",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToFilters
+                )
             }
 
             // Card Premium em gradiente de marca

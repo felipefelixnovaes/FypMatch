@@ -27,9 +27,9 @@ const HERO_SLIDES = [
 ];
 
 export default function Home() {
-  const [step, setStep] = useState<"form" | "success">("form");
+  const [step, setStep] = useState<"form_1" | "form_2" | "success">("form_1");
   const [selectedCity, setSelectedCity] = useState("sp");
-  const [formData, setFormData] = useState({ email: "", phone: "" });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", age: "", gender: "", lookingFor: "", goal: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [referralLink, setReferralLink] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -43,10 +43,16 @@ export default function Home() {
 
   // Auto-rotate the hero text
   useEffect(() => {
+    let mounted = true;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+      if (mounted) {
+        setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
+      }
     }, 3500);
-    return () => clearInterval(timer);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
   }, []);
 
   // Simulate people joining right now
@@ -60,15 +66,40 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [activeCity.id, activeCity.realTimeAdd]);
 
+  const handleNextStep = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Captura parcial no passo 1 (Progressive Profiling)
+    setIsLoading(true);
+    try {
+      await submitLeadToCRM({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        city: selectedCity,
+      });
+    } catch (error) {
+      console.error("Erro no passo 1:", error);
+    } finally {
+      setIsLoading(false);
+      setStep("form_2");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     // Enviar dados para o NextCRM da Fábrica Digital
     await submitLeadToCRM({
+      name: formData.name,
       email: formData.email,
       phone: formData.phone,
-      city: selectedCity
+      city: selectedCity,
+      age: formData.age,
+      gender: formData.gender,
+      lookingFor: formData.lookingFor,
+      goal: formData.goal
     });
 
     // Generate a mock referral link
@@ -118,7 +149,7 @@ export default function Home() {
           </div>
 
           {/* Animated Hero Text Slider */}
-          <div className="h-[140px] sm:h-[150px] md:h-[180px] my-4 flex items-center justify-center md:justify-start relative w-full">
+          <div className="h-[140px] sm:h-[150px] md:h-[180px] my-4 flex items-center justify-center md:justify-start relative w-full overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.h1
                 key={currentSlide}
@@ -145,7 +176,7 @@ export default function Home() {
           <div className="hidden md:flex flex-row items-center justify-start gap-4 pt-4">
             <div className="flex -space-x-4">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-fypmatch-dark bg-gray-800 flex items-center justify-center overflow-hidden">
+                <div key={i} className="w-10 h-10 rounded-full border-2 border-fypmatch-dark bg-gray-800 flex items-center justify-center overflow-hidden relative">
                   <Image src={`https://i.pravatar.cc/100?img=${i + activeCity.seed}`} alt="User" fill />
                 </div>
               ))}
@@ -177,20 +208,20 @@ export default function Home() {
           </motion.div>
 
           <AnimatePresence mode="wait">
-            {step === "form" ? (
+            {step === "form_1" ? (
               <motion.div
-                key="form"
+                key="form_1"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-4 md:space-y-6 pt-2"
               >
                 <div className="hidden md:block">
-                  <h2 className="text-2xl font-bold mb-2">Reserve seu lugar</h2>
+                  <h2 className="text-2xl font-bold mb-2">Reserve seu lugar (1/2)</h2>
                   <p className="text-gray-400 text-sm">Nenhum spam. Apenas a notificação de acesso.</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+                <form onSubmit={handleNextStep} className="space-y-3 md:space-y-4">
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                     <select
@@ -204,6 +235,18 @@ export default function Home() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="relative">
+                    <Users className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      placeholder="Seu nome"
+                      className="w-full bg-black/50 border border-white/10 rounded-lg py-3 pl-10 pr-4 text-sm md:text-base text-white focus:outline-none focus:border-fypmatch-pink transition-colors"
+                    />
                   </div>
 
                   <div className="relative">
@@ -237,10 +280,10 @@ export default function Home() {
                       className="w-full bg-hero-gradient hover:opacity-90 text-white font-bold py-3.5 rounded-lg flex items-center justify-center text-sm md:text-base transition-all disabled:opacity-50 shadow-lg shadow-fypmatch-pink/20"
                     >
                       {isLoading ? (
-                        <span className="animate-pulse">Garantindo vaga...</span>
+                        <span className="animate-pulse">Avançando...</span>
                       ) : (
                         <>
-                          Entrar na Lista VIP
+                          Próxima Etapa
                           <ChevronRight className="ml-2 w-5 h-5" />
                         </>
                       )}
@@ -248,6 +291,105 @@ export default function Home() {
                     <p className="text-[10px] md:text-xs text-center text-gray-500 mt-3 flex items-center justify-center gap-2">
                       <ShieldCheck className="w-3 h-3" /> 18+ · Sem spam · Saia quando quiser
                     </p>
+                  </div>
+                </form>
+              </motion.div>
+            ) : step === "form_2" ? (
+              <motion.div
+                key="form_2"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                className="space-y-4 md:space-y-6 pt-2"
+              >
+                <div className="hidden md:block">
+                  <h2 className="text-2xl font-bold mb-2">Quase lá! (2/2)</h2>
+                  <p className="text-gray-400 text-sm">Ajude a melhorar seu match no lançamento.</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="relative">
+                      <select
+                        required
+                        value={formData.age}
+                        onChange={(e) => setFormData({...formData, age: e.target.value})}
+                        className="w-full bg-black/50 border border-white/10 rounded-lg py-3 px-4 text-sm text-white appearance-none focus:outline-none focus:border-fypmatch-pink transition-colors"
+                      >
+                        <option value="" disabled className="bg-fypmatch-darker text-gray-400">Idade</option>
+                        <option value="18-24" className="bg-fypmatch-darker">18-24 anos</option>
+                        <option value="25-34" className="bg-fypmatch-darker">25-34 anos</option>
+                        <option value="35-44" className="bg-fypmatch-darker">35-44 anos</option>
+                        <option value="45+" className="bg-fypmatch-darker">45+ anos</option>
+                      </select>
+                    </div>
+
+                    <div className="relative">
+                      <select
+                        required
+                        value={formData.gender}
+                        onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                        className="w-full bg-black/50 border border-white/10 rounded-lg py-3 px-4 text-sm text-white appearance-none focus:outline-none focus:border-fypmatch-pink transition-colors"
+                      >
+                        <option value="" disabled className="bg-fypmatch-darker text-gray-400">Gênero</option>
+                        <option value="masculino" className="bg-fypmatch-darker">Homem</option>
+                        <option value="feminino" className="bg-fypmatch-darker">Mulher</option>
+                        <option value="outro" className="bg-fypmatch-darker">Outro</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <select
+                      required
+                      value={formData.lookingFor}
+                      onChange={(e) => setFormData({...formData, lookingFor: e.target.value})}
+                      className="w-full bg-black/50 border border-white/10 rounded-lg py-3 px-4 text-sm text-white appearance-none focus:outline-none focus:border-fypmatch-pink transition-colors"
+                    >
+                      <option value="" disabled className="bg-fypmatch-darker text-gray-400">Quem você quer conhecer?</option>
+                      <option value="mulheres" className="bg-fypmatch-darker">Mulheres</option>
+                      <option value="homens" className="bg-fypmatch-darker">Homens</option>
+                      <option value="todos" className="bg-fypmatch-darker">Todos</option>
+                    </select>
+                  </div>
+
+                  <div className="relative">
+                    <select
+                      required
+                      value={formData.goal}
+                      onChange={(e) => setFormData({...formData, goal: e.target.value})}
+                      className="w-full bg-black/50 border border-white/10 rounded-lg py-3 px-4 text-sm text-white appearance-none focus:outline-none focus:border-fypmatch-pink transition-colors"
+                    >
+                      <option value="" disabled className="bg-fypmatch-darker text-gray-400">Objetivo principal</option>
+                      <option value="relacionamento" className="bg-fypmatch-darker">Relacionamento sério</option>
+                      <option value="casual" className="bg-fypmatch-darker">Encontros casuais</option>
+                      <option value="amizade" className="bg-fypmatch-darker">Novas amizades</option>
+                      <option value="naosei" className="bg-fypmatch-darker">Ainda não sei</option>
+                    </select>
+                  </div>
+
+                  <div className="pt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setStep("form_1")}
+                      className="bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold py-3.5 px-4 rounded-lg flex items-center justify-center transition-all"
+                    >
+                      Voltar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="flex-1 bg-hero-gradient hover:opacity-90 text-white font-bold py-3.5 rounded-lg flex items-center justify-center text-sm md:text-base transition-all disabled:opacity-50 shadow-lg shadow-fypmatch-pink/20"
+                    >
+                      {isLoading ? (
+                        <span className="animate-pulse">Finalizando...</span>
+                      ) : (
+                        <>
+                          Entrar na Lista VIP
+                          <ChevronRight className="ml-2 w-5 h-5" />
+                        </>
+                      )}
+                    </button>
                   </div>
                 </form>
               </motion.div>
@@ -301,7 +443,7 @@ export default function Home() {
         <div className="md:hidden flex flex-row items-center justify-center gap-3 pt-4 order-3 w-full pb-8">
           <div className="flex -space-x-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="w-8 h-8 rounded-full border-2 border-fypmatch-dark bg-gray-800 flex items-center justify-center overflow-hidden">
+              <div key={i} className="w-8 h-8 rounded-full border-2 border-fypmatch-dark bg-gray-800 flex items-center justify-center overflow-hidden relative">
                 <Image src={`https://i.pravatar.cc/100?img=${i + activeCity.seed}`} alt="User" fill />
               </div>
             ))}

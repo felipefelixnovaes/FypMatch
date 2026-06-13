@@ -29,6 +29,8 @@ export {
 
 export { adminGetUserEligibility } from "./admin/eligibility";
 
+export { adminSendNotification } from "./admin/notifications";
+
 export { counselorChat } from "./counselor/chat";
 
 export { onMatchCreated } from "./notifications/onMatchCreated";

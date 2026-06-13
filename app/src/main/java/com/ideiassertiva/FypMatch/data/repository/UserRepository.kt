@@ -50,8 +50,22 @@ class UserRepository @Inject constructor(
         }
     }
 
+    // Salva o token FCM atual em users/{uid}.fcmToken para o backend (Cloud Function)
+    // poder enviar push de match/mensagem. Roda no login e quando o token e carregado.
+    private fun registerFcmToken(userId: String) {
+        if (userId.isBlank()) return
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                if (!token.isNullOrBlank()) {
+                    usersCollection.document(userId)
+                        .set(mapOf("fcmToken" to token), SetOptions.merge())
+                }
+            }
+    }
+
     suspend fun loadCurrentUser() {
         val firebaseUser = auth.currentUser ?: return
+        registerFcmToken(firebaseUser.uid)
         try {
             val doc = usersCollection.document(firebaseUser.uid).get().await()
             if (doc.exists()) {

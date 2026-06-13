@@ -28,11 +28,17 @@ class FypMatchMessagingService : FirebaseMessagingService() {
     
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        
-        // Send token to server or save locally
-        // In a real implementation, you would send this to your backend
-        // to associate the token with the current user
         saveTokenToPreferences(token)
+        // Associa o token ao usuario logado em users/{uid}.fcmToken (para push via Cloud Function)
+        val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+        if (uid != null) {
+            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                .collection("users").document(uid)
+                .set(
+                    mapOf("fcmToken" to token),
+                    com.google.firebase.firestore.SetOptions.merge()
+                )
+        }
     }
     
     private fun handleNewMessage(remoteMessage: RemoteMessage) {

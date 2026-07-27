@@ -17,8 +17,9 @@
 ## 🟡 Necessário antes da submissão
 
 - [ ] Criar o app no Play Console + configurar Play App Signing
-- [ ] Assets de loja: ícone 512×512, feature graphic 1024×500, screenshots (mín. 2, recomendado 4-8) — nada disso existe no repo hoje
-- [ ] Descrição curta/longa da ficha de loja (pt-BR, considerar en-US se for expandir)
+- [x] Ícone 512×512 e feature graphic 1024×500 — gerados a partir dos assets reais da marca em [`marketing/play-store/`](../marketing/play-store/FICHA_DE_LOJA.md)
+- [ ] Screenshots (mín. 2, recomendado 4-8) — pendente, precisa de captura real do app rodando (ver instruções em `marketing/play-store/FICHA_DE_LOJA.md`)
+- [x] Descrição curta/longa da ficha de loja — rascunho em [`marketing/play-store/FICHA_DE_LOJA.md`](../marketing/play-store/FICHA_DE_LOJA.md), revisar antes de publicar se as features citadas já estão fora de beta
 - [ ] Confirmar texto de consentimento no onboarding cobre cada categoria de dado sensível separadamente (orientação sexual, geolocalização, biometria, religião) — ver seção 2.2 da política
 - [ ] Definir e documentar prazo real de exclusão de dados após remoção de conta (inclusive backups e mensagens do outro lado da conversa)
 - [ ] QA manual completo end-to-end antes de gerar a release candidate (checklist já existe em `docs/release-runbook.md`, mas é focado em beta/App Distribution — adaptar para release de produção)

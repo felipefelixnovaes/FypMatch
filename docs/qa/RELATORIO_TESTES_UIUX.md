@@ -24,8 +24,12 @@ Nesta rodada de testes, o app foi instalado e executado de verdade (não apenas 
 | 5 | Perfil aparecia em branco após cadastro | Alto (UX crítica) | ✅ Corrigido e verificado |
 | 6 | "Central de ajuda" duplicada no menu | Baixo | ✅ Corrigido |
 | 7 | **Tela de Editar Perfil trava (main thread) após uso dos dropdowns** | **Alto (bloqueia conclusão de perfil)** | 🟡 **Causa raiz encontrada, mitigação parcial aplicada (~4x menos frames pulados), não eliminado** |
-| 8 | Tema visual não persiste entre reinícios do app | Médio | ⚠️ Identificado, não investigado |
+| 8 | Tema visual não persiste entre reinícios do app | Médio | 🔵 Suspeita não confirmada — pode ser apenas conta sem tema alterado |
 | 9 | Dropdowns de Gênero/Orientação exigem toque duplo pra abrir | Baixo/Médio | ⚠️ Identificado, não investigado |
+| 10 | Verificação de foto | — | ✅ Nenhum bug encontrado |
+| 11 | "Preço no Play" mostra o produto em vez do preço em R$ | Baixo | ⚠️ Identificado, não corrigido |
+| 12 | Botão "Comprar" sem feedback visível claro | Baixo/Médio | ⚠️ Identificado, não confirmado com certeza |
+| 13 | Central de Segurança não abriu em 7 tentativas de toque | — | 🔵 Código verificado correto — provável instabilidade de teste, não bug confirmado |
 
 ---
 
@@ -166,9 +170,11 @@ EGL_emulation: app_time_stats: avg=500.10ms min=498.84ms max=501.35ms count=2
 
 ---
 
-## 8. ⚠️ Tema não persiste entre reinícios do app
+## 8. ⚠️ Tema não persiste entre reinícios do app (correção: possível não-bug)
 
-Notei, sem buscar ativamente, que o tema do app trocou de "Noturno" (configurado antes) para "Claro" sozinho após um restart do processo. Não investiguei a fundo (pode ser um bug real de persistência de preferência, ou comportamento intencional ligado ao tema do sistema/emulador). Vale uma investigação futura dedicada.
+Notei, sem buscar ativamente, que o tema do app trocou de "Noturno" (configurado antes) para "Claro" sozinho após um restart do processo.
+
+**Atualização após mais testes:** ao abrir "Tema do app" nas Configurações da conta 2 (uma conta diferente, criada nesta sessão e que eu nunca tinha configurado), o toggle mostrava "Claro" selecionado corretamente — ou seja, pode ser simplesmente que essa conta nunca teve o tema alterado para "Noturno", e não um bug de persistência de fato. Não tive tempo de confirmar isolando a mesma conta antes/depois de um restart. Rebaixo a confiança desse achado — fica como suspeita a confirmar, não como bug verificado.
 
 ![Tema claro inesperado](screenshots/05_tema_claro_inesperado.png)
 
@@ -179,6 +185,37 @@ Notei, sem buscar ativamente, que o tema do app trocou de "Noturno" (configurado
 Descoberto ao investigar por que as duas contas de teste não apareciam uma para a outra na Descoberta: `UserProfile.hasRequiredProfileFields()` exige `fullName`, `age >= 18`, `bio`/`aboutMe`, `city`, `gender`, `orientation` e `intention` todos preenchidos. Isso é uma regra de produto correta (não mostrar perfis incompletos), mas combinada com o bug #7 (trava ao preencher orientação/intenção), ficou difícil completar um perfil de teste do zero via UI nesta sessão.
 
 **Consequência prática:** não consegui validar match + chat entre as duas contas nesta rodada. Fica pendente para a próxima sessão, idealmente só depois do bug #7 ser corrigido (ou usando um workaround: gravar os campos de perfil direto no Firestore Console para os testes, contornando a UI).
+
+---
+
+## 10. Loja, Verificação de foto e Central de Segurança
+
+### Verificação de foto — sem problemas encontrados ✅
+
+Tela bem construída: detecta corretamente que a conta não tem foto de perfil, desabilita "Tirar selfie" com uma mensagem clara ("Adicione uma foto de perfil... a revisão precisa comparar a selfie com pelo menos uma foto pública"), e o texto de consentimento LGPD bate exatamente com o que documentei na política de privacidade (retenção de 7 dias, revisão manual). Nenhum bug encontrado.
+
+![Verificação de foto](screenshots/11_verificacao_de_foto_ok.png)
+
+### Loja / Planos Premium — funcional e transparente, com 2 achados menores
+
+A tela de planos (Premium R$19,90 / VIP R$39,90) renderiza bem, a seleção de card funciona (o botão inferior troca de "Assinar Premium" para "Assinar VIP" conforme o card selecionado). Ao tentar assinar, navega para a "Loja FypMatch" com um banner honesto:
+
+> "Loja beta — Os produtos já estão definidos. A compra real será liberada quando o Google Play Billing e a verificação no backend estiverem ativos."
+
+Isso é uma boa prática — o app não finge vender algo que não pode entregar.
+
+![Planos Premium](screenshots/12_planos_premium.png)
+![Loja beta transparente](screenshots/13_loja_beta_transparente.png)
+
+**Achado 1 (conteúdo, baixa severidade):** o campo "Preço no Play" mostra o próprio produto como preço — ex.: pacote "20 créditos IA" tem "Preço no Play: 20 créditos IA" — parece um placeholder de preço em R$ que não foi substituído.
+
+**Achado 2 (UX, baixa/média severidade):** ao tocar "Comprar", nenhum feedback visível diferencia o antes/depois — o banner "Loja beta" no topo mostra exatamente o mesmo texto antes e depois do toque, sem indicar se a tentativa foi registrada. Pelo código (`StoreRepository.requestPurchase`), a chamada deveria retornar uma mensagem de erro específica ("A loja está em modo beta: compra real indisponível...") que populasse `uiState.error` e apareceria no mesmo banner — não consegui confirmar visualmente que isso realmente acontece. Vale um teste mais controlado (talvez com breakpoint/log adicional) na próxima rodada.
+
+### Central de Segurança — não alcançada (provável instabilidade de teste, não bug confirmado)
+
+Tentei abrir "Central de segurança" no menu de Configurações **7 vezes**, com coordenadas e reposicionamentos de scroll diferentes — nenhuma navegou. Revisei o código: `onNavigateToSafetyCenter` está corretamente conectado (`SettingsScreen.kt:592` → `FypMatchNavigation.kt:524` → `navController.navigate(Screen.SafetyCenter.route)`, com o destino `SafetyCenterScreen` devidamente registrado). Outras linhas do mesmo tipo (`SettingsNavRow`) na mesma tela responderam normalmente ao toque.
+
+Dado que o código está correto e outras linhas idênticas funcionam, **não estou reportando isso como bug confirmado** — é mais provável que seja a mesma instabilidade de toque que enfrentei ao longo da sessão (possivelmente relacionada ao jank residual do bug #7). Fica como item para retestar diretamente (idealmente com toque manual real, não automatizado) na próxima rodada, antes de investigar mais a fundo.
 
 ---
 

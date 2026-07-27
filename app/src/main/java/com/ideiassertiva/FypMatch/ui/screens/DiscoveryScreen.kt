@@ -864,7 +864,8 @@ private fun NoMoreCardsView(
             text = "Não há mais pessoas por aqui!",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface
         )
         
         Spacer(modifier = Modifier.height(8.dp))

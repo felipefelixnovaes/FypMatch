@@ -119,43 +119,49 @@ fun WelcomeScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(40.dp))
-
-            // Carousel de onboarding
-            HorizontalPager(
-                state = pagerState,
+            // Carousel de onboarding — centralizado no espaco disponivel entre o
+            // cabecalho e os CTAs, em vez de empurrar tudo com um unico Spacer
+            // gigante (deixava um vao vazio enorme em telas altas).
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            ) { page ->
-                OnboardingCard(
-                    page = onboardingPages[page],
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Indicadores de página
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .weight(1f)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                repeat(onboardingPages.size) { index ->
-                    val isSelected = pagerState.currentPage == index
-                    Box(
-                        modifier = Modifier
-                            .size(if (isSelected) 10.dp else 6.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isSelected) Color.White
-                                else Color.White.copy(alpha = 0.4f)
-                            )
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                ) { page ->
+                    OnboardingCard(
+                        page = onboardingPages[page],
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
-            }
 
-            Spacer(Modifier.weight(1f))
+                Spacer(Modifier.height(16.dp))
+
+                // Indicadores de página
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(onboardingPages.size) { index ->
+                        val isSelected = pagerState.currentPage == index
+                        Box(
+                            modifier = Modifier
+                                .size(if (isSelected) 10.dp else 6.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (isSelected) Color.White
+                                    else Color.White.copy(alpha = 0.4f)
+                                )
+                        )
+                    }
+                }
+            }
 
             // CTAs
             Button(

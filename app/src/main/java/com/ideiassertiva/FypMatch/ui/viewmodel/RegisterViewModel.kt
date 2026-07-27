@@ -5,6 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
+import com.ideiassertiva.FypMatch.model.Gender
+import com.ideiassertiva.FypMatch.model.User
+import com.ideiassertiva.FypMatch.model.UserProfile
+import com.ideiassertiva.FypMatch.model.withCompletionStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,20 +73,26 @@ class RegisterViewModel @Inject constructor() : ViewModel() {
                     .build()
                 firebaseUser.updateProfile(profileUpdate).await()
 
-                // 3. Salvar dados adicionais no Firestore
-                val userData = mapOf(
-                    "id" to firebaseUser.uid,
-                    "email" to email.trim(),
-                    "displayName" to displayName.trim(),
-                    "age" to age,
-                    "gender" to gender,
-                    "photoUrl" to "",
-                    "createdAt" to Date(),
-                    "lastActive" to Date()
+                // 3. Salvar dados adicionais no Firestore — inclui o "profile" aninhado
+                // (fullName/age/gender) para que ProfileEditViewModel.loadCurrentUser()
+                // encontre os dados do cadastro em vez de valores padrão em branco.
+                val now = Date()
+                val newUser = User(
+                    id = firebaseUser.uid,
+                    email = email.trim(),
+                    displayName = displayName.trim(),
+                    photoUrl = "",
+                    profile = UserProfile(
+                        fullName = displayName.trim(),
+                        age = age,
+                        gender = mapGenderLabelToEnum(gender)
+                    ).withCompletionStatus(),
+                    createdAt = now,
+                    lastActive = now
                 )
                 firestore.collection("users")
                     .document(firebaseUser.uid)
-                    .set(userData)
+                    .set(newUser)
                     .await()
 
                 _uiState.value = RegisterUiState.Success(firebaseUser.uid)
@@ -99,6 +109,14 @@ class RegisterViewModel @Inject constructor() : ViewModel() {
                 _uiState.value = RegisterUiState.Error(mensagem)
             }
         }
+    }
+
+    /** Converte o rótulo em português escolhido na tela de cadastro para o enum do domínio. */
+    private fun mapGenderLabelToEnum(label: String): Gender = when (label) {
+        "Homem" -> Gender.MALE
+        "Mulher" -> Gender.FEMALE
+        "Não-binário" -> Gender.NON_BINARY
+        else -> Gender.NOT_SPECIFIED
     }
 
     /** Volta ao estado inicial para permitir nova tentativa */

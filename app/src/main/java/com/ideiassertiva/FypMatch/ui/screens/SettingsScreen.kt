@@ -517,16 +517,6 @@ fun SettingsScreen(
             item { SectionHeader(title = "Suporte") }
 
             item {
-                ListItem(
-                    headlineContent = { Text("Central de ajuda") },
-                    leadingContent = {
-                        Icon(Icons.Default.Help, contentDescription = null, tint = FypColors.Primary)
-                    },
-                    trailingContent = {
-                        Icon(Icons.Default.OpenInNew, contentDescription = null)
-                    },
-                    modifier = Modifier
-                )
                 // Abre o link da Central de ajuda
                 Card(
                     onClick = { uriHandler.openUri("https://fypmatch.com/help") },

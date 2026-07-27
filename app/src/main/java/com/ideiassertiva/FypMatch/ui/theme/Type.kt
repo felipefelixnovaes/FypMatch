@@ -4,27 +4,55 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
+import com.ideiassertiva.FypMatch.R
 
 /**
- * FypMatch Typography — Major Third Scale (1.25)
- * Baseado em impeccable.style — Nunca use Roboto como escolha primária
+ * Plus Jakarta Sans via Google Fonts Provider (async).
  *
- * TODO(custom-fonts): Outfit/Inter fonts currently use FontFamily.Default as a
- * placeholder. Two upgrade paths exist:
- *
- *   a) Bump Compose BOM to 2024.09.00+ and use the GoogleFont/FontProvider API
- *      (Font(googleFont = GoogleFont("Outfit"), fontProvider = ...)).
- *      This requires Android 8.0+ (Oreo) for Downloadable Fonts.
- *
- *   b) Add .ttf files to res/font/ and reference them via resource ID:
- *      Font(R.font.outfit_bold, weight = FontWeight.Bold).
- *      This works on all API levels and does not require a BOM bump.
+ * Usa a API assincrona (androidx.compose.ui.text.googlefonts) em vez do
+ * Font(R.font.*) direto: dispositivos sem Google Play Services/Play Store
+ * (ou sem rede na primeira carga) lancavam Resources.NotFoundException e
+ * derrubavam o app inteiro na primeira tela, ja que TODA a Typography
+ * dependia dessa unica fonte. A API async cai para a fonte padrao do
+ * sistema em vez de lancar excecao quando o provider nao esta disponivel.
  */
+private val googleFontProvider = GoogleFont.Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs
+)
 
-private val DisplayFont = FontFamily.Default
+private val plusJakartaSansGoogleFont = GoogleFont("Plus Jakarta Sans")
 
-private val BodyFont = FontFamily.Default
+private val PlusJakartaSans = FontFamily(
+    Font(
+        googleFont = plusJakartaSansGoogleFont,
+        fontProvider = googleFontProvider,
+        weight = FontWeight.Normal
+    ),
+    Font(
+        googleFont = plusJakartaSansGoogleFont,
+        fontProvider = googleFontProvider,
+        weight = FontWeight.Medium
+    ),
+    Font(
+        googleFont = plusJakartaSansGoogleFont,
+        fontProvider = googleFontProvider,
+        weight = FontWeight.SemiBold
+    ),
+    Font(
+        googleFont = plusJakartaSansGoogleFont,
+        fontProvider = googleFontProvider,
+        weight = FontWeight.Bold
+    )
+)
+
+private val DisplayFont = PlusJakartaSans
+
+private val BodyFont = PlusJakartaSans
 
 val FypTypography = Typography(
     // Hero / Display

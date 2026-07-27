@@ -126,12 +126,22 @@ Frames pulados nessa magnitude (300-440 frames ≈ 5-7 segundos de bloqueio) tor
 
 **Impacto:** se isso acontecer com um usuário real completando o perfil (que é obrigatório para aparecer na Descoberta — ver seção "Perfil completo" abaixo), ele fica preso na tela sem conseguir salvar, sem entender o motivo, e pode sair do app frustrado.
 
-**Não investiguei a causa exata** (não tive tempo de fazer profiling/CPU trace nesta sessão), mas as pistas mais prováveis para a próxima investigação:
-- Recomposições excessivas disparadas pelos `DropdownMenuField` de Gênero/Orientação/Intenção (os três juntos, cada um com `remember { mutableStateOf(false) }` próprio — conferir se algo força recomposição do formulário inteiro a cada mudança de estado)
-- Alguma leitura/gravação síncrona no Firestore ou no `SharedPreferences` disparada a cada seleção de dropdown, rodando na main thread
-- Vazamento de `LaunchedEffect`/coroutine acumulando trabalho a cada abertura de dropdown
+### Causa raiz encontrada (revisão de código, sem profiler)
 
-**Recomendação:** rodar profiler (Android Studio Profiler / `systrace`) especificamente na tela `ProfileEditScreen` interagindo repetidamente com os três dropdowns, antes de tentar corrigir às cegas.
+Depois de reportar isso como "não investigado", voltei ao código e encontrei uma causa raiz plausível e bem fundamentada, sem precisar de profiler:
+
+1. **Estado "objeto-deus" no topo da tela.** `ProfileEditScreen` mantém um único `var user by remember { mutableStateOf(...) }` para o `User` inteiro (perfil, fotos, interesses, preferências — 20+ campos) e passa esse objeto inteiro para **todas** as seções (`PhotoSection`, `BasicInfoSection`, `AboutMeSection`, `InterestsSection`, `PersonalInfoEditSection`, `CulturalPreferencesEditSection`). Qualquer alteração — uma letra digitada na bio, uma seleção de dropdown — dispara `user = user.copy(...)`, recompondo a árvore inteira.
+2. **Toolchain sem "strong skipping mode".** O projeto usa Kotlin 1.8.10/1.9.22 com o compilador Compose antigo (`kotlinCompilerExtensionVersion = "1.5.9"`, configurado via `composeOptions`, não via o plugin novo `org.jetbrains.kotlin.plugin.compose`). O *strong skipping mode* — que veio para resolver exatamente esse tipo de recomposição em cascata — só existe a partir do Compose Compiler 2.0.0 (Kotlin 2.0+). Nesta versão do toolchain, campos do tipo `List<String>` (interesses, fotos, filmes favoritos etc.) são tratados como **instáveis** pelo compilador, então nem o `User`/`UserProfile` como um todo é elegível para "pular" recomposição — mesmo que o conteúdo não tenha mudado.
+3. **`InterestsSection` é a seção mais cara:** ~63 `FilterChip` (7 categorias × 6-11 opções cada, ver `InterestCatalog.kt`) recompõem **inteiramente a cada tecla digitada em qualquer campo da tela**, não só quando o usuário mexe em interesses.
+
+Juntando os três pontos: qualquer interação rápida (como os toques automatizados que usei nos testes, mas também um usuário real digitando rápido ou tocando dropdowns em sequência) força dezenas de recomposições completas por segundo, sem chance de "pular" nada — exatamente o tipo de acúmulo que gera os `Skipped 338/441 frames` observados.
+
+**Por que não corrigi agora:** a correção correta e completa (separar o estado por seção, em vez de um objeto único hoisted no topo) é um refatoração de escopo real dentro de uma tela de ~930 linhas com muitos campos — arriscado fazer às cegas sem conseguir testar cada campo depois (e já gastei bastante tempo de sessão nos testes manuais). Prefiro documentar a causa raiz com precisão a arriscar uma mudança grande não verificada.
+
+**Recomendação concreta para a próxima sessão:**
+- Opção rápida e de baixo risco: extrair o estado de `InterestsSection` para fora do objeto `user` (ela não precisa do resto do perfil, só da lista de interesses) — reduz o maior custo de recomposição sem mexer no resto da tela.
+- Opção completa: dividir `user` em estados independentes por seção (idade, nome, cidade, interesses, etc.), montando o `User` final só no momento de salvar.
+- Opção de infraestrutura (maior escopo, afeta o app inteiro): migrar para Kotlin 2.0+ e o plugin novo do Compose Compiler para habilitar strong skipping mode por padrão — resolveria essa classe de problema em todas as telas do app, não só nesta, mas é uma mudança de toolchain que precisa de testes de regressão amplos.
 
 ---
 

@@ -36,6 +36,8 @@ import coil.request.ImageRequest
 import com.ideiassertiva.FypMatch.model.*
 import com.ideiassertiva.FypMatch.ui.components.LocationPickerField
 import com.ideiassertiva.FypMatch.ui.viewmodel.ProfileEditViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -173,7 +175,11 @@ fun ProfileEditScreen(
 
                 // Interesses
                 InterestsSection(
-                    interests = user.profile.interests,
+                    // ImmutableList torna InterestsSection "skippable": nesta versao do
+                    // Compose compiler (sem strong skipping mode), List<String> normal
+                    // forcaria recomposicao dos ~63 FilterChips a cada tecla digitada em
+                    // QUALQUER campo da tela, nao so em interesses.
+                    interests = user.profile.interests.toImmutableList(),
                     onInterestsChange = { newInterests ->
                         user = user.copy(
                             profile = user.profile.copy(interests = newInterests)
@@ -523,7 +529,7 @@ private fun AboutMeSection(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun InterestsSection(
-    interests: List<String>,
+    interests: ImmutableList<String>,
     onInterestsChange: (List<String>) -> Unit
 ) {
     Card(

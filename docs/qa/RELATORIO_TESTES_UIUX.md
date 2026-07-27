@@ -23,7 +23,7 @@ Nesta rodada de testes, o app foi instalado e executado de verdade (não apenas 
 | 4 | Contraste (texto invisível) no estado vazio da descoberta | Alto (acessibilidade) | ✅ Corrigido e verificado |
 | 5 | Perfil aparecia em branco após cadastro | Alto (UX crítica) | ✅ Corrigido e verificado |
 | 6 | "Central de ajuda" duplicada no menu | Baixo | ✅ Corrigido |
-| 7 | **Tela de Editar Perfil trava (main thread) após uso dos dropdowns** | **Alto (bloqueia conclusão de perfil)** | ⚠️ **Identificado, não corrigido** |
+| 7 | **Tela de Editar Perfil trava (main thread) após uso dos dropdowns** | **Alto (bloqueia conclusão de perfil)** | 🟡 **Causa raiz encontrada, mitigação parcial aplicada (~4x menos frames pulados), não eliminado** |
 | 8 | Tema visual não persiste entre reinícios do app | Médio | ⚠️ Identificado, não investigado |
 | 9 | Dropdowns de Gênero/Orientação exigem toque duplo pra abrir | Baixo/Médio | ⚠️ Identificado, não investigado |
 
@@ -142,6 +142,27 @@ Juntando os três pontos: qualquer interação rápida (como os toques automatiz
 - Opção rápida e de baixo risco: extrair o estado de `InterestsSection` para fora do objeto `user` (ela não precisa do resto do perfil, só da lista de interesses) — reduz o maior custo de recomposição sem mexer no resto da tela.
 - Opção completa: dividir `user` em estados independentes por seção (idade, nome, cidade, interesses, etc.), montando o `User` final só no momento de salvar.
 - Opção de infraestrutura (maior escopo, afeta o app inteiro): migrar para Kotlin 2.0+ e o plugin novo do Compose Compiler para habilitar strong skipping mode por padrão — resolveria essa classe de problema em todas as telas do app, não só nesta, mas é uma mudança de toolchain que precisa de testes de regressão amplos.
+
+### Mitigação aplicada e testada — melhora parcial confirmada
+
+Implementei a opção rápida: converti `interests` para `kotlinx.collections.immutable.ImmutableList<String>` (dependência `kotlinx-collections-immutable:0.3.7` adicionada) na chamada de `InterestsSection`, tornando a seção elegível para "pular" recomposição quando o conteúdo não muda, mesmo sem strong skipping mode habilitado no projeto.
+
+**Resultado do reteste** (mesmo procedimento: toques repetidos e rápidos nos dropdowns de Gênero/Orientação):
+
+| Métrica | Antes da correção | Depois da correção |
+|---|---|---|
+| Frames pulados (Choreographer) | 338 / 441 | 101 / 59 |
+| Botão "Salvar" volta a responder | Só após force-stop do app | Sim, mas com atraso perceptível |
+
+**Melhora real (~4x menos frames pulados), mas o problema não foi eliminado.** Observei via `adb logcat` que o app continua renderizando a uma taxa muito baixa mesmo sem interação:
+
+```
+EGL_emulation: app_time_stats: avg=500.10ms min=498.84ms max=501.35ms count=2
+```
+
+~500ms por frame (≈2 fps) é consistente com recomposição contínua acontecendo em algum lugar, não só disparada por interação — sugere que ainda existe uma segunda causa (possivelmente nas outras seções que também dependem do mesmo `user` monolítico: `BasicInfoSection`, `PersonalInfoEditSection` com seus 3 dropdowns, `CulturalPreferencesEditSection`) que não foi endereçada por esta correção pontual.
+
+**Conclusão:** a correção foi commitada por ser uma melhoria real e de baixo risco (menos frames pulados, sem regressão observada), mas **o bug #7 continua parcialmente aberto**. A correção completa (dividir o estado por seção, conforme a "opção completa" acima) ainda é necessária para eliminar o problema de vez.
 
 ---
 

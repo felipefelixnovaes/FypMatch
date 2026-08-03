@@ -52,10 +52,10 @@ class MainActivity : ComponentActivity() {
         pendingProfileUsername.value = extractProfileUsername(intent)
     }
 
-    // Deep link de perfil: https://fypmatch.web.app/u/{username} (App Links)
+    // Deep link de perfil: https://fypmatch-8ac3c.web.app/u/{username} (App Links)
     private fun extractProfileUsername(intent: Intent?): String? {
         val data = intent?.data ?: return null
-        if (data.host != "fypmatch.web.app") return null
+        if (data.host != "fypmatch-8ac3c.web.app") return null
         val segments = data.pathSegments
         if (segments.size != 2 || segments[0] != "u") return null
         return segments[1]

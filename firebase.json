@@ -4,5 +4,23 @@
   },
   "storage": {
     "rules": "firebase/storage.rules"
-  }
+  },
+  "hosting": [
+    {
+      "site": "fypmatch-8ac3c",
+      "public": "web-share/public",
+      "cleanUrls": true,
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ]
 }

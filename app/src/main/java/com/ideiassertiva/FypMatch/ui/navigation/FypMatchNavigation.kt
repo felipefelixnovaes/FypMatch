@@ -143,7 +143,7 @@ fun FypMatchNavigation(
     val startDestination =
         if (isOnboardingDismissed) postOnboardingStartDestination() else Screen.Onboarding.route
 
-    // Deep link de perfil compartilhado (https://fypmatch.web.app/u/{username}) — resolve
+    // Deep link de perfil compartilhado (https://fypmatch-8ac3c.web.app/u/{username}) — resolve
     // username -> userId e navega para a tela de detalhes assim que houver sessão ativa.
     LaunchedEffect(pendingProfileUsername, isOnboardingDismissed) {
         if (!pendingProfileUsername.isNullOrBlank() && getCurrentUserId().isNotBlank()) {

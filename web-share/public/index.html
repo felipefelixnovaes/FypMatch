@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>FypMatch</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: linear-gradient(135deg, #E91E63, #7C4DFF);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .wrap {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    p { opacity: 0.9; margin: 0 0 24px; }
+    a.btn {
+      display: inline-block;
+      background: #fff;
+      color: #E91E63;
+      font-weight: 600;
+      padding: 14px 28px;
+      border-radius: 999px;
+      text-decoration: none;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="spinner" id="spinner"></div>
+    <h1>Abrindo o FypMatch…</h1>
+    <p id="subtitle">Se o app não abrir, baixe na loja.</p>
+    <a class="btn" id="store-link" href="https://play.google.com/store/apps/details?id=com.ideiassertiva.FypMatch">
+      Baixar na Play Store
+    </a>
+  </div>
+
+  <script>
+    (function () {
+      // /u/{username} -> extrai o username do path
+      var match = window.location.pathname.match(/^\/u\/([^\/]+)\/?$/);
+      var username = match ? decodeURIComponent(match[1]) : null;
+
+      var storeUrl = "https://play.google.com/store/apps/details?id=com.ideiassertiva.FypMatch";
+      var storeLink = document.getElementById("store-link");
+      storeLink.href = storeUrl;
+
+      if (!username) {
+        document.getElementById("subtitle").textContent = "Baixe o FypMatch e conheça pessoas incríveis.";
+        document.getElementById("spinner").style.display = "none";
+        return;
+      }
+
+      var deepLink = "fypmatch://profile?username=" + encodeURIComponent(username);
+
+      // Tenta abrir o app via custom scheme. Se a aba continuar visível após o timeout,
+      // assume que o app não está instalado e mostra o fallback pra loja.
+      var fallbackTimer = setTimeout(function () {
+        document.getElementById("subtitle").textContent =
+          "Não conseguimos abrir o app automaticamente — baixe abaixo pra ver o perfil.";
+        document.getElementById("spinner").style.display = "none";
+      }, 1800);
+
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden) {
+          clearTimeout(fallbackTimer);
+        }
+      });
+
+      window.location.href = deepLink;
+    })();
+  </script>
+</body>
+</html>

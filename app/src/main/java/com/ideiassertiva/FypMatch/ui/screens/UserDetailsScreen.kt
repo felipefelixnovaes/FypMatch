@@ -911,7 +911,7 @@ private fun InfoChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text
 }
 
 private fun shareProfile(context: android.content.Context, username: String) {
-    val url = "https://fypmatch.web.app/u/$username"
+    val url = "https://fypmatch-8ac3c.web.app/u/$username"
     val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(android.content.Intent.EXTRA_TEXT, "Vem me conhecer no FypMatch! $url")

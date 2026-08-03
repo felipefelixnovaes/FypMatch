@@ -37,14 +37,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- App Links: https://fypmatch.web.app/u/{username} — abre o perfil compartilhado -->
+            <!-- App Links: https://fypmatch-8ac3c.web.app/u/{username} — abre o perfil compartilhado -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="fypmatch.web.app"
+                    android:host="fypmatch-8ac3c.web.app"
                     android:pathPrefix="/u/" />
             </intent-filter>
         </activity>

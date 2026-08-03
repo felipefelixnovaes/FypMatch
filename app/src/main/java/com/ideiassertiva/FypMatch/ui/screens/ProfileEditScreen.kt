@@ -92,6 +92,13 @@ fun ProfileEditScreen(
                     }
                 },
                 actions = {
+                    val username = user.username
+                    if (!username.isNullOrBlank()) {
+                        val context = LocalContext.current
+                        IconButton(onClick = { shareOwnProfile(context, username) }) {
+                            Icon(Icons.Default.Share, contentDescription = "Compartilhar meu perfil")
+                        }
+                    }
                     if (uiState.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp).padding(end = 16.dp)
@@ -1015,4 +1022,13 @@ private fun DropdownMenuField(
             }
         }
     }
+}
+
+private fun shareOwnProfile(context: android.content.Context, username: String) {
+    val url = "https://fypmatch-8ac3c.web.app/u/$username"
+    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(android.content.Intent.EXTRA_TEXT, "Esse é o meu perfil no FypMatch! $url")
+    }
+    context.startActivity(android.content.Intent.createChooser(intent, "Compartilhar meu perfil via"))
 }

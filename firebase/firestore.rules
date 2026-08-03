@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Funcoes auxiliares
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -10,10 +9,27 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
+
+    function staffRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accessLevel;
+    }
     
     function isAdmin() {
       return isAuthenticated() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN';
+        (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN' ||
+          staffRole() == 'ADMIN'
+        );
+    }
+
+    function isStaff() {
+      return isAuthenticated() &&
+        staffRole() in ['ADMIN', 'MODERATOR', 'SUPPORT'];
+    }
+
+    function isModeratorOrAdmin() {
+      return isAuthenticated() &&
+        staffRole() in ['ADMIN', 'MODERATOR'];
     }
 
     function isParticipant(data) {
@@ -21,15 +37,89 @@ service cloud.firestore {
         data.keys().hasAny(['participantIds']) &&
         request.auth.uid in data.participantIds;
     }
+
+    function ownerCanWriteVerification() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verification']) ||
+        !request.resource.data.keys().hasAny(['verification']) ||
+        (
+          request.resource.data.verification.photoStatus in
+            ['NOT_STARTED', 'PENDING_REVIEW', 'REJECTED', 'EXPIRED']
+        );
+    }
+
+    function clientCannotWriteSensitiveFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'verification', 'betaFlags', 'accessLevel', 'subscription', 'aiCredits', 'wallet', 'isActive'
+      ]);
+    }
+
+    function requestWalletHasNoPaidBalance() {
+      return !request.resource.data.keys().hasAny(['wallet']) ||
+        (
+          (!request.resource.data.wallet.keys().hasAny(['purchasedAiCredits']) ||
+            request.resource.data.wallet.purchasedAiCredits == 0) &&
+          (!request.resource.data.wallet.keys().hasAny(['superLikes']) ||
+            request.resource.data.wallet.superLikes == 0) &&
+          (!request.resource.data.wallet.keys().hasAny(['profileBoosts']) ||
+            request.resource.data.wallet.profileBoosts == 0) &&
+          (!request.resource.data.wallet.keys().hasAny(['superBoosts']) ||
+            request.resource.data.wallet.superBoosts == 0)
+        );
+    }
+
+    function ownerWalletWriteSafe() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet']) ||
+        (
+          !resource.data.keys().hasAny(['wallet']) &&
+          requestWalletHasNoPaidBalance()
+        ) ||
+        (
+          resource.data.keys().hasAny(['wallet']) &&
+          request.resource.data.wallet == resource.data.wallet
+        );
+    }
+
+    function ownerCanUpdateUser(userId) {
+      return isOwner(userId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'accessLevel']) &&
+        ownerWalletWriteSafe() &&
+        ownerCanWriteVerification() &&
+        ownerCannotReactivateDeletionRequest();
+    }
+
+    function ownerCannotReactivateDeletionRequest() {
+      return !resource.data.keys().hasAny(['accountStatus']) ||
+        resource.data.accountStatus != 'DELETION_REQUESTED' ||
+        (
+          request.resource.data.accountStatus == 'DELETION_REQUESTED' &&
+          request.resource.data.isActive == false
+        );
+    }
+
+    function ownerCanCreateUser(userId) {
+      return isOwner(userId) &&
+        (
+          !request.resource.data.keys().hasAny(['verification']) ||
+          request.resource.data.verification.photoStatus != 'PHOTO_VERIFIED'
+        ) &&
+        (
+          !request.resource.data.keys().hasAny(['role']) ||
+          request.resource.data.role != 'ADMIN'
+        ) &&
+        (
+          !request.resource.data.keys().hasAny(['accessLevel']) ||
+          request.resource.data.accessLevel != 'ADMIN'
+        ) &&
+        requestWalletHasNoPaidBalance();
+    }
     
-    // Users collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && ownerCanCreateUser(userId);
+      allow update: if ownerCanUpdateUser(userId) ||
+        (isAdmin() && clientCannotWriteSensitiveFields());
       allow delete: if isOwner(userId) || isAdmin();
       
-      // Subcolecoes
       match /blocked/{blockedUserId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId);
@@ -39,23 +129,77 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId);
       }
+
+      // "Quem viu meu perfil" — só o dono do perfil lê a lista de visualizações,
+      // e cada usuário só pode registrar a própria visita (nunca em nome de outro).
+      match /viewers/{viewerId} {
+        allow read: if isOwner(userId);
+        allow create: if isAuthenticated() && request.auth.uid == viewerId;
+        allow update, delete: if false;
+      }
+    }
+
+    // Registro de unicidade de usernames públicos (link de compartilhamento de perfil).
+    // Documento id = username normalizado; só o dono pode criar/atualizar/remover o seu.
+    match /usernames/{username} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /questionnaires/{userId} {
+      allow read, create, update, delete: if isOwner(userId) || isStaff();
+    }
+
+    match /deepQuestionnaires/{userId} {
+      allow read, create, update, delete: if isOwner(userId) || isStaff();
+    }
+
+    match /selfKnowledge/{userId} {
+      allow read, create, update, delete: if isOwner(userId) || isStaff();
+    }
+
+    match /connectionMaps/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId) &&
+        request.resource.data.userId == userId;
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    match /counselorSessions/{userId} {
+      allow read, create, update, delete: if isOwner(userId);
+    }
+
+    match /availability/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isOwner(userId);
+    }
+
+    match /lifeValues/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isOwner(userId);
+    }
+
+    match /neuroProfiles/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isOwner(userId);
     }
     
-    // Waitlist collection
     match /waitlist/{entryId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isOwner(resource.data.userId) || isAdmin();
     }
 
-    // Likes collection
     match /likes/{userId} {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated() && isOwner(userId);
       allow delete: if isOwner(userId) || isAdmin();
     }
     
-    // Matches collection
     match /matches/{matchId} {
       allow read: if isAuthenticated() && 
         (resource.data.user1Id == request.auth.uid || resource.data.user2Id == request.auth.uid);
@@ -66,7 +210,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // Messages collection
     match /messages/{messageId} {
       allow read: if isParticipant(resource.data) ||
         (isAuthenticated() &&
@@ -79,30 +222,74 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
     
-    // Reports collection
     match /reports/{reportId} {
       allow read: if isAuthenticated() && 
-        (resource.data.reporterUserId == request.auth.uid || isAdmin());
+        (resource.data.reporterUserId == request.auth.uid || isStaff());
       allow create: if isAuthenticated() && 
         request.resource.data.reporterUserId == request.auth.uid;
-      allow update: if isAdmin();
+      allow update: if isModeratorOrAdmin();
+    }
+
+    match /accountDeletionRequests/{requestId} {
+      allow create: if isAuthenticated() &&
+        requestId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status in ['REQUESTED', 'PENDING'];
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isStaff());
+      allow update: if isStaff() ||
+        (
+          isAuthenticated() &&
+          resource.data.userId == request.auth.uid &&
+          request.resource.data.userId == resource.data.userId &&
+          request.resource.data.status in ['REQUESTED', 'PENDING']
+        );
+      allow delete: if isAdmin();
     }
     
-    // Subscriptions collection
     match /subscriptions/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isOwner(userId) || isStaff();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) || isAdmin();
     }
+
+    match /storeProducts/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /purchases/{purchaseId} {
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isStaff());
+      allow create, update, delete: if false;
+    }
+
+    match /userWallets/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow write: if false;
+    }
+
+    match /photoVerificationRequests/{requestId} {
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'PENDING_REVIEW' &&
+        request.resource.data.provider == 'MANUAL';
+      allow read: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isStaff());
+      allow update, delete: if false;
+    }
+
+    match /adminAuditLog/{logId} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
     
-    // Conversations collection
     match /conversations/{conversationId} {
       allow read: if isParticipant(resource.data);
       allow create: if isParticipant(request.resource.data);
       allow update: if isParticipant(resource.data);
     }
 
-    // Live Connections collection
     match /liveConnections/{connectionId} {
       allow read: if isAuthenticated() &&
         (request.auth.uid == resource.data.user1Id || request.auth.uid == resource.data.user2Id);
@@ -122,7 +309,6 @@ service cloud.firestore {
       }
     }
     
-    // Regra padrao: negar tudo que nao foi explicitamente permitido
     match /{document=**} {
       allow read, write: if false;
     }

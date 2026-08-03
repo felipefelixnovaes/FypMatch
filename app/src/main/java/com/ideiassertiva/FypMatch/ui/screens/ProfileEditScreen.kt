@@ -55,6 +55,7 @@ fun ProfileEditScreen(
             uiState.user ?: User()
         )
     }
+    val isAdultProfile = user.profile.age >= 18
 
     var showDeletePhotoDialog by remember { mutableStateOf<Int?>(null) }
 
@@ -97,6 +98,7 @@ fun ProfileEditScreen(
                         )
                     } else {
                         TextButton(
+                            enabled = isAdultProfile,
                             onClick = {
                                 viewModel.saveUser(user)
                             }
@@ -138,6 +140,21 @@ fun ProfileEditScreen(
                     }
                 }
 
+                if (!isAdultProfile) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    ) {
+                        Text(
+                            text = "O FypMatch é exclusivo para maiores de 18 anos. Ajuste a idade para salvar o perfil.",
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
                 // Seção de fotos
                 PhotoSection(
                     photos = user.profile.photos,
@@ -154,7 +171,12 @@ fun ProfileEditScreen(
                 // Informações básicas
                 BasicInfoSection(
                     user = user,
-                    onUserUpdate = { updatedUser -> user = updatedUser }
+                    onUserUpdate = { updatedUser -> user = updatedUser },
+                    isSavingUsername = uiState.isSavingUsername,
+                    usernameError = uiState.usernameError,
+                    usernameSavedSuccessfully = uiState.usernameSavedSuccessfully,
+                    onClaimUsername = { input -> viewModel.claimUsername(input) },
+                    onDismissUsernameStatus = { viewModel.clearUsernameStatus() }
                 )
 
                 // Sobre mim
@@ -376,7 +398,12 @@ private fun PhotoSection(
 @Composable
 private fun BasicInfoSection(
     user: User,
-    onUserUpdate: (User) -> Unit
+    onUserUpdate: (User) -> Unit,
+    isSavingUsername: Boolean,
+    usernameError: String?,
+    usernameSavedSuccessfully: Boolean,
+    onClaimUsername: (String) -> Unit,
+    onDismissUsernameStatus: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -407,6 +434,15 @@ private fun BasicInfoSection(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            UsernameField(
+                currentUsername = user.username,
+                isSaving = isSavingUsername,
+                error = usernameError,
+                savedSuccessfully = usernameSavedSuccessfully,
+                onClaim = onClaimUsername,
+                onDismissStatus = onDismissUsernameStatus
+            )
+
             OutlinedTextField(
                 value = user.profile.age.toString(),
                 onValueChange = { newAge ->
@@ -418,6 +454,12 @@ private fun BasicInfoSection(
                     )
                 },
                 label = { Text("Idade") },
+                isError = user.profile.age < 18,
+                supportingText = {
+                    if (user.profile.age < 18) {
+                        Text("A idade mínima para usar o FypMatch é 18 anos.")
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -432,6 +474,35 @@ private fun BasicInfoSection(
                     )
                 },
                 label = { Text("Profissão") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            DropdownMenuField(
+                label = "Grau de instrução",
+                value = user.profile.educationLevel.getDisplayName(),
+                options = EducationLevel.values().map { it.getDisplayName() },
+                onSelectionChange = { selectedDisplayName ->
+                    val selected = EducationLevel.values().find {
+                        it.getDisplayName() == selectedDisplayName
+                    } ?: EducationLevel.NOT_SPECIFIED
+                    onUserUpdate(
+                        user.copy(
+                            profile = user.profile.copy(educationLevel = selected)
+                        )
+                    )
+                }
+            )
+
+            OutlinedTextField(
+                value = user.profile.education,
+                onValueChange = { newEducation ->
+                    onUserUpdate(
+                        user.copy(
+                            profile = user.profile.copy(education = newEducation)
+                        )
+                    )
+                },
+                label = { Text("Formação/curso (opcional)") },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -462,6 +533,121 @@ private fun BasicInfoSection(
                 label = "Cidade",
                 supportingText = "Digite e escolha na lista ou use sua localização atual."
             )
+
+            DropdownMenuField(
+                label = "Gênero",
+                value = user.profile.gender.getDisplayName(),
+                options = Gender.values()
+                    .filter { it != Gender.NOT_SPECIFIED }
+                    .map { it.getDisplayName() },
+                onSelectionChange = { selectedDisplayName ->
+                    val selected = Gender.values().find {
+                        it.getDisplayName() == selectedDisplayName
+                    } ?: Gender.NOT_SPECIFIED
+                    onUserUpdate(
+                        user.copy(
+                            profile = user.profile.copy(gender = selected)
+                        )
+                    )
+                }
+            )
+
+            DropdownMenuField(
+                label = "Orientação",
+                value = user.profile.orientation.getDisplayName(),
+                options = Orientation.values()
+                    .filter { it != Orientation.NOT_SPECIFIED }
+                    .map { it.getDisplayName() },
+                onSelectionChange = { selectedDisplayName ->
+                    val selected = Orientation.values().find {
+                        it.getDisplayName() == selectedDisplayName
+                    } ?: Orientation.NOT_SPECIFIED
+                    onUserUpdate(
+                        user.copy(
+                            profile = user.profile.copy(orientation = selected)
+                        )
+                    )
+                }
+            )
+
+            DropdownMenuField(
+                label = "O que você busca?",
+                value = user.profile.intention.getDisplayName(),
+                options = Intention.values()
+                    .filter { it != Intention.NOT_SPECIFIED }
+                    .map { it.getDisplayName() },
+                onSelectionChange = { selectedDisplayName ->
+                    val selected = Intention.values().find {
+                        it.getDisplayName() == selectedDisplayName
+                    } ?: Intention.NOT_SPECIFIED
+                    onUserUpdate(
+                        user.copy(
+                            profile = user.profile.copy(intention = selected)
+                        )
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun UsernameField(
+    currentUsername: String?,
+    isSaving: Boolean,
+    error: String?,
+    savedSuccessfully: Boolean,
+    onClaim: (String) -> Unit,
+    onDismissStatus: () -> Unit
+) {
+    var input by remember(currentUsername) { mutableStateOf(currentUsername.orEmpty()) }
+
+    Column {
+        OutlinedTextField(
+            value = input,
+            onValueChange = {
+                input = it.lowercase().filter { c -> c.isLetterOrDigit() || c == '_' }
+                onDismissStatus()
+            },
+            label = { Text("Nome de usuário") },
+            placeholder = { Text("seuusername") },
+            leadingIcon = { Text("@", modifier = Modifier.padding(start = 12.dp)) },
+            supportingText = {
+                Text("3–20 caracteres: letras minúsculas, números ou _. Usado no link do seu perfil.")
+            },
+            isError = error != null,
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        error?.let {
+            Text(
+                text = it,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        if (savedSuccessfully) {
+            Text(
+                text = "Username salvo!",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { onClaim(input) },
+            enabled = !isSaving && input.isNotBlank() && input != currentUsername.orEmpty(),
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            if (isSaving) {
+                CircularProgressIndicator(modifier = Modifier.height(16.dp), strokeWidth = 2.dp)
+            } else {
+                Text("Salvar username")
+            }
         }
     }
 }

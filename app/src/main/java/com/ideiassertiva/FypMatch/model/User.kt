@@ -9,6 +9,7 @@ data class User(
     val id: String = "",
     val email: String = "",
     val displayName: String = "",
+    val username: String? = null,
     val photoUrl: String = "",
     val profile: UserProfile = UserProfile(),
     val preferences: UserPreferences = UserPreferences(),
@@ -20,7 +21,9 @@ data class User(
     val isActive: Boolean = true,
     val waitlistData: WaitlistUser? = null,
     val aiCredits: AiCredits = AiCredits(),
-    val complementaryProfile: ComplementaryProfile = ComplementaryProfile()
+    val wallet: StoreWallet = StoreWallet(),
+    val complementaryProfile: ComplementaryProfile = ComplementaryProfile(),
+    val verification: UserVerification = UserVerification()
 )
 
 @IgnoreExtraProperties
@@ -36,6 +39,7 @@ data class UserProfile(
     val intention: Intention = Intention.NOT_SPECIFIED,
     val interests: List<String> = emptyList(),
     val education: String = "",
+    val educationLevel: EducationLevel = EducationLevel.NOT_SPECIFIED,
     val profession: String = "",
     val height: Int = 0, // em cm
     
@@ -68,6 +72,7 @@ data class UserProfile(
     val isProfileComplete: Boolean = false
 )
 
+@IgnoreExtraProperties
 data class Location(
     val city: String = "",
     val state: String = "",
@@ -172,6 +177,19 @@ enum class Religion {
     NOT_SPECIFIED
 }
 
+enum class EducationLevel {
+    HIGH_SCHOOL,              // Ensino médio
+    TECHNICAL,                // Técnico
+    UNDERGRADUATE_IN_PROGRESS,// Superior cursando
+    UNDERGRADUATE,            // Superior completo
+    POSTGRADUATE,             // Pós-graduação
+    MASTER,                   // Mestrado
+    DOCTORATE,                // Doutorado
+    OTHER,
+    PREFER_NOT_TO_SAY,
+    NOT_SPECIFIED
+}
+
 enum class PetPreference {
     LOVE_PETS,       // Amo animais
     LIKE_PETS,       // Gosto de animais
@@ -199,6 +217,7 @@ data class UserPreferences(
     val hasChildrenPreference: List<ChildrenStatus> = emptyList(),
     val wantsChildrenPreference: List<ChildrenStatus> = emptyList(),
     val religionPreference: List<Religion> = emptyList(),
+    val educationLevelPreference: List<EducationLevel> = emptyList(),
     val travelModeEnabled: Boolean = false,
     val searchLocation: Location = Location()
 ) {
@@ -220,6 +239,7 @@ enum class AccessLevel {
     ADMIN           // Acesso administrativo
 }
 
+@IgnoreExtraProperties
 data class BetaFlags(
     val hasEarlyAccess: Boolean = false,
     val canAccessSwipe: Boolean = false,
@@ -229,6 +249,7 @@ data class BetaFlags(
     val isTestUser: Boolean = false
 )
 
+@IgnoreExtraProperties
 data class AiCredits(
     val current: Int = 0,
     val dailyLimit: Int = 0,
@@ -240,7 +261,7 @@ data class AiCredits(
 
 // Créditos por tipo de assinatura
 object AiCreditLimits {
-    const val FREE_DAILY = 0           // Usuários gratuitos não têm créditos diários
+    const val FREE_DAILY = 3           // Beta: creditos diarios gratis para testar o conselheiro
     const val PREMIUM_DAILY = 10       // Premium: 10 créditos por dia
     const val VIP_DAILY = 25           // VIP: 25 créditos por dia
     
@@ -256,9 +277,10 @@ fun User.isProfileComplete(): Boolean {
 }
 
 fun UserProfile.hasRequiredProfileFields(): Boolean {
+    val narrative = bio.ifBlank { aboutMe }
     return fullName.isNotBlank() &&
             age >= 18 &&
-            bio.isNotBlank() &&
+            narrative.isNotBlank() &&
             location.city.isNotBlank() &&
             gender != Gender.NOT_SPECIFIED &&
             orientation != Orientation.NOT_SPECIFIED &&
@@ -380,6 +402,21 @@ fun Religion.getDisplayName(): String {
         Religion.OTHER -> "Outra"
         Religion.PREFER_NOT_TO_SAY -> "Prefiro não dizer"
         Religion.NOT_SPECIFIED -> "Não informado"
+    }
+}
+
+fun EducationLevel.getDisplayName(): String {
+    return when (this) {
+        EducationLevel.HIGH_SCHOOL -> "Ensino médio"
+        EducationLevel.TECHNICAL -> "Técnico"
+        EducationLevel.UNDERGRADUATE_IN_PROGRESS -> "Superior cursando"
+        EducationLevel.UNDERGRADUATE -> "Superior completo"
+        EducationLevel.POSTGRADUATE -> "Pós-graduação"
+        EducationLevel.MASTER -> "Mestrado"
+        EducationLevel.DOCTORATE -> "Doutorado"
+        EducationLevel.OTHER -> "Outro"
+        EducationLevel.PREFER_NOT_TO_SAY -> "Prefiro não dizer"
+        EducationLevel.NOT_SPECIFIED -> "Não informado"
     }
 }
 

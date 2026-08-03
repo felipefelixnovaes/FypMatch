@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,11 +24,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.ideiassertiva.FypMatch.domain.QuestionnaireCopy
 import com.ideiassertiva.FypMatch.ui.components.PremiumBadge
 import com.ideiassertiva.FypMatch.ui.components.PremiumTier
 import com.ideiassertiva.FypMatch.ui.components.SectionHeader
 import com.ideiassertiva.FypMatch.ui.components.UserAvatar
 import com.ideiassertiva.FypMatch.ui.theme.FypColors
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ideiassertiva.FypMatch.ui.theme.AppThemeMode
+import com.ideiassertiva.FypMatch.ui.viewmodel.ThemeViewModel
 import com.ideiassertiva.FypMatch.ui.viewmodel.SettingsViewModel
 
 /**
@@ -39,23 +44,33 @@ import com.ideiassertiva.FypMatch.ui.viewmodel.SettingsViewModel
 @Composable
 fun SettingsScreen(
     onNavigateToPremium: () -> Unit,
+    onNavigateToStore: () -> Unit = {},
     onNavigateBack: () -> Unit,
     onNavigateToLogin: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToFilters: () -> Unit = {},
     onNavigateToSelfKnowledge: () -> Unit = {},
+    onNavigateToConnectionMap: () -> Unit = {},
     onNavigateToQuickMode: () -> Unit = {},
     onNavigateToDeepMode: () -> Unit = {},
     onNavigateToAffiliate: () -> Unit = {},
     onNavigateToAds: () -> Unit = {},
     onNavigateToNeuroProfile: () -> Unit = {},
     onNavigateToComplementaryProfile: () -> Unit = {},
-    viewModel: SettingsViewModel = hiltViewModel()
+    onNavigateToPhotoVerification: () -> Unit = {},
+    onNavigateToAvailability: () -> Unit = {},
+    onNavigateToLifeValues: () -> Unit = {},
+    onNavigateToAppGuide: () -> Unit = {},
+    onNavigateToSafetyCenter: () -> Unit = {},
+    onNavigateToProfileViewers: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel(),
+    themeViewModel: ThemeViewModel = hiltViewModel()
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
 
     // ─── Estado das preferências (SharedPreferences via remember + side-effect) ──
     val prefs = remember {
@@ -161,8 +176,9 @@ fun SettingsScreen(
                         onClick = {
                             deleteError = null
                             viewModel.deleteAccount(
-                                onComplete = {
+                                onComplete = { message ->
                                     mostrarDialogExcluir = false
+                                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                                     onNavigateToLogin()
                                 },
                                 onError = { err ->
@@ -187,6 +203,8 @@ fun SettingsScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
         topBar = {
             TopAppBar(
                 title = { Text("Configurações", fontWeight = FontWeight.SemiBold) },
@@ -199,7 +217,10 @@ fun SettingsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         }
@@ -208,6 +229,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -217,7 +239,7 @@ fun SettingsScreen(
             // ═══════════════════════════════════════════════════════════════
             item {
                 Spacer(modifier = Modifier.height(16.dp))
-                SectionHeader(title = "Conta")
+                SectionHeader(title = "Conta", color = FypColors.ValuesAccent)
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -227,8 +249,11 @@ fun SettingsScreen(
                     onClick = onNavigateToProfile,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -240,12 +265,13 @@ fun SettingsScreen(
                             Text(
                                 text = currentUser?.displayName ?: "Marina Alves",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Editar perfil e localização",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = FypColors.Primary
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Icon(
@@ -264,6 +290,16 @@ fun SettingsScreen(
                     subtitle = "Idade, distância, cidade, modo viagem e preferências",
                     tint = FypColors.Primary,
                     onClick = onNavigateToFilters
+                )
+            }
+
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.VerifiedUser,
+                    title = "Verificação de foto",
+                    subtitle = "Selfie real com revisão manual para selo de confiança",
+                    tint = FypColors.Success,
+                    onClick = onNavigateToPhotoVerification
                 )
             }
 
@@ -311,17 +347,53 @@ fun SettingsScreen(
             item { Spacer(modifier = Modifier.height(12.dp)) }
 
             // ═══════════════════════════════════════════════════════════════
-            // SEÇÃO: DESCOBERTAS & AUTOCONHECIMENTO
+            // SEÇÃO: SEU MAPA FYPMATCH
             // ═══════════════════════════════════════════════════════════════
-            item { SectionHeader(title = "Descobertas & Autoconhecimento") }
+            item { SectionHeader(title = QuestionnaireCopy.SETTINGS_MAP_SECTION, color = FypColors.ValuesAccent) }
 
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.EventAvailable,
+                    title = QuestionnaireCopy.AVAILABILITY_TITLE,
+                    subtitle = QuestionnaireCopy.AVAILABILITY_SUBTITLE,
+                    tint = FypColors.Success,
+                    onClick = onNavigateToAvailability
+                )
+            }
             item {
                 SettingsNavRow(
                     icon = Icons.Default.Psychology,
                     title = "Autoconhecimento",
-                    subtitle = "Eneagrama, Linguagens do Amor e Arquétipos",
+                    subtitle = "Eneagrama, Linguagens do Cuidado e Arquétipos",
                     tint = FypColors.Secondary,
                     onClick = onNavigateToSelfKnowledge
+                )
+            }
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Visibility,
+                    title = "Quem viu meu perfil",
+                    subtitle = "Veja quem visitou seu perfil recentemente",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToProfileViewers
+                )
+            }
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Star,
+                    title = QuestionnaireCopy.LIFE_VALUES_HUB_TITLE,
+                    subtitle = QuestionnaireCopy.LIFE_VALUES_HUB_SUBTITLE,
+                    tint = FypColors.ValuesAccent,
+                    onClick = onNavigateToLifeValues
+                )
+            }
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.Insights,
+                    title = "Seu Mapa de Conexão",
+                    subtitle = "Eixos relacionais gerados pelos seus questionários",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToConnectionMap
                 )
             }
             item {
@@ -345,8 +417,8 @@ fun SettingsScreen(
             item {
                 SettingsNavRow(
                     icon = Icons.Default.Favorite,
-                    title = "Perfil de neurodiversidade",
-                    subtitle = "Personalize sua experiência",
+                    title = "Comunicação e bem-estar",
+                    subtitle = "Preferências de comunicação e neurodiversidade",
                     tint = FypColors.Secondary,
                     onClick = onNavigateToNeuroProfile
                 )
@@ -366,7 +438,17 @@ fun SettingsScreen(
             // ═══════════════════════════════════════════════════════════════
             // SEÇÃO: CRÉDITOS & AFILIADOS
             // ═══════════════════════════════════════════════════════════════
-            item { SectionHeader(title = "Créditos & Afiliados") }
+            item { SectionHeader(title = "Créditos & Afiliados", color = FypColors.ValuesAccent) }
+
+            item {
+                SettingsNavRow(
+                    icon = Icons.Default.ShoppingCart,
+                    title = "Loja",
+                    subtitle = "Créditos IA, supercurtidas e impulsionamento",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToStore
+                )
+            }
 
             item {
                 SettingsNavRow(
@@ -390,9 +472,24 @@ fun SettingsScreen(
             item { Divider(modifier = Modifier.padding(vertical = 8.dp)) }
 
             // ═══════════════════════════════════════════════════════════════
+            // SEÇÃO: APARÊNCIA
+            // ═══════════════════════════════════════════════════════════════
+            item { SectionHeader(title = "Aparência", color = FypColors.ValuesAccent) }
+
+            item {
+                ThemeModeSelector(
+                    selected = themeMode,
+                    onSelect = themeViewModel::setThemeMode,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
+
+            item { Divider(modifier = Modifier.padding(vertical = 8.dp)) }
+
+            // ═══════════════════════════════════════════════════════════════
             // SEÇÃO: NOTIFICAÇÕES
             // ═══════════════════════════════════════════════════════════════
-            item { SectionHeader(title = "Notificações") }
+            item { SectionHeader(title = "Notificações", color = FypColors.ValuesAccent) }
 
             item {
                 ListItem(
@@ -456,7 +553,7 @@ fun SettingsScreen(
             // ═══════════════════════════════════════════════════════════════
             // SEÇÃO: PRIVACIDADE
             // ═══════════════════════════════════════════════════════════════
-            item { SectionHeader(title = "Privacidade") }
+            item { SectionHeader(title = "Privacidade", color = FypColors.ValuesAccent) }
 
             item {
                 ListItem(
@@ -497,6 +594,16 @@ fun SettingsScreen(
             }
 
             item {
+                SettingsNavRow(
+                    icon = Icons.Default.Shield,
+                    title = "Central de segurança",
+                    subtitle = "Bloqueios, denúncias, regras da comunidade e encontro seguro",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToSafetyCenter
+                )
+            }
+
+            item {
                 ListItem(
                     headlineContent = { Text("Bloquear / Denunciar usuários") },
                     leadingContent = {
@@ -514,7 +621,17 @@ fun SettingsScreen(
             // ═══════════════════════════════════════════════════════════════
             // SEÇÃO: SUPORTE
             // ═══════════════════════════════════════════════════════════════
-            item { SectionHeader(title = "Suporte") }
+            item { SectionHeader(title = "Suporte", color = FypColors.ValuesAccent) }
+
+            item {
+                SettingsNavRow(
+                    icon = Icons.AutoMirrored.Filled.MenuBook,
+                    title = "Guia do app",
+                    subtitle = "Veja prints guiados, balões explicativos e o mapa de recursos",
+                    tint = FypColors.Primary,
+                    onClick = onNavigateToAppGuide
+                )
+            }
 
             item {
                 // Abre o link da Central de ajuda
@@ -601,7 +718,7 @@ fun SettingsScreen(
             // ═══════════════════════════════════════════════════════════════
             // SEÇÃO: AÇÕES DE CONTA
             // ═══════════════════════════════════════════════════════════════
-            item { SectionHeader(title = "Ações") }
+            item { SectionHeader(title = "Ações", color = FypColors.ValuesAccent) }
 
             // Botão sair
             item {
@@ -654,8 +771,11 @@ private fun SettingsNavRow(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -673,7 +793,12 @@ private fun SettingsNavRow(
             }
             Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Text(
                     subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -681,6 +806,59 @@ private fun SettingsNavRow(
                 )
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemeModeSelector(
+    selected: AppThemeMode,
+    onSelect: (AppThemeMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Tema do app",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "Escolha entre o visual claro e o modo noturno do app",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+            )
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                AppThemeMode.entries.forEachIndexed { index, mode ->
+                    SegmentedButton(
+                        selected = selected == mode,
+                        onClick = { onSelect(mode) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = AppThemeMode.entries.size
+                        ),
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            inactiveContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    ) {
+                        Text(mode.label)
+                    }
+                }
+            }
         }
     }
 }

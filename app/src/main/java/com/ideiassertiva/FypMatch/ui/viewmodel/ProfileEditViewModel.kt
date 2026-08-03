@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ideiassertiva.FypMatch.data.repository.AuthRepository
 import com.ideiassertiva.FypMatch.data.repository.UserRepository
+import com.ideiassertiva.FypMatch.data.repository.UsernameRepository
 import com.ideiassertiva.FypMatch.model.User
 import com.ideiassertiva.FypMatch.model.withCompletionStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ProfileEditViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val usernameRepository: UsernameRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileEditUiState())
@@ -56,6 +58,13 @@ class ProfileEditViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
+                if (user.profile.age < 18) {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "O FypMatch é exclusivo para maiores de 18 anos."
+                    )
+                    return@launch
+                }
                 val userId = user.id.ifBlank { authRepository.getCurrentUserId() ?: "" }
                 val uploadedPhotos = if (userId.isNotBlank()) {
                     userRepository.uploadPhotos(userId, user.profile.photos)
@@ -91,11 +100,40 @@ class ProfileEditViewModel @Inject constructor(
             }
         }
     }
+
+    fun claimUsername(rawUsername: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSavingUsername = true, usernameError = null)
+            val result = usernameRepository.claimUsername(rawUsername)
+            result.fold(
+                onSuccess = { normalized ->
+                    _uiState.value = _uiState.value.copy(
+                        isSavingUsername = false,
+                        user = _uiState.value.user?.copy(username = normalized),
+                        usernameSavedSuccessfully = true
+                    )
+                },
+                onFailure = { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isSavingUsername = false,
+                        usernameError = e.message ?: "Erro ao salvar username"
+                    )
+                }
+            )
+        }
+    }
+
+    fun clearUsernameStatus() {
+        _uiState.value = _uiState.value.copy(usernameSavedSuccessfully = false, usernameError = null)
+    }
 }
 
 data class ProfileEditUiState(
     val isLoading: Boolean = false,
     val user: User? = null,
     val savedSuccessfully: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isSavingUsername: Boolean = false,
+    val usernameSavedSuccessfully: Boolean = false,
+    val usernameError: String? = null
 )

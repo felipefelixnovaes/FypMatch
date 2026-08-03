@@ -47,6 +47,15 @@
                     android:host="fypmatch-8ac3c.web.app"
                     android:pathPrefix="/u/" />
             </intent-filter>
+
+            <!-- Custom scheme: fypmatch://profile?username=X — usado pela landing page web-share
+                 como caminho direto quando o app já está instalado -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="fypmatch" android:host="profile" />
+            </intent-filter>
         </activity>
 
         <!-- Firebase Cloud Messaging Service -->

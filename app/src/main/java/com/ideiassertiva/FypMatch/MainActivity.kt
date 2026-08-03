@@ -53,8 +53,12 @@ class MainActivity : ComponentActivity() {
     }
 
     // Deep link de perfil: https://fypmatch-8ac3c.web.app/u/{username} (App Links)
+    // ou fypmatch://profile?username={username} (custom scheme, usado pela landing page)
     private fun extractProfileUsername(intent: Intent?): String? {
         val data = intent?.data ?: return null
+        if (data.scheme == "fypmatch" && data.host == "profile") {
+            return data.getQueryParameter("username")?.takeIf { it.isNotBlank() }
+        }
         if (data.host != "fypmatch-8ac3c.web.app") return null
         val segments = data.pathSegments
         if (segments.size != 2 || segments[0] != "u") return null

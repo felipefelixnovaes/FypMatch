@@ -6,7 +6,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
-    id("com.google.firebase.appdistribution")
     id("dagger.hilt.android.plugin")
     kotlin("kapt")
 }
@@ -37,8 +36,8 @@ android {
         applicationId = "com.ideiassertiva.FypMatch"
         minSdk = 24
         targetSdk = 35
-        versionCode = 54
-        versionName = "1.0.49"
+        versionCode = 55
+        versionName = "1.0.50"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         manifestPlaceholders["admobApplicationId"] = admobApplicationId
@@ -57,12 +56,6 @@ android {
     }
 
     buildTypes {
-        debug {
-            firebaseAppDistribution {
-                artifactType = "APK"
-                groups = "beta-fypmatch"
-            }
-        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -107,10 +100,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
-    implementation("androidx.camera:camera-core:1.3.2")
-    implementation("androidx.camera:camera-camera2:1.3.2")
-    implementation("androidx.camera:camera-lifecycle:1.3.2")
-    implementation("androidx.camera:camera-view:1.3.2")
     implementation("com.google.dagger:hilt-android:2.48")
     kapt("com.google.dagger:hilt-compiler:2.48")
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
@@ -124,7 +113,6 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-messaging-ktx")
-    implementation("com.google.firebase:firebase-functions-ktx")
     implementation("com.google.android.gms:play-services-auth:20.6.0")
     implementation("com.google.android.gms:play-services-ads:23.6.0")
     implementation("io.coil-kt:coil-compose:2.4.0")
